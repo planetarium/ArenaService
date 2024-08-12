@@ -1,0 +1,177 @@
+{
+  "format": 1,
+  "restore": {
+    "/Users/yang/projects/arena-service/ArenaService/ArenaService/ArenaService.csproj": {}
+  },
+  "projects": {
+    "/Users/yang/projects/arena-service/ArenaService/ArenaService/ArenaService.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/yang/projects/arena-service/ArenaService/ArenaService/ArenaService.csproj",
+        "projectName": "ArenaService",
+        "projectPath": "/Users/yang/projects/arena-service/ArenaService/ArenaService/ArenaService.csproj",
+        "packagesPath": "/Users/yang/.nuget/packages/",
+        "outputPath": "/Users/yang/projects/arena-service/ArenaService/ArenaService/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/yang/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net8.0"
+        ],
+        "sources": {
+          "/Users/yang/nuget-local": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net8.0": {
+            "targetAlias": "net8.0",
+            "projectReferences": {
+              "/Users/yang/projects/arena-service/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared.csproj": {
+                "projectPath": "/Users/yang/projects/arena-service/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net8.0": {
+          "targetAlias": "net8.0",
+          "dependencies": {
+            "GraphQL": {
+              "target": "Package",
+              "version": "[4.7.1, )"
+            },
+            "GraphQL.Server.Transports.AspNetCore": {
+              "target": "Package",
+              "version": "[5.1.1, )"
+            },
+            "GraphQL.Server.Transports.AspNetCore.SystemTextJson": {
+              "target": "Package",
+              "version": "[5.1.1, )"
+            },
+            "GraphQL.Server.Ui.Playground": {
+              "target": "Package",
+              "version": "[5.1.1, )"
+            },
+            "Grpc.AspNetCore": {
+              "target": "Package",
+              "version": "[2.57.0, )"
+            },
+            "Lib9c": {
+              "target": "Package",
+              "version": "[1.16.1, )"
+            },
+            "Libplanet.Action": {
+              "target": "Package",
+              "version": "[5.2.2, )"
+            },
+            "MagicOnion.Client": {
+              "target": "Package",
+              "version": "[6.1.4, )"
+            },
+            "StackExchange.Redis": {
+              "target": "Package",
+              "version": "[2.8.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.300/PortableRuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "/Users/yang/projects/arena-service/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "/Users/yang/projects/arena-service/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared.csproj",
+        "projectName": "NineChronicles.RPC.Shared",
+        "projectPath": "/Users/yang/projects/arena-service/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared.csproj",
+        "packagesPath": "/Users/yang/.nuget/packages/",
+        "outputPath": "/Users/yang/projects/arena-service/NineChronicles.RPC.Shared/NineChronicles.RPC.Shared/obj/",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "/Users/yang/.nuget/NuGet/NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "netstandard2.0"
+        ],
+        "sources": {
+          "/Users/yang/nuget-local": {},
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "netstandard2.0": {
+            "targetAlias": "netstandard2.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "netstandard2.0": {
+          "targetAlias": "netstandard2.0",
+          "dependencies": {
+            "MagicOnion.Abstractions": {
+              "target": "Package",
+              "version": "[5.0.3, )"
+            },
+            "MagicOnion.Shared": {
+              "target": "Package",
+              "version": "[5.0.3, )"
+            },
+            "MessagePack.MSBuild.Tasks": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.1.80, )"
+            },
+            "NETStandard.Library": {
+              "suppressParent": "All",
+              "target": "Package",
+              "version": "[2.0.3, )",
+              "autoReferenced": true
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/8.0.300/RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}
