@@ -1,5 +1,3 @@
-using Bencodex;
-using Bencodex.Types;
 using GraphQL;
 using GraphQL.Types;
 using Libplanet.Crypto;
@@ -11,13 +9,9 @@ namespace ArenaService
 {
     public class StateQuery : ObjectGraphType
     {
-        private readonly RpcClient _rpcClient;
-        private readonly IRedisArenaParticipantsService _redisArenaParticipantsService;
-
-        public StateQuery(RpcClient rpcClient, IRedisArenaParticipantsService redisArenaParticipantsService)
+        public StateQuery(IRedisArenaParticipantsService redisArenaParticipantsService)
         {
-            _rpcClient = rpcClient;
-            _redisArenaParticipantsService = redisArenaParticipantsService;
+            var redisArenaParticipantsService1 = redisArenaParticipantsService;
             Name = "StateQuery";
             FieldAsync<NonNullGraphType<ListGraphType<ArenaParticipantType>>>(
                 "arenaParticipants",
@@ -43,7 +37,7 @@ namespace ArenaService
                     string cacheKey;
                     try
                     {
-                        cacheKey = await _redisArenaParticipantsService.GetSeasonKeyAsync();
+                        cacheKey = await redisArenaParticipantsService1.GetSeasonKeyAsync();
                     }
                     catch (KeyNotFoundException)
                     {
@@ -51,13 +45,13 @@ namespace ArenaService
                         return result;
                     }
 
-                    var scores = await _redisArenaParticipantsService.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
+                    var scores = await redisArenaParticipantsService1.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
                     var avatarScore = scores.FirstOrDefault(r => r.avatarAddr == currentAvatarAddr);
                     if (avatarScore.score > 0)
                     {
                         playerScore = avatarScore.score;
                     }
-                    result = await _redisArenaParticipantsService.GetArenaParticipantsAsync(cacheKey);
+                    result = await redisArenaParticipantsService1.GetArenaParticipantsAsync(cacheKey);
                     foreach (var arenaParticipant in result)
                     {
                         var (win, lose, _) = ArenaHelper.GetScores(playerScore, arenaParticipant.Score);

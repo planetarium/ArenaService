@@ -32,11 +32,13 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     private IBlockChainService _service;
     private IActionEvaluationHub _hub;
     private readonly Codec _codec;
+    private readonly string _rpcHost;
 
-    public RpcClient(PrivateKey privateKey)
+    public RpcClient(PrivateKey privateKey, IConfiguration configuration)
     {
         _privateKey = privateKey;
         _codec = new Codec();
+        _rpcHost = configuration["Rpc:Host"]!;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -50,8 +52,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
                     cancellationToken.ThrowIfCancellationRequested();
                 }
 
-                var rpcHost = "http://9c-main-jwt.nine-chronicles.com:31238";
-                var channel = GrpcChannel.ForAddress(rpcHost,
+                var channel = GrpcChannel.ForAddress(_rpcHost,
                     new GrpcChannelOptions
                     {
                         Credentials = ChannelCredentials.Insecure,

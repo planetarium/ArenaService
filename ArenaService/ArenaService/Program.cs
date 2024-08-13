@@ -8,7 +8,7 @@ using AddressType = ArenaService.AddressType;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var redisConnectionString = "localhost:6379";
+var redisConnectionString = builder.Configuration["Redis:ConnectionString"]!;
 var configurationOptions = new ConfigurationOptions
 {
     EndPoints = { redisConnectionString },
