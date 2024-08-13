@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ArenaService")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ca3dcf4a5b56ed9ebff8e74ea99a9d0aa6fd0a06")]
 [assembly: System.Reflection.AssemblyProductAttribute("ArenaService")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ArenaService")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

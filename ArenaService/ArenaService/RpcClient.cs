@@ -39,40 +39,45 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         _codec = new Codec();
     }
 
-    public async Task InitializeAsync(CancellationToken cancellationToken)
+    public async Task StartAsync(CancellationToken cancellationToken)
     {
-        while (true)
+        Task.Run(async () =>
         {
-            if (cancellationToken.IsCancellationRequested)
+            while (true)
             {
-                cancellationToken.ThrowIfCancellationRequested();
-            }
-
-            var rpcHost = "http://9c-main-jwt.nine-chronicles.com:31238";
-            var channel = GrpcChannel.ForAddress(rpcHost,
-                new GrpcChannelOptions
+                if (cancellationToken.IsCancellationRequested)
                 {
-                    Credentials = ChannelCredentials.Insecure,
-                    MaxReceiveMessageSize = null,
-                    HttpHandler = new SocketsHttpHandler
-                    {
-                        EnableMultipleHttp2Connections = true,
-                    }
+                    cancellationToken.ThrowIfCancellationRequested();
                 }
-            );
 
-            _hub = await StreamingHubClient.ConnectAsync<IActionEvaluationHub, IActionEvaluationHubReceiver>(
-                channel,
-                this,
-                cancellationToken: cancellationToken);
-            _service = MagicOnionClient.Create<IBlockChainService>(channel)
-                .WithCancellationToken(cancellationToken);
+                var rpcHost = "http://9c-main-jwt.nine-chronicles.com:31238";
+                var channel = GrpcChannel.ForAddress(rpcHost,
+                    new GrpcChannelOptions
+                    {
+                        Credentials = ChannelCredentials.Insecure,
+                        MaxReceiveMessageSize = null,
+                        HttpHandler = new SocketsHttpHandler
+                        {
+                            EnableMultipleHttp2Connections = true,
+                        }
+                    }
+                );
 
-            await _hub.JoinAsync(Address.ToHex());
-            await _service.AddClient(Address.ToByteArray());
+                _hub = await StreamingHubClient.ConnectAsync<IActionEvaluationHub, IActionEvaluationHubReceiver>(
+                    channel,
+                    this,
+                    cancellationToken: cancellationToken);
+                _service = MagicOnionClient.Create<IBlockChainService>(channel)
+                    .WithCancellationToken(cancellationToken);
 
-            await _hub.WaitForDisconnect();
-        }
+                await _hub.JoinAsync(Address.ToHex());
+                await _service.AddClient(Address.ToByteArray());
+
+                await _hub.WaitForDisconnect();
+            }
+        }, cancellationToken);
+
+        await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
@@ -158,16 +163,10 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <returns><see cref="IValue"/> or null if not found.</returns>
     public async Task<IValue?> GetLegacyState(Block block, Address address)
     {
-        var result = await _service.GetStateByStateRootHash(
-            block.StateRootHash.ToByteArray(),
-            ReservedAddresses.LegacyAccount.ToByteArray(),
-            address.ToByteArray());
-        if (_codec.Decode(result) is { } decode and not Null)
-        {
-            return decode;
-        }
-
-        return null;
+        return await GetState(
+            block,
+            ReservedAddresses.LegacyAccount,
+            address);
     }
 
     /// <summary>
@@ -468,10 +467,24 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <returns><see cref="IValue"/> or null if not found.</returns>
     public async Task<IValue?> GetState(Block block, Address accountAddress, Address address)
     {
-        var result = await _service.GetStateByStateRootHash(
-            block.StateRootHash.ToByteArray(),
-            accountAddress.ToByteArray(),
-            address.ToByteArray());
+        byte[] result = [];
+        var retry = 0;
+        while (retry < 3)
+        {
+            try
+            {
+                result = await _service.GetStateByStateRootHash(
+                    block.StateRootHash.ToByteArray(),
+                    accountAddress.ToByteArray(),
+                    address.ToByteArray());
+                break;
+            }
+            catch (RpcException)
+            {
+                await Task.Delay((3 - retry) * 1000);
+                retry++;
+            }
+        }
         if (_codec.Decode(result) is { } decode and not Null)
         {
             return decode;

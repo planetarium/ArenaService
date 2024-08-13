@@ -1,4 +1,5 @@
 using Bencodex;
+using Bencodex.Types;
 using GraphQL;
 using GraphQL.Types;
 using Libplanet.Crypto;
@@ -10,7 +11,6 @@ namespace ArenaService
 {
     public class StateQuery : ObjectGraphType
     {
-        private readonly Codec _codec = new Codec();
         private readonly RpcClient _rpcClient;
         private readonly IRedisArenaParticipantsService _redisArenaParticipantsService;
 
@@ -19,7 +19,7 @@ namespace ArenaService
             _rpcClient = rpcClient;
             _redisArenaParticipantsService = redisArenaParticipantsService;
             Name = "StateQuery";
-            Field<NonNullGraphType<ListGraphType<ArenaParticipantType>>>(
+            FieldAsync<NonNullGraphType<ListGraphType<ArenaParticipantType>>>(
                 "arenaParticipants",
                 arguments: new QueryArguments(
                     new QueryArgument<NonNullGraphType<AddressType>>
@@ -32,25 +32,32 @@ namespace ArenaService
                         DefaultValue = true,
                     }
                 ),
-                resolve: context =>
+                resolve: async context =>
                 {
                     // Copy from NineChronicles RxProps.Arena
                     // https://github.com/planetarium/NineChronicles/blob/80.0.1/nekoyume/Assets/_Scripts/State/RxProps.Arena.cs#L279
-                    var blockIndex = _rpcClient.Tip.Index;
                     var currentAvatarAddr = context.GetArgument<Address>("avatarAddress");
                     var filterBounds = context.GetArgument<bool>("filterBounds");
-                    // var currentRoundData = context.Source.WorldState.GetSheet<ArenaSheet>().GetRoundByBlockIndex(blockIndex);
                     int playerScore = ArenaScore.ArenaScoreDefault;
-                    // var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
-                    var cacheKey = "10_2";
                     List<ArenaParticipant> result = new();
-                    // var scoreAddr = ArenaScore.DeriveAddress(currentAvatarAddr, currentRoundData.ChampionshipId, currentRoundData.Round);
-                    // var scoreState = context.Source.WorldState.GetLegacyState(scoreAddr);
-                    // if (scoreState is List scores)
-                    // {
-                    //     playerScore = (Integer)scores[1];
-                    // }
-                    result = _redisArenaParticipantsService.GetValueAsync(cacheKey).Result;
+                    string cacheKey;
+                    try
+                    {
+                        cacheKey = await _redisArenaParticipantsService.GetSeasonKeyAsync();
+                    }
+                    catch (KeyNotFoundException)
+                    {
+                        // return empty list because cache not yet
+                        return result;
+                    }
+
+                    var scores = await _redisArenaParticipantsService.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
+                    var avatarScore = scores.FirstOrDefault(r => r.avatarAddr == currentAvatarAddr);
+                    if (avatarScore.score > 0)
+                    {
+                        playerScore = avatarScore.score;
+                    }
+                    result = await _redisArenaParticipantsService.GetArenaParticipantsAsync(cacheKey);
                     foreach (var arenaParticipant in result)
                     {
                         var (win, lose, _) = ArenaHelper.GetScores(playerScore, arenaParticipant.Score);

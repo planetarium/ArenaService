@@ -1,5 +1,4 @@
 using ArenaService;
-using ArenaService.Services;
 using GraphQL.Server;
 using GraphQL.Server.Ui.Playground;
 using GraphQL.Types;
@@ -23,10 +22,11 @@ var redis = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
 // Add services to the container.
 builder.Services
     .AddSingleton<RpcClient>()
+    .AddHostedService<RpcService>()
     .AddSingleton(new PrivateKey())
     .AddSingleton<IConnectionMultiplexer>(_ => redis)
     .AddSingleton<IRedisArenaParticipantsService, RedisArenaParticipantsService>()
-    // .AddHostedService<ArenaParticipantsWorker>()
+    .AddHostedService<ArenaParticipantsWorker>()
     .AddScoped<ISchema, StandaloneSchema>()
     .AddGraphQL(options => options.EnableMetrics = true)
     .AddSystemTextJson()
