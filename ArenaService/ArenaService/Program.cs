@@ -8,12 +8,14 @@ using AddressType = ArenaService.AddressType;
 
 var builder = WebApplication.CreateBuilder(args);
 
-var redisConnectionString = builder.Configuration["Redis:ConnectionString"]!;
+var configuration = builder.Configuration;
+var redisConnectionString = configuration["Redis:ConnectionString"]!;
+var timeOut = int.Parse(configuration["Redis:TimeOut"]!);
 var configurationOptions = new ConfigurationOptions
 {
     EndPoints = { redisConnectionString },
-    ConnectTimeout = 500,
-    SyncTimeout = 500,
+    ConnectTimeout = timeOut,
+    SyncTimeout = timeOut,
 };
 
 var redis = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
