@@ -4,7 +4,8 @@ public class RpcService(RpcClient rpcClient) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        await rpcClient.StartAsync(cancellationToken);
+        _ = rpcClient.StartAsync(cancellationToken);
+        await Task.CompletedTask;
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)

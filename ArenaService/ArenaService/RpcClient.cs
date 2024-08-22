@@ -33,6 +33,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     private IActionEvaluationHub _hub;
     private readonly Codec _codec;
     private readonly string _rpcHost;
+    private bool _selfDisconnect;
 
     public RpcClient(PrivateKey privateKey, IConfiguration configuration)
     {
@@ -43,42 +44,57 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
     public async Task StartAsync(CancellationToken cancellationToken)
     {
-        Task.Run(async () =>
+        while (true)
         {
-            while (true)
+            if (cancellationToken.IsCancellationRequested)
             {
-                if (cancellationToken.IsCancellationRequested)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                }
-
-                var channel = GrpcChannel.ForAddress(_rpcHost,
-                    new GrpcChannelOptions
-                    {
-                        Credentials = ChannelCredentials.Insecure,
-                        MaxReceiveMessageSize = null,
-                        HttpHandler = new SocketsHttpHandler
-                        {
-                            EnableMultipleHttp2Connections = true,
-                        }
-                    }
-                );
-
-                _hub = await StreamingHubClient.ConnectAsync<IActionEvaluationHub, IActionEvaluationHubReceiver>(
-                    channel,
-                    this,
-                    cancellationToken: cancellationToken);
-                _service = MagicOnionClient.Create<IBlockChainService>(channel)
-                    .WithCancellationToken(cancellationToken);
-
-                await _hub.JoinAsync(Address.ToHex());
-                await _service.AddClient(Address.ToByteArray());
-
-                await _hub.WaitForDisconnect();
+                _selfDisconnect = true;
+                cancellationToken.ThrowIfCancellationRequested();
             }
-        }, cancellationToken);
+
+            try
+            {
+                await Join(cancellationToken);
+            }
+            catch (Exception)
+            {
+                // pass
+            }
+
+            if (_selfDisconnect)
+            {
+                break;
+            }
+        }
 
         await Task.CompletedTask;
+    }
+
+    private async Task Join(CancellationToken cancellationToken)
+    {
+        var channel = GrpcChannel.ForAddress(_rpcHost,
+            new GrpcChannelOptions
+            {
+                Credentials = ChannelCredentials.Insecure,
+                MaxReceiveMessageSize = null,
+                HttpHandler = new SocketsHttpHandler
+                {
+                    EnableMultipleHttp2Connections = true,
+                }
+            }
+        );
+
+        _hub = await StreamingHubClient.ConnectAsync<IActionEvaluationHub, IActionEvaluationHubReceiver>(
+            channel,
+            this,
+            cancellationToken: cancellationToken);
+        _service = MagicOnionClient.Create<IBlockChainService>(channel)
+            .WithCancellationToken(cancellationToken);
+
+        await _hub.JoinAsync(Address.ToHex());
+        await _service.AddClient(Address.ToByteArray());
+
+        await _hub.WaitForDisconnect();
     }
 
     public async Task StopAsync(CancellationToken cancellationToken)
