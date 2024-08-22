@@ -38,10 +38,6 @@ public class ArenaParticipantsWorker : BackgroundService
             //pass
             _logger.LogInformation("[ArenaParticipantsWorker]Cancel ArenaParticipantsWorker");
         }
-        catch (Exception e)
-        {
-            _logger.LogError(e, "[ArenaParticipantsWorker]Stopping ArenaParticipantsWorker");
-        }
     }
 
     /// <summary>
