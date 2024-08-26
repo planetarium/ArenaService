@@ -16,6 +16,7 @@ var configurationOptions = new ConfigurationOptions
     EndPoints = { redisConnectionString },
     ConnectTimeout = timeOut,
     SyncTimeout = timeOut,
+    DefaultDatabase = int.Parse(configuration["Redis:Database"]!),
 };
 
 var redis = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
