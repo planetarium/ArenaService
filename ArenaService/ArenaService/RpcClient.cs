@@ -27,6 +27,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     private const int MaxDegreeOfParallelism = 8;
 
     public Address Address => _privateKey.Address;
+    public Block PreviousTip;
     public Block Tip;
     public bool Ready;
     private readonly PrivateKey _privateKey;
@@ -123,6 +124,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     {
         var dict = (Dictionary)_codec.Decode(newTip);
         var newTipBlock = BlockMarshaler.UnmarshalBlock(dict);
+        PreviousTip = Tip;
         Tip = newTipBlock;
     }
 

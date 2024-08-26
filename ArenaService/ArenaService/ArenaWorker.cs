@@ -51,9 +51,15 @@ public class ArenaParticipantsWorker : BackgroundService
         sw.Start();
         // Copy from NineChronicles RxProps.Arena
         // https://github.com/planetarium/NineChronicles/blob/80.0.1/nekoyume/Assets/_Scripts/State/RxProps.Arena.cs#L279
-        while (_rpcClient.Tip is null)
+        var retry = 0;
+        while (_rpcClient.Tip?.Index == _rpcClient.PreviousTip?.Index)
         {
-            await Task.Delay(1000);
+            await Task.Delay((3 - retry) * 1000);
+            retry++;
+            if (retry >= 3)
+            {
+                throw new InvalidOperationException();
+            }
         }
 
         var tip = _rpcClient.Tip;
