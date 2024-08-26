@@ -46,10 +46,10 @@ namespace ArenaService
                     }
 
                     var scores = await redisArenaParticipantsService1.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
-                    var avatarScore = scores.FirstOrDefault(r => r.avatarAddr == currentAvatarAddr);
-                    if (avatarScore.score > 0)
+                    var avatarScore = scores.FirstOrDefault(r => r.AvatarAddr == currentAvatarAddr);
+                    if (avatarScore.Score > 0)
                     {
-                        playerScore = avatarScore.score;
+                        playerScore = avatarScore.Score;
                     }
                     result = await redisArenaParticipantsService1.GetArenaParticipantsAsync(cacheKey);
                     foreach (var arenaParticipant in result)

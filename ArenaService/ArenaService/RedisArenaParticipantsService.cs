@@ -48,18 +48,18 @@ public class RedisArenaParticipantsService : IRedisArenaParticipantsService
         await _db.StringSetAsync(SeasonKey, value, expiry);
     }
 
-    public async Task<List<(Address avatarAddr, int score, int rank)>> GetAvatarAddrAndScoresWithRank(string key)
+    public async Task<List<ArenaScoreAndRank>> GetAvatarAddrAndScoresWithRank(string key)
     {
         RedisValue result = await _db.StringGetAsync(key);
         if (result.IsNull)
         {
-            return new List<(Address avatarAddr, int score, int rank)>();
+            return new List<ArenaScoreAndRank>();
         }
 
-        return JsonSerializer.Deserialize<List<(Address avatarAddr, int score, int rank)>>(result.ToString())!;
+        return JsonSerializer.Deserialize<List<ArenaScoreAndRank>>(result.ToString())!;
     }
 
-    public async Task SetAvatarAddrAndScoresWithRank(string key, List<(Address avatarAddr, int score, int rank)> value, TimeSpan? expiry = null)
+    public async Task SetAvatarAddrAndScoresWithRank(string key, List<ArenaScoreAndRank> value, TimeSpan? expiry = null)
     {
         var serialized = JsonSerializer.Serialize(value);
         await _db.StringSetAsync(key, serialized, expiry);

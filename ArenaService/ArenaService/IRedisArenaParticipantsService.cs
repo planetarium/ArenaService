@@ -8,7 +8,6 @@ public interface IRedisArenaParticipantsService
     Task SetArenaParticipantsAsync(string key, List<ArenaParticipant> value, TimeSpan? expiry = null);
     Task<string> GetSeasonKeyAsync();
     Task SetSeasonAsync(string value, TimeSpan? expiry = null);
-    Task<List<(Address avatarAddr, int score, int rank)>> GetAvatarAddrAndScoresWithRank(string key);
-    Task SetAvatarAddrAndScoresWithRank(string key, List<(Address avatarAddr, int score, int rank)> value,
-        TimeSpan? expiry = null);
+    Task<List<ArenaScoreAndRank>> GetAvatarAddrAndScoresWithRank(string key);
+    Task SetAvatarAddrAndScoresWithRank(string key, List<ArenaScoreAndRank> value, TimeSpan? expiry = null);
 }

@@ -225,7 +225,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="currentRoundData">The current round data.</param>
     /// <param name="worldState">The world state.</param>
     /// <returns>The list of avatar addresses, scores, and ranks.</returns>
-    public async Task<List<(Address avatarAddr, int score, int rank)>> AvatarAddrAndScoresWithRank(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
+    public async Task<List<ArenaScoreAndRank>> AvatarAddrAndScoresWithRank(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
     {
         var avatarAndScoreAddrList = avatarAddrList
             .Select(avatarAddr => (
@@ -248,26 +248,26 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             avatarAddrAndScores.Add((tuple.avatarAddr, score));
         }
 
-        List<(Address avatarAddr, int score, int rank)> orderedTuples = avatarAddrAndScores
+        List<ArenaScoreAndRank> orderedTuples = avatarAddrAndScores
             .OrderByDescending(tuple => tuple.score)
             .ThenBy(tuple => tuple.avatarAddr)
-            .Select(tuple => (tuple.avatarAddr, tuple.score, 0))
+            .Select(tuple => new ArenaScoreAndRank(tuple.avatarAddr, tuple.score, 0))
             .ToList();
         int? currentScore = null;
         var currentRank = 1;
-        var avatarAddrAndScoresWithRank = new List<(Address avatarAddr, int score, int rank)>();
-        var trunk = new List<(Address avatarAddr, int score, int rank)>();
+        var avatarAddrAndScoresWithRank = new List<ArenaScoreAndRank>();
+        var trunk = new List<ArenaScoreAndRank>();
         for (var i = 0; i < orderedTuples.Count; i++)
         {
             var tuple = orderedTuples[i];
             if (!currentScore.HasValue)
             {
-                currentScore = tuple.score;
+                currentScore = tuple.Score;
                 trunk.Add(tuple);
                 continue;
             }
 
-            if (currentScore.Value == tuple.score)
+            if (currentScore.Value == tuple.Score)
             {
                 trunk.Add(tuple);
                 currentRank++;
@@ -278,9 +278,9 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
                 foreach (var tupleInTrunk in trunk)
                 {
-                    avatarAddrAndScoresWithRank.Add((
-                        tupleInTrunk.avatarAddr,
-                        tupleInTrunk.score,
+                    avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
+                        tupleInTrunk.AvatarAddr,
+                        tupleInTrunk.Score,
                         currentRank));
                 }
 
@@ -291,9 +291,9 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
             foreach (var tupleInTrunk in trunk)
             {
-                avatarAddrAndScoresWithRank.Add((
-                    tupleInTrunk.avatarAddr,
-                    tupleInTrunk.score,
+                avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
+                    tupleInTrunk.AvatarAddr,
+                    tupleInTrunk.Score,
                     currentRank));
             }
 
@@ -301,14 +301,14 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             if (i < orderedTuples.Count - 1)
             {
                 trunk.Add(tuple);
-                currentScore = tuple.score;
+                currentScore = tuple.Score;
                 currentRank++;
                 continue;
             }
 
-            avatarAddrAndScoresWithRank.Add((
-                tuple.avatarAddr,
-                tuple.score,
+            avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
+                tuple.AvatarAddr,
+                tuple.Score,
                 currentRank + 1));
         }
 
@@ -322,7 +322,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="avatarAddrList">The list of avatar addresses to filter the matching participants.</param>
     /// <param name="avatarAddrAndScoresWithRank">The list of avatar addresses with their scores and ranks.</param>
     /// <returns><see cref="Task"/>A list of arena participants.</returns>
-    public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList, List<(Address avatarAddr, int score, int rank)> avatarAddrAndScoresWithRank)
+    public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList, List<ArenaScoreAndRank> avatarAddrAndScoresWithRank)
     {
         var runeListSheet = await GetSheet<RuneListSheet>(block);
         var costumeSheet = await GetSheet<CostumeStatSheet>(block);
@@ -345,7 +345,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
         var tasks = avatarAddrAndScoresWithRank.Select(async tuple =>
         {
-            var (avatarAddr, score, rank) = tuple;
+            var avatarAddr = tuple.AvatarAddr;
             var runeStates = await GetRuneState(block, avatarAddr, runeListSheet);
             var avatar = await GetAvatarState(block, avatarAddr);
             var itemSlotState =
@@ -401,8 +401,8 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             await Task.CompletedTask;
             return new ArenaParticipant(
                 avatarAddr,
-                score,
-                rank,
+                tuple.Score,
+                tuple.Rank,
                 avatar,
                 portraitId,
                 0,
