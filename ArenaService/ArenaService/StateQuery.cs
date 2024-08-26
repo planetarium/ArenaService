@@ -47,7 +47,7 @@ namespace ArenaService
 
                     var scores = await redisArenaParticipantsService1.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
                     var avatarScore = scores.FirstOrDefault(r => r.AvatarAddr == currentAvatarAddr);
-                    if (avatarScore.Score > 0)
+                    if (avatarScore?.Score > 0)
                     {
                         playerScore = avatarScore.Score;
                     }
