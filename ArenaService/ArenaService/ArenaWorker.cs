@@ -54,7 +54,7 @@ public class ArenaParticipantsWorker : BackgroundService
         var retry = 0;
         while (_rpcClient.Tip?.Index == _rpcClient.PreviousTip?.Index)
         {
-            await Task.Delay((3 - retry) * 1000);
+            await Task.Delay((5 - retry) * 1000);
             retry++;
             if (retry >= 3)
             {
