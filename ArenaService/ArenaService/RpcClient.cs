@@ -28,6 +28,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
     public Address Address => _privateKey.Address;
     public Block Tip;
+    public bool Ready;
     private readonly PrivateKey _privateKey;
     private IBlockChainService _service;
     private IActionEvaluationHub _hub;
@@ -58,7 +59,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             }
             catch (Exception)
             {
-                // pass
+                Ready = false;
             }
 
             if (_selfDisconnect)
@@ -93,6 +94,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
         await _hub.JoinAsync(Address.ToHex());
         await _service.AddClient(Address.ToByteArray());
+        Ready = true;
 
         await _hub.WaitForDisconnect();
     }

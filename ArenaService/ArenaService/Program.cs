@@ -27,6 +27,7 @@ builder.Services
     .AddHostedService<RpcService>()
     .AddSingleton(new PrivateKey())
     .AddSingleton<IConnectionMultiplexer>(_ => redis)
+    .AddSingleton<RpcNodeHealthCheck>()
     .AddSingleton<IRedisArenaParticipantsService, RedisArenaParticipantsService>()
     .AddHostedService<ArenaParticipantsWorker>()
     .AddScoped<ISchema, StandaloneSchema>()
@@ -34,6 +35,10 @@ builder.Services
     .AddSystemTextJson()
     .AddGraphTypes(typeof(AddressType))
     .AddGraphTypes(typeof(StandaloneQuery));
+
+builder.Services
+    .AddHealthChecks()
+    .AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
 
 
 var app = builder.Build();
@@ -43,5 +48,9 @@ app
     .UseGraphQLPlayground(new PlaygroundOptions
     {
         GraphQLEndPoint = "/graphql"
+    })
+    .UseEndpoints(endpoints =>
+    {
+        endpoints.MapHealthChecks("/ping");
     });
 app.Run();
