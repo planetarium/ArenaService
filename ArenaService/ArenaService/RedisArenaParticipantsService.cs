@@ -1,19 +1,14 @@
 using System.Text.Json;
-using Libplanet.Crypto;
 using StackExchange.Redis;
 
 namespace ArenaService;
 
-public class RedisArenaParticipantsService : IRedisArenaParticipantsService
+public class RedisArenaParticipantsService(IConnectionMultiplexer redis, RedisHealthCheck redisHealthCheck)
+    : IRedisArenaParticipantsService
 {
     public const string SeasonKey = "season";
 
-    private readonly IDatabase _db;
-
-    public RedisArenaParticipantsService(IConnectionMultiplexer redis)
-    {
-        _db = redis.GetDatabase();
-    }
+    private readonly IDatabase _db = redis.GetDatabase();
 
     public async Task<List<ArenaParticipant>> GetArenaParticipantsAsync(string key)
     {

@@ -11,6 +11,7 @@ var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 var redisConnectionString = configuration["Redis:ConnectionString"]!;
 var timeOut = int.Parse(configuration["Redis:TimeOut"]!);
+var enableWorker = bool.Parse(configuration["Worker"]!);
 var configurationOptions = new ConfigurationOptions
 {
     EndPoints = { redisConnectionString },
@@ -24,22 +25,33 @@ var redis = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
 
 // Add services to the container.
 builder.Services
-    .AddSingleton<RpcClient>()
-    .AddHostedService<RpcService>()
-    .AddSingleton(new PrivateKey())
     .AddSingleton<IConnectionMultiplexer>(_ => redis)
-    .AddSingleton<RpcNodeHealthCheck>()
-    .AddSingleton<IRedisArenaParticipantsService, RedisArenaParticipantsService>()
-    .AddHostedService<ArenaParticipantsWorker>()
     .AddScoped<ISchema, StandaloneSchema>()
+    .AddSingleton<RedisHealthCheck>()
+    .AddSingleton<IRedisArenaParticipantsService, RedisArenaParticipantsService>()
+    .AddHostedService<RedisHealthCheckService>()
     .AddGraphQL(options => options.EnableMetrics = true)
     .AddSystemTextJson()
     .AddGraphTypes(typeof(AddressType))
     .AddGraphTypes(typeof(StandaloneQuery));
 
-builder.Services
+if (enableWorker)
+{
+    builder.Services
+        .AddSingleton<RpcClient>()
+        .AddHostedService<RpcService>()
+        .AddSingleton(new PrivateKey())
+        .AddSingleton<RpcNodeHealthCheck>()
+        .AddHostedService<ArenaParticipantsWorker>();
+}
+
+var healthChecksBuilder = builder.Services
     .AddHealthChecks()
-    .AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
+    .AddCheck<RedisHealthCheck>(nameof(RedisHealthCheck));
+if (enableWorker)
+{
+    healthChecksBuilder.AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
+}
 
 
 var app = builder.Build();
