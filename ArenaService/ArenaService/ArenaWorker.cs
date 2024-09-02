@@ -67,9 +67,10 @@ public class ArenaParticipantsWorker : BackgroundService
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData);
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
         var scoreCacheKey = $"{cacheKey}_score";
+        var expiry = TimeSpan.FromMinutes(5);
         if (participants is null)
         {
-            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>());
+            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>(), expiry);
             _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list", cacheKey);
             return;
         }
@@ -77,10 +78,9 @@ public class ArenaParticipantsWorker : BackgroundService
         var avatarAddrList = participants.AvatarAddresses;
         var avatarAddrAndScoresWithRank = await _rpcClient.AvatarAddrAndScoresWithRank(tip, avatarAddrList, currentRoundData);
         var result = await _rpcClient.GetArenaParticipants(tip, avatarAddrList, avatarAddrAndScoresWithRank);
-        await _service.SetArenaParticipantsAsync(cacheKey, result, TimeSpan.FromHours(1));
-        await _service.SetAvatarAddrAndScoresWithRank(scoreCacheKey, avatarAddrAndScoresWithRank,
-            TimeSpan.FromHours(1));
-        await _service.SetSeasonAsync(cacheKey, TimeSpan.FromHours(1));
+        await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
+        await _service.SetAvatarAddrAndScoresWithRank(scoreCacheKey, avatarAddrAndScoresWithRank, expiry);
+        await _service.SetSeasonAsync(cacheKey, expiry);
         sw.Stop();
         _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}]: {Elapsed}", cacheKey, sw.Elapsed);
     }
