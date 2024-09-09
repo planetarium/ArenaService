@@ -45,12 +45,11 @@ namespace ArenaService
                         return result;
                     }
 
-                    var scores = await redisArenaParticipantsService1.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
-                    var avatarScore = scores.FirstOrDefault(r => r.AvatarAddr == currentAvatarAddr);
-                    if (avatarScore?.Score > 0)
                     var cached = await redisArenaParticipantsService1.GetArenaParticipantsAsync(cacheKey);
+                    var avatarScore = cached.FirstOrDefault(r => r.AvatarAddr == currentAvatarAddr).Score;
+                    if (avatarScore > 0)
                     {
-                        playerScore = avatarScore.Score;
+                        playerScore = avatarScore;
                     }
                     foreach (var arenaParticipant in cached)
                     {
