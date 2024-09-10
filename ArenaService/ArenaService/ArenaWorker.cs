@@ -66,7 +66,6 @@ public class ArenaParticipantsWorker : BackgroundService
         var currentRoundData = await _rpcClient.GetRoundData(tip);
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData);
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
-        var scoreCacheKey = $"{cacheKey}_score";
         var expiry = TimeSpan.FromMinutes(5);
         if (participants is null)
         {
