@@ -218,12 +218,11 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return participants;
     }
 
-        /// <summary>
+    /// <summary>
     /// Retrieves the avatar addresses and scores with ranks for a given list of avatar addresses, current round data, and world state.
     /// </summary>
     /// <param name="avatarAddrList">The list of avatar addresses.</param>
     /// <param name="currentRoundData">The current round data.</param>
-    /// <param name="worldState">The world state.</param>
     /// <returns>The list of avatar addresses, scores, and ranks.</returns>
     public async Task<List<ArenaScoreAndRank>> AvatarAddrAndScoresWithRank(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
     {
@@ -343,22 +342,15 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             collectionSheetExist = false;
         }
 
+        var itemSlotStates = await GetItemSlotStates(block, avatarAddrList);
+        var runeSlotStates = await GetRuneSlotStates(block, avatarAddrList);
         var tasks = avatarAddrAndScoresWithRank.Select(async tuple =>
         {
             var avatarAddr = tuple.AvatarAddr;
             var runeStates = await GetRuneState(block, avatarAddr, runeListSheet);
             var avatar = await GetAvatarState(block, avatarAddr);
-            var itemSlotState =
-                await GetLegacyState(block, ItemSlotState.DeriveAddress(avatarAddr, BattleType.Arena)) is
-                    List itemSlotList
-                    ? new ItemSlotState(itemSlotList)
-                    : new ItemSlotState(BattleType.Arena);
-
-            var runeSlotState =
-                await GetLegacyState(block, RuneSlotState.DeriveAddress(avatarAddr, BattleType.Arena)) is
-                    List runeSlotList
-                    ? new RuneSlotState(runeSlotList)
-                    : new RuneSlotState(BattleType.Arena);
+            var itemSlotState = itemSlotStates[avatarAddr];
+            var runeSlotState = runeSlotStates[avatarAddr];
 
             var equippedRuneStates = new List<RuneState>();
             foreach (var runeId in runeSlotState.GetRuneSlot().Select(slot => slot.RuneId))
@@ -537,6 +529,56 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         }
 
         throw new Exception();
+    }
+
+    /// <summary>
+    /// Retrieves the item slot states for the given avatar addresses from the world state.
+    /// </summary>
+    /// <param name="block">The world state used to retrieve the collection states.</param>
+    /// <param name="avatarAddresses">The list of addresses to retrieve the item slot states for.</param>
+    /// <returns>A dictionary of Address and <see cref="ItemSlotState"/> pairs representing the item slot states
+    /// for the given addresses.</returns>
+    public async Task<Dictionary<Address, ItemSlotState>> GetItemSlotStates(Block block, IReadOnlyList<Address> avatarAddresses)
+    {
+        var result = new Dictionary<Address, ItemSlotState>();
+        var slotAddresses = avatarAddresses.Select(a => ItemSlotState.DeriveAddress(a, BattleType.Arena)).ToList();
+        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses);
+        foreach (var address in avatarAddresses)
+        {
+            var slotAddress = ItemSlotState.DeriveAddress(address, BattleType.Arena);
+            var serialized = values[slotAddress];
+            var itemSlotState = serialized is List bencoded
+                ? new ItemSlotState(bencoded)
+                : new ItemSlotState(BattleType.Arena);
+            result.TryAdd(address, itemSlotState);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Retrieves the rune slot states for the given avatar addresses from the world state.
+    /// </summary>
+    /// <param name="block">The world state used to retrieve the collection states.</param>
+    /// <param name="avatarAddresses">The list of avatar addresses to retrieve the rune slot states for.</param>
+    /// <returns>A dictionary of Address and <see cref="RuneSlotState"/> pairs representing the rune slot states
+    /// for the given addresses.</returns>
+    public async Task<Dictionary<Address, RuneSlotState>> GetRuneSlotStates(Block block, IReadOnlyList<Address> avatarAddresses)
+    {
+        var result = new Dictionary<Address, RuneSlotState>();
+        var slotAddresses = avatarAddresses.Select(a => RuneSlotState.DeriveAddress(a, BattleType.Arena)).ToList();
+        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses);
+        foreach (var address in avatarAddresses)
+        {
+            var slotAddress = RuneSlotState.DeriveAddress(address, BattleType.Arena);
+            var serialized = values[slotAddress];
+            var runeSlotState = serialized is List bencoded
+                ? new RuneSlotState(bencoded)
+                : new RuneSlotState(BattleType.Arena);
+            result.TryAdd(address, runeSlotState);
+        }
+
+        return result;
     }
 
     public static List<RuneOptionSheet.Row.RuneOptionInfo> GetRuneOptions(
