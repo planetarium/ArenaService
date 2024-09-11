@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.Diagnostics;
 using Bencodex;
 using Bencodex.Types;
 using Grpc.Core;
@@ -223,32 +222,10 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <summary>
     /// Retrieves the avatar addresses and scores with ranks for a given list of avatar addresses, current round data, and world state.
     /// </summary>
-    /// <param name="avatarAddrList">The list of avatar addresses.</param>
-    /// <param name="currentRoundData">The current round data.</param>
+    /// <param name="avatarAddrAndScores">Ths list of avatar address and score tuples.</param>
     /// <returns>The list of avatar addresses, scores, and ranks.</returns>
-    public async Task<List<ArenaScoreAndRank>> AvatarAddrAndScoresWithRank(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
+    public List<ArenaScoreAndRank> AvatarAddrAndScoresWithRank(List<(Address avatarAddr, int score)> avatarAddrAndScores)
     {
-        var avatarAndScoreAddrList = avatarAddrList
-            .Select(avatarAddr => (
-                avatarAddr,
-                ArenaScore.DeriveAddress(
-                    avatarAddr,
-                    currentRoundData.ChampionshipId,
-                    currentRoundData.Round)))
-            .ToArray();
-        // NOTE: If addresses is too large, and split and get separately.
-        var scores = await GetStates(
-            block,
-            ReservedAddresses.LegacyAccount,
-            avatarAndScoreAddrList.Select(tuple => tuple.Item2).ToList());
-        var avatarAddrAndScores = new List<(Address avatarAddr, int score)>();
-        foreach (var tuple in avatarAndScoreAddrList)
-        {
-            var scoreAddress = tuple.Item2;
-            var score = scores[scoreAddress] is List scoreList ? (int)(Integer)scoreList[1] : ArenaScore.ArenaScoreDefault;
-            avatarAddrAndScores.Add((tuple.avatarAddr, score));
-        }
-
         List<ArenaScoreAndRank> orderedTuples = avatarAddrAndScores
             .OrderByDescending(tuple => tuple.score)
             .ThenBy(tuple => tuple.avatarAddr)
@@ -316,21 +293,48 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return avatarAddrAndScoresWithRank;
     }
 
+    public async Task<List<(Address avatarAddr, int score)>> GetAvatarAddrAndScores(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
+    {
+        var avatarAndScoreAddrList = avatarAddrList
+            .Select(avatarAddr => (
+                avatarAddr,
+                ArenaScore.DeriveAddress(
+                    avatarAddr,
+                    currentRoundData.ChampionshipId,
+                    currentRoundData.Round)))
+            .ToArray();
+        // NOTE: If addresses is too large, and split and get separately.
+        var scores = await GetStates(
+            block,
+            ReservedAddresses.LegacyAccount,
+            avatarAndScoreAddrList.Select(tuple => tuple.Item2).ToList());
+        var avatarAddrAndScores = new List<(Address avatarAddr, int score)>();
+        foreach (var tuple in avatarAndScoreAddrList)
+        {
+            var scoreAddress = tuple.Item2;
+            var score = scores[scoreAddress] is List scoreList ? (int)(Integer)scoreList[1] : ArenaScore.ArenaScoreDefault;
+            avatarAddrAndScores.Add((tuple.avatarAddr, score));
+        }
+
+        return avatarAddrAndScores;
+    }
+
     /// <summary>
     /// Retrieve a list of arena participants based on the provided world state, avatar address list, and avatar addresses with scores and ranks.
     /// </summary>
     /// <param name="block"><see cref="Block"/> from which to retrieve the arena participants.</param>
     /// <param name="avatarAddrList">The list of avatar addresses to filter the matching participants.</param>
     /// <param name="avatarAddrAndScoresWithRank">The list of avatar addresses with their scores and ranks.</param>
+    /// <param name="prevArenaParticipants"></param>
     /// <returns><see cref="Task"/>A list of arena participants.</returns>
-    public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList, List<ArenaScoreAndRank> avatarAddrAndScoresWithRank)
+    public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList,
+        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipant> prevArenaParticipants)
     {
         var runeListSheet = await GetSheet<RuneListSheet>(block);
         var costumeSheet = await GetSheet<CostumeStatSheet>(block);
         var characterSheet = await GetSheet<CharacterSheet>(block);
         var runeOptionSheet = await GetSheet<RuneOptionSheet>(block);
         var runeLevelBonusSheet = await GetSheet<RuneLevelBonusSheet>(block);
-        var runeIds = runeListSheet.Values.Select(x => x.Id).ToList();
         var row = characterSheet[GameConfig.DefaultAvatarCharacterId];
         CollectionSheet collectionSheet = new CollectionSheet();
         var collectionStates = await GetCollectionStates(block, avatarAddrList);
@@ -351,66 +355,85 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var tasks = avatarAddrAndScoresWithRank.Select(async tuple =>
         {
             var avatarAddr = tuple.AvatarAddr;
-            if (!allRuneStates.TryGetValue(avatarAddr, out var runeStates))
+            // 점수가 변경된 경우, BattleArena를 실행한 아바타기때문에 전체 정보를 업데이트한다.
+            if (avatarAddrList.Contains(avatarAddr))
             {
-                runeStates = await GetRuneState(block, avatarAddr, runeListSheet);
-            }
-            var avatar = avatarStates[avatarAddr];
-            var itemSlotState = itemSlotStates[avatarAddr];
-            var runeSlotState = runeSlotStates[avatarAddr];
-
-            var equippedRuneStates = new List<RuneState>();
-            foreach (var runeId in runeSlotState.GetRuneSlot().Select(slot => slot.RuneId))
-            {
-                if (!runeId.HasValue)
+                if (!allRuneStates.TryGetValue(avatarAddr, out var runeStates))
                 {
-                    continue;
+                    runeStates = await GetRuneState(block, avatarAddr, runeListSheet);
+                }
+                var avatar = avatarStates[avatarAddr];
+                var itemSlotState = itemSlotStates[avatarAddr];
+                var runeSlotState = runeSlotStates[avatarAddr];
+
+                var equippedRuneStates = new List<RuneState>();
+                foreach (var runeId in runeSlotState.GetRuneSlot().Select(slot => slot.RuneId))
+                {
+                    if (!runeId.HasValue)
+                    {
+                        continue;
+                    }
+
+                    if (runeStates.TryGetRuneState(runeId.Value, out var runeState))
+                    {
+                        equippedRuneStates.Add(runeState);
+                    }
                 }
 
-                if (runeStates.TryGetRuneState(runeId.Value, out var runeState))
+                var equipments = itemSlotState.Equipments
+                    .Select(guid =>
+                        avatar.inventory.Equipments.FirstOrDefault(x => x.ItemId == guid))
+                    .Where(item => item != null).ToList();
+                var costumes = itemSlotState.Costumes
+                    .Select(guid =>
+                        avatar.inventory.Costumes.FirstOrDefault(x => x.ItemId == guid))
+                    .Where(item => item != null).ToList();
+                var runeOptions = GetRuneOptions(equippedRuneStates, runeOptionSheet);
+                var collectionExist = collectionStates.ContainsKey(avatarAddr);
+                var collectionModifiers = new List<StatModifier>();
+                if (collectionSheetExist && collectionExist)
                 {
-                    equippedRuneStates.Add(runeState);
+                    var collectionState = collectionStates[avatarAddr];
+                    foreach (var collectionId in collectionState.Ids)
+                    {
+                        collectionModifiers.AddRange(collectionSheet[collectionId].StatModifiers);
+                    }
                 }
+
+                var cp = CPHelper.TotalCP(equipments, costumes, runeOptions, avatar.level, row, costumeSheet, collectionModifiers,
+                    RuneHelper.CalculateRuneLevelBonus(runeStates, runeListSheet, runeLevelBonusSheet)
+                );
+                var portraitId = GetPortraitId(equipments, costumes);
+                await Task.CompletedTask;
+                return new ArenaParticipant(
+                    avatarAddr,
+                    tuple.Score,
+                    tuple.Rank,
+                    avatar.NameWithHash,
+                    avatar.level,
+                    portraitId,
+                    0,
+                    0,
+                    cp
+                );
             }
 
-            var equipments = itemSlotState.Equipments
-                .Select(guid =>
-                    avatar.inventory.Equipments.FirstOrDefault(x => x.ItemId == guid))
-                .Where(item => item != null).ToList();
-            var costumes = itemSlotState.Costumes
-                .Select(guid =>
-                    avatar.inventory.Costumes.FirstOrDefault(x => x.ItemId == guid))
-                .Where(item => item != null).ToList();
-            var runeOptions = GetRuneOptions(equippedRuneStates, runeOptionSheet);
-            var collectionExist = collectionStates.ContainsKey(avatarAddr);
-            var collectionModifiers = new List<StatModifier>();
-            if (collectionSheetExist && collectionExist)
-            {
-                var collectionState = collectionStates[avatarAddr];
-                foreach (var collectionId in collectionState.Ids)
-                {
-                    collectionModifiers.AddRange(collectionSheet[collectionId].StatModifiers);
-                }
-            }
-
-            var cp = CPHelper.TotalCP(equipments, costumes, runeOptions, avatar.level, row, costumeSheet, collectionModifiers,
-                RuneHelper.CalculateRuneLevelBonus(runeStates, runeListSheet, runeLevelBonusSheet)
-            );
-            var portraitId = GetPortraitId(equipments, costumes);
-            await Task.CompletedTask;
+            // 점수가 그대로인 경우, 순위만 변경한다.
+            var prev = prevArenaParticipants.First(r => r.AvatarAddr == avatarAddr);
             return new ArenaParticipant(
                 avatarAddr,
                 tuple.Score,
                 tuple.Rank,
-                avatar,
-                portraitId,
+                prev.NameWithHash,
+                prev.Level,
+                prev.PortraitId,
                 0,
                 0,
-                cp
+                prev.Cp
             );
         }).ToList();
         var result = await Task.WhenAll(tasks);
-        return result.OrderBy(i => i.Rank).ToList();
+        return result.ToList();
     }
 
     /// <summary>

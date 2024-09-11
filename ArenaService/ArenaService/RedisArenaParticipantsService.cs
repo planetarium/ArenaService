@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Libplanet.Crypto;
 using StackExchange.Redis;
 
 namespace ArenaService;
@@ -43,18 +44,18 @@ public class RedisArenaParticipantsService(IConnectionMultiplexer redis, RedisHe
         await _db.StringSetAsync(SeasonKey, value, expiry);
     }
 
-    public async Task<List<ArenaScoreAndRank>> GetAvatarAddrAndScoresWithRank(string key)
+    public async Task<List<(Address avatarAddr, int score)>> GetAvatarAddrAndScores(string key)
     {
         RedisValue result = await _db.StringGetAsync(key);
         if (result.IsNull)
         {
-            return new List<ArenaScoreAndRank>();
+            return new List<(Address avatarAddr, int score)>();
         }
 
-        return JsonSerializer.Deserialize<List<ArenaScoreAndRank>>(result.ToString())!;
+        return JsonSerializer.Deserialize<List<(Address avatarAddr, int score)>>(result.ToString())!;
     }
 
-    public async Task SetAvatarAddrAndScoresWithRank(string key, List<ArenaScoreAndRank> value, TimeSpan? expiry = null)
+    public async Task SetAvatarAddrAndScores(string key, List<(Address avatarAddr, int score)> value, TimeSpan? expiry = null)
     {
         var serialized = JsonSerializer.Serialize(value);
         await _db.StringSetAsync(key, serialized, expiry);
