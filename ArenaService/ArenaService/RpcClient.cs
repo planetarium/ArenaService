@@ -224,12 +224,12 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// </summary>
     /// <param name="avatarAddrAndScores">Ths list of avatar address and score tuples.</param>
     /// <returns>The list of avatar addresses, scores, and ranks.</returns>
-    public List<ArenaScoreAndRank> AvatarAddrAndScoresWithRank(List<(Address avatarAddr, int score)> avatarAddrAndScores)
+    public List<ArenaScoreAndRank> AvatarAddrAndScoresWithRank(List<ArenaScoreAndRank> avatarAddrAndScores)
     {
         List<ArenaScoreAndRank> orderedTuples = avatarAddrAndScores
-            .OrderByDescending(tuple => tuple.score)
-            .ThenBy(tuple => tuple.avatarAddr)
-            .Select(tuple => new ArenaScoreAndRank(tuple.avatarAddr, tuple.score, 0))
+            .OrderByDescending(tuple => tuple.Score)
+            .ThenBy(tuple => tuple.AvatarAddr)
+            .Select(tuple => new ArenaScoreAndRank(tuple.AvatarAddr, tuple.Score, 0))
             .ToList();
         int? currentScore = null;
         var currentRank = 1;
@@ -293,7 +293,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return avatarAddrAndScoresWithRank;
     }
 
-    public async Task<List<(Address avatarAddr, int score)>> GetAvatarAddrAndScores(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
+    public async Task<List<ArenaScoreAndRank>> GetAvatarAddrAndScores(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
     {
         var avatarAndScoreAddrList = avatarAddrList
             .Select(avatarAddr => (
@@ -308,12 +308,12 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             block,
             ReservedAddresses.LegacyAccount,
             avatarAndScoreAddrList.Select(tuple => tuple.Item2).ToList());
-        var avatarAddrAndScores = new List<(Address avatarAddr, int score)>();
+        var avatarAddrAndScores = new List<ArenaScoreAndRank>();
         foreach (var tuple in avatarAndScoreAddrList)
         {
             var scoreAddress = tuple.Item2;
             var score = scores[scoreAddress] is List scoreList ? (int)(Integer)scoreList[1] : ArenaScore.ArenaScoreDefault;
-            avatarAddrAndScores.Add((tuple.avatarAddr, score));
+            avatarAddrAndScores.Add(new ArenaScoreAndRank(tuple.avatarAddr, score, 0));
         }
 
         return avatarAddrAndScores;

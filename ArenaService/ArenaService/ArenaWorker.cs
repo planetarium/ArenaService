@@ -79,7 +79,7 @@ public class ArenaParticipantsWorker : BackgroundService
         // 전체목록의 랭킹 순서 처리
         var avatarAddrAndScoresWithRank = _rpcClient.AvatarAddrAndScoresWithRank(avatarAddrAndScores);
         // 전체목록의 ArenaParticipant 업데이트
-        var result = await _rpcClient.GetArenaParticipants(tip, filtered.Select(i => i.avatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants);
+        var result = await _rpcClient.GetArenaParticipants(tip, filtered.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants);
         await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
         await _service.SetSeasonAsync(cacheKey, expiry);
         await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores);
