@@ -25,7 +25,7 @@ namespace ArenaService;
 
 public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 {
-    private const int MaxDegreeOfParallelism = 8;
+    private int _maxDegreeOfParallelism;
 
     public Address Address => _privateKey.Address;
     public Block PreviousTip;
@@ -43,6 +43,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         _privateKey = privateKey;
         _codec = new Codec();
         _rpcHost = configuration["Rpc:Host"]!;
+        _maxDegreeOfParallelism = int.Parse(configuration["Rpc:Degree"]!);
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -446,7 +447,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             .ToList();
         ParallelOptions options = new()
         {
-            MaxDegreeOfParallelism = MaxDegreeOfParallelism
+            MaxDegreeOfParallelism = _maxDegreeOfParallelism
         };
         await Parallel.ForEachAsync(chunks, options, async (chunk, _) =>
         {
@@ -553,7 +554,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses);
         avatarAddresses
             .AsParallel()
-            .WithDegreeOfParallelism(MaxDegreeOfParallelism)
+            .WithDegreeOfParallelism(_maxDegreeOfParallelism)
             .ForAll(address =>
             {
                 var slotAddress = ItemSlotState.DeriveAddress(address, BattleType.Arena);
@@ -580,7 +581,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses);
         avatarAddresses
             .AsParallel()
-            .WithDegreeOfParallelism(MaxDegreeOfParallelism)
+            .WithDegreeOfParallelism(_maxDegreeOfParallelism)
             .ForAll(address =>
             {
                 var slotAddress = RuneSlotState.DeriveAddress(address, BattleType.Arena);
@@ -602,7 +603,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var result = new ConcurrentDictionary<Address, AvatarState>();
         avatarResults
             .AsParallel()
-            .WithDegreeOfParallelism(MaxDegreeOfParallelism)
+            .WithDegreeOfParallelism(_maxDegreeOfParallelism)
             .ForAll(kv =>
             {
                 var address = kv.Key;
@@ -626,7 +627,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var runeResults = await GetStates(block, ReservedAddresses.LegacyAccount, runeAddresses);
         runeResults
             .AsParallel()
-            .WithDegreeOfParallelism(MaxDegreeOfParallelism)
+            .WithDegreeOfParallelism(_maxDegreeOfParallelism)
             .ForAll(pair =>
             {
                 if (pair.Value is List rawState)
@@ -645,7 +646,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var result = new ConcurrentDictionary<Address, AllRuneState>();
         avatarAddresses
             .AsParallel()
-            .WithDegreeOfParallelism(MaxDegreeOfParallelism)
+            .WithDegreeOfParallelism(_maxDegreeOfParallelism)
             .ForAll(address =>
             {
                 var serialized = serializedResults[address];
