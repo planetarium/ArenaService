@@ -82,7 +82,7 @@ public class ArenaParticipantsWorker : BackgroundService
         var result = await _rpcClient.GetArenaParticipants(tip, filtered.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants);
         await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
         await _service.SetSeasonAsync(cacheKey, expiry);
-        await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores);
+        await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores, expiry);
         sw.Stop();
         _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}]: {Elapsed}", cacheKey, sw.Elapsed);
     }
