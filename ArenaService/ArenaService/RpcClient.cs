@@ -300,7 +300,6 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
                     currentRoundData.ChampionshipId,
                     currentRoundData.Round)))
             .ToArray();
-        // NOTE: If addresses is too large, and split and get separately.
         var scores = await GetStates(
             block,
             ReservedAddresses.LegacyAccount,
@@ -322,7 +321,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="block"><see cref="Block"/> from which to retrieve the arena participants.</param>
     /// <param name="avatarAddrList">The list of avatar addresses to filter the matching participants.</param>
     /// <param name="avatarAddrAndScoresWithRank">The list of avatar addresses with their scores and ranks.</param>
-    /// <param name="prevArenaParticipants"></param>
+    /// <param name="prevArenaParticipants">The list of previous synced arena participants. if the score has not changed, <see cref="ArenaParticipant"/> is reused.</param>
     /// <returns><see cref="Task"/>A list of arena participants.</returns>
     public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList,
         List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipant> prevArenaParticipants)
@@ -401,7 +400,6 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
                     RuneHelper.CalculateRuneLevelBonus(runeStates, runeListSheet, runeLevelBonusSheet)
                 );
                 var portraitId = GetPortraitId(equipments, costumes);
-                await Task.CompletedTask;
                 return new ArenaParticipant(
                     avatarAddr,
                     tuple.Score,
@@ -457,6 +455,14 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return result;
     }
 
+    /// <summary>
+    /// Split and get <see cref="IValue"/> separately by given chunkSize.
+    /// </summary>
+    /// <param name="block"><see cref="Block"/></param>
+    /// <param name="accountAddress">target account address.</param>
+    /// <param name="addresses">list of target state address.</param>
+    /// <param name="chunkSize">chunking size. default value is 500</param>
+    /// <returns>A dictionary of Address and IValue pairs for the given addresses.</returns>
     public async Task<Dictionary<Address, IValue>> GetStates(Block block, Address accountAddress, IReadOnlyList<Address> addresses, int chunkSize = 500)
     {
         var result = new ConcurrentDictionary<Address, IValue>();

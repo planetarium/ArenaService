@@ -23,8 +23,8 @@ public struct ArenaParticipant
         Address avatarAddr,
         int score,
         int rank,
-        string nameWithHash,
-        int level,
+        string avatarNameWithHash,
+        int avatarLevel,
         int portraitId,
         int winScore,
         int loseScore,
@@ -37,8 +37,8 @@ public struct ArenaParticipant
         LoseScore = loseScore;
         Cp = cp;
         PortraitId = portraitId;
-        NameWithHash = nameWithHash;
-        Level = level;
+        NameWithHash = avatarNameWithHash;
+        Level = avatarLevel;
     }
 
     public void Update(int winScore, int loseScore)
