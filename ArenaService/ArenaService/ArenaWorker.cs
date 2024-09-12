@@ -29,7 +29,7 @@ public class ArenaParticipantsWorker : BackgroundService
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(_interval, stoppingToken);
+                await Task.Delay(_interval * 1000, stoppingToken);
                 await PrepareArenaParticipants();
             }
         }
