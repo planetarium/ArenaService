@@ -16,8 +16,7 @@
         <PackageReference Include="GraphQL.Server.Transports.AspNetCore.SystemTextJson" Version="5.1.1" />
         <PackageReference Include="GraphQL.Server.Ui.Playground" Version="5.1.1" />
         <PackageReference Include="Grpc.AspNetCore" Version="2.57.0"/>
-        <PackageReference Include="Lib9c" Version="1.18.0-dev.776c9113f7fd8f99b5645222d45b57dd7ad2cb82" />
-        <PackageReference Include="Libplanet.Action" Version="5.2.2" />
+        <PackageReference Include="Lib9c" Version="1.18.0-dev.10015e1bac6320932d93ca583724e29ed87348d8" />
         <PackageReference Include="MagicOnion.Client" Version="6.1.4" />
         <PackageReference Include="StackExchange.Redis" Version="2.8.0" />
     </ItemGroup>
