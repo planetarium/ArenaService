@@ -3,7 +3,7 @@ using Nekoyume.Model.State;
 
 namespace ArenaService;
 
-public class ArenaParticipant
+public struct ArenaParticipant
 {
     public Address AvatarAddr { get; set; }
     public int Score { get; set; }
@@ -23,7 +23,8 @@ public class ArenaParticipant
         Address avatarAddr,
         int score,
         int rank,
-        AvatarState avatarState,
+        string avatarNameWithHash,
+        int avatarLevel,
         int portraitId,
         int winScore,
         int loseScore,
@@ -36,7 +37,13 @@ public class ArenaParticipant
         LoseScore = loseScore;
         Cp = cp;
         PortraitId = portraitId;
-        NameWithHash = avatarState.NameWithHash;
-        Level = avatarState.level;
+        NameWithHash = avatarNameWithHash;
+        Level = avatarLevel;
+    }
+
+    public void Update(int winScore, int loseScore)
+    {
+        WinScore = winScore;
+        LoseScore = loseScore;
     }
 }

@@ -45,18 +45,17 @@ namespace ArenaService
                         return result;
                     }
 
-                    var scores = await redisArenaParticipantsService1.GetAvatarAddrAndScoresWithRank($"{cacheKey}_score");
-                    var avatarScore = scores.FirstOrDefault(r => r.AvatarAddr == currentAvatarAddr);
-                    if (avatarScore?.Score > 0)
+                    var cached = await redisArenaParticipantsService1.GetArenaParticipantsAsync(cacheKey);
+                    var avatarScore = cached.FirstOrDefault(r => r.AvatarAddr == currentAvatarAddr).Score;
+                    if (avatarScore > 0)
                     {
-                        playerScore = avatarScore.Score;
+                        playerScore = avatarScore;
                     }
-                    result = await redisArenaParticipantsService1.GetArenaParticipantsAsync(cacheKey);
-                    foreach (var arenaParticipant in result)
+                    foreach (var arenaParticipant in cached)
                     {
                         var (win, lose, _) = ArenaHelper.GetScores(playerScore, arenaParticipant.Score);
-                        arenaParticipant.WinScore = win;
-                        arenaParticipant.LoseScore = lose;
+                        arenaParticipant.Update(win, lose);
+                        result.Add(arenaParticipant);
                     }
 
                     if (filterBounds)

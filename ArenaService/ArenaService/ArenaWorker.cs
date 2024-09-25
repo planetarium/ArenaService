@@ -1,10 +1,4 @@
 using System.Diagnostics;
-using Bencodex.Types;
-using Libplanet.Action.State;
-using Libplanet.Crypto;
-using Nekoyume.Model.Arena;
-using Nekoyume.Module;
-using Nekoyume.TableData;
 
 namespace ArenaService;
 
@@ -29,7 +23,7 @@ public class ArenaParticipantsWorker : BackgroundService
         {
             while (!stoppingToken.IsCancellationRequested)
             {
-                await Task.Delay(_interval, stoppingToken);
+                await Task.Delay(_interval * 1000, stoppingToken);
                 await PrepareArenaParticipants();
             }
         }
@@ -66,21 +60,30 @@ public class ArenaParticipantsWorker : BackgroundService
         var currentRoundData = await _rpcClient.GetRoundData(tip);
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData);
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
-        var scoreCacheKey = $"{cacheKey}_score";
+        var scoreCacheKey = $"{cacheKey}_scores";
+        var prevAddrAndScores = await _service.GetAvatarAddrAndScores(scoreCacheKey);
+        var prevArenaParticipants = await _service.GetArenaParticipantsAsync(cacheKey);
+        var expiry = TimeSpan.FromMinutes(5);
         if (participants is null)
         {
-            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>());
+            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>(), expiry);
             _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list", cacheKey);
             return;
         }
 
         var avatarAddrList = participants.AvatarAddresses;
-        var avatarAddrAndScoresWithRank = await _rpcClient.AvatarAddrAndScoresWithRank(tip, avatarAddrList, currentRoundData);
-        var result = await _rpcClient.GetArenaParticipants(tip, avatarAddrList, avatarAddrAndScoresWithRank);
-        await _service.SetArenaParticipantsAsync(cacheKey, result, TimeSpan.FromHours(1));
-        await _service.SetAvatarAddrAndScoresWithRank(scoreCacheKey, avatarAddrAndScoresWithRank,
-            TimeSpan.FromHours(1));
-        await _service.SetSeasonAsync(cacheKey, TimeSpan.FromHours(1));
+        // 최신상태의 아바타 주소, 점수를 조회
+        var avatarAddrAndScores = await _rpcClient.GetAvatarAddrAndScores(tip, avatarAddrList, currentRoundData);
+        // 이전상태의 아바타 주소, 점수를 비교해서 추가되거나 점수가 변경된 대상만 찾음
+        var updatedAddressAndScores = avatarAddrAndScores.Except(prevAddrAndScores).ToList();
+        // 전체목록의 랭킹 순서 처리
+        var avatarAddrAndScoresWithRank = _rpcClient.AvatarAddrAndScoresWithRank(avatarAddrAndScores);
+        // 전체목록의 ArenaParticipant 업데이트
+        var result = await _rpcClient.GetArenaParticipants(tip, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants);
+        // 캐시 업데이트
+        await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
+        await _service.SetSeasonAsync(cacheKey, expiry);
+        await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores, expiry);
         sw.Stop();
         _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}]: {Elapsed}", cacheKey, sw.Elapsed);
     }
