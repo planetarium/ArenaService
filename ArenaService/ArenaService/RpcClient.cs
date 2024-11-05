@@ -80,6 +80,8 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
                 HttpHandler = new SocketsHttpHandler
                 {
                     EnableMultipleHttp2Connections = true,
+                    KeepAlivePingDelay = TimeSpan.FromSeconds(60),
+                    KeepAlivePingTimeout = TimeSpan.FromSeconds(30),
                 }
             }
         );
@@ -156,14 +158,18 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// Get <see cref="ISheet"/> by block index.
     /// </summary>
     /// <param name="block"><see cref="Block"/>target block</param>
+    /// <param name="cancellationToken"></param>
     /// <returns><see cref="ISheet"/></returns>
-    public async Task<T> GetSheet<T>(Block block) where T : ISheet, new()
+    public async Task<T> GetSheet<T>(Block block, CancellationToken cancellationToken) where T : ISheet, new()
     {
         var address = Addresses.GetSheetAddress<T>();
-        var result = await _service.GetStateByStateRootHash(
-            block.StateRootHash.ToByteArray(),
-            ReservedAddresses.LegacyAccount.ToByteArray(),
-            address.ToByteArray());
+        var result = await _service
+            .WithCancellationToken(cancellationToken)
+            .GetStateByStateRootHash(
+                block.StateRootHash.ToByteArray(),
+                ReservedAddresses.LegacyAccount.ToByteArray(),
+                address.ToByteArray()
+            );
         if (_codec.Decode(result) is Text t)
         {
             var sheet = new T();
@@ -179,23 +185,34 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// </summary>
     /// <param name="block"><see cref="Block"/>target block</param>
     /// <param name="address"><see cref="Address"/>state address</param>
+    /// <param name="cancellationToken"></param>
     /// <returns><see cref="IValue"/> or null if not found.</returns>
-    public async Task<IValue?> GetLegacyState(Block block, Address address)
+    public async Task<IValue?> GetLegacyState(Block block, Address address, CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         return await GetState(
             block,
             ReservedAddresses.LegacyAccount,
-            address);
+            address,
+            cancellationToken);
     }
 
     /// <summary>
     /// Gets the round data from specified block.
     /// </summary>
     /// <param name="block"><see cref="Block"/>target block</param>
+    /// <param name="cancellationToken"></param>
     /// <returns><see cref="ArenaSheet.RoundData"/>round data</returns>
-    public async Task<ArenaSheet.RoundData> GetRoundData(Block block)
+    public async Task<ArenaSheet.RoundData> GetRoundData(Block block, CancellationToken cancellationToken)
     {
-        var arenaSheet = await GetSheet<ArenaSheet>(block);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        var arenaSheet = await GetSheet<ArenaSheet>(block, cancellationToken);
         return arenaSheet.GetRoundByBlockIndex(block.Index);
     }
 
@@ -204,13 +221,19 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// </summary>
     /// <param name="block"><see cref="Block"/>target block</param>
     /// <param name="currentRoundData"><see cref="ArenaSheet.RoundData"/>The current round data.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>The arena participants state, or null if not found.</returns>
-    public async Task<ArenaParticipants?> GetArenaParticipantsState(Block block, ArenaSheet.RoundData currentRoundData)
+    public async Task<ArenaParticipants?> GetArenaParticipantsState(Block block, ArenaSheet.RoundData currentRoundData,
+        CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var participantsAddr = ArenaParticipants.DeriveAddress(
             currentRoundData.ChampionshipId,
             currentRoundData.Round);
-        var participants = await GetLegacyState(block, participantsAddr) is List participantsList
+        var participants = await GetLegacyState(block, participantsAddr, cancellationToken) is List participantsList
             ? new ArenaParticipants(participantsList)
             : null;
         return participants;
@@ -290,8 +313,13 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return avatarAddrAndScoresWithRank;
     }
 
-    public async Task<List<AvatarAddressAndScore>> GetAvatarAddrAndScores(Block block, List<Address> avatarAddrList, ArenaSheet.RoundData currentRoundData)
+    public async Task<List<AvatarAddressAndScore>> GetAvatarAddrAndScores(Block block, List<Address> avatarAddrList,
+        ArenaSheet.RoundData currentRoundData, CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var avatarAndScoreAddrList = avatarAddrList
             .Select(avatarAddr => (
                 avatarAddr,
@@ -303,7 +331,8 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         var scores = await GetStates(
             block,
             ReservedAddresses.LegacyAccount,
-            avatarAndScoreAddrList.Select(tuple => tuple.Item2).ToList());
+            avatarAndScoreAddrList.Select(tuple => tuple.Item2).ToList(),
+            cancellationToken);
         var avatarAddrAndScores = new List<AvatarAddressAndScore>();
         foreach (var tuple in avatarAndScoreAddrList)
         {
@@ -322,41 +351,51 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="avatarAddrList">The list of avatar addresses to filter the matching participants.</param>
     /// <param name="avatarAddrAndScoresWithRank">The list of avatar addresses with their scores and ranks.</param>
     /// <param name="prevArenaParticipants">The list of previous synced arena participants. if the score has not changed, <see cref="ArenaParticipant"/> is reused.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns><see cref="Task"/>A list of arena participants.</returns>
     public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList,
-        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipant> prevArenaParticipants)
+        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipant> prevArenaParticipants,
+        CancellationToken cancellationToken)
     {
-        var runeListSheet = await GetSheet<RuneListSheet>(block);
-        var costumeSheet = await GetSheet<CostumeStatSheet>(block);
-        var characterSheet = await GetSheet<CharacterSheet>(block);
-        var runeOptionSheet = await GetSheet<RuneOptionSheet>(block);
-        var runeLevelBonusSheet = await GetSheet<RuneLevelBonusSheet>(block);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        var runeListSheet = await GetSheet<RuneListSheet>(block, cancellationToken);
+        var costumeSheet = await GetSheet<CostumeStatSheet>(block, cancellationToken);
+        var characterSheet = await GetSheet<CharacterSheet>(block, cancellationToken);
+        var runeOptionSheet = await GetSheet<RuneOptionSheet>(block, cancellationToken);
+        var runeLevelBonusSheet = await GetSheet<RuneLevelBonusSheet>(block, cancellationToken);
         var row = characterSheet[GameConfig.DefaultAvatarCharacterId];
         CollectionSheet collectionSheet = new CollectionSheet();
-        var collectionStates = await GetCollectionStates(block, avatarAddrList);
+        var collectionStates = await GetCollectionStates(block, avatarAddrList, cancellationToken);
         bool collectionSheetExist = true;
         try
         {
-            collectionSheet = await GetSheet<CollectionSheet>(block);
+            collectionSheet = await GetSheet<CollectionSheet>(block, cancellationToken);
         }
         catch (Exception)
         {
             collectionSheetExist = false;
         }
 
-        var itemSlotStates = await GetItemSlotStates(block, avatarAddrList);
-        var runeSlotStates = await GetRuneSlotStates(block, avatarAddrList);
-        var avatarStates = await GetAvatarStates(block, avatarAddrList);
-        var allRuneStates = await GetAllRuneStates(block, avatarAddrList);
+        var itemSlotStates = await GetItemSlotStates(block, avatarAddrList, cancellationToken);
+        var runeSlotStates = await GetRuneSlotStates(block, avatarAddrList, cancellationToken);
+        var avatarStates = await GetAvatarStates(block, avatarAddrList, cancellationToken);
+        var allRuneStates = await GetAllRuneStates(block, avatarAddrList, cancellationToken);
         var tasks = avatarAddrAndScoresWithRank.Select(async tuple =>
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+            }
             var avatarAddr = tuple.AvatarAddr;
             // 점수가 변경된 경우, BattleArena를 실행한 아바타기때문에 전체 정보를 업데이트한다.
             if (avatarAddrList.Contains(avatarAddr))
             {
                 if (!allRuneStates.TryGetValue(avatarAddr, out var runeStates))
                 {
-                    runeStates = await GetRuneState(block, avatarAddr, runeListSheet);
+                    runeStates = await GetRuneState(block, avatarAddr, runeListSheet, cancellationToken);
                 }
                 var avatar = avatarStates[avatarAddr];
                 var itemSlotState = itemSlotStates[avatarAddr];
@@ -436,13 +475,18 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// </summary>
     /// <param name="block">The world state used to retrieve the collection states.</param>
     /// <param name="addresses">The list of addresses to retrieve the collection states for.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A dictionary of Address and CollectionState pairs representing the collection states
     /// for the given addresses,
     /// or an empty dictionary for addresses that do not have a collection state.</returns>
-    public async Task<Dictionary<Address, CollectionState>> GetCollectionStates(Block block, IReadOnlyList<Address> addresses)
+    public async Task<Dictionary<Address, CollectionState>> GetCollectionStates(Block block, IReadOnlyList<Address> addresses, CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var result = new Dictionary<Address, CollectionState>();
-        var values = await GetStates(block, Addresses.Collection, addresses);
+        var values = await GetStates(block, Addresses.Collection, addresses, cancellationToken);
         foreach (var address in addresses)
         {
             var serialized = values[address];
@@ -461,10 +505,16 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="block"><see cref="Block"/></param>
     /// <param name="accountAddress">target account address.</param>
     /// <param name="addresses">list of target state address.</param>
+    /// <param name="cancellationToken"></param>
     /// <param name="chunkSize">chunking size. default value is 500</param>
     /// <returns>A dictionary of Address and IValue pairs for the given addresses.</returns>
-    public async Task<Dictionary<Address, IValue>> GetStates(Block block, Address accountAddress, IReadOnlyList<Address> addresses, int chunkSize = 500)
+    public async Task<Dictionary<Address, IValue>> GetStates(Block block, Address accountAddress,
+        IReadOnlyList<Address> addresses, CancellationToken cancellationToken, int chunkSize = 500)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var result = new ConcurrentDictionary<Address, IValue>();
         var chunks = addresses
             .Select((x, i) => new {Index = i, Value = x})
@@ -473,22 +523,27 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             .ToList();
         foreach (var chunk in chunks)
         {
-            var queryResult = await _service.GetBulkStateByStateRootHash(block.StateRootHash.ToByteArray(), accountAddress.ToByteArray(), chunk);
+            var queryResult = await _service.WithCancellationToken(cancellationToken).GetBulkStateByStateRootHash(block.StateRootHash.ToByteArray(), accountAddress.ToByteArray(), chunk);
             foreach (var kv in queryResult) result[new Address(kv.Key)] = _codec.Decode(kv.Value);
         }
         return result.ToDictionary(kv => kv.Key, kv => kv.Value);
     }
 
-    public async Task<AllRuneState> GetRuneState(Block block, Address avatarAddress, RuneListSheet runeListSheet)
+    public async Task<AllRuneState> GetRuneState(Block block, Address avatarAddress, RuneListSheet runeListSheet,
+        CancellationToken cancellationToken)
     {
-        var serialized = await GetState(block, Addresses.RuneState, avatarAddress);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        var serialized = await GetState(block, Addresses.RuneState, avatarAddress, cancellationToken);
         AllRuneState allRuneState;
         if (serialized is null)
         {
             // Get legacy rune states
             allRuneState = new AllRuneState();
             var runeAddresses = runeListSheet.Values.Select(r => RuneState.DeriveAddress(avatarAddress, r.Id)).ToList();
-            var runeStates = await GetRuneStates(block, runeAddresses);
+            var runeStates = await GetRuneStates(block, runeAddresses, cancellationToken);
             foreach (var runeState in runeStates)
             {
                 allRuneState.AddRuneState(runeState);
@@ -508,24 +563,33 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="block"><see cref="Block"/>target block</param>
     /// <param name="accountAddress"><see cref="Address"/>target account address</param>
     /// <param name="address"><see cref="Address"/>state address</param>
+    /// <param name="cancellationToken"></param>
     /// <returns><see cref="IValue"/> or null if not found.</returns>
-    public async Task<IValue?> GetState(Block block, Address accountAddress, Address address)
+    public async Task<IValue?> GetState(Block block, Address accountAddress, Address address,
+        CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         byte[] result = [];
         var retry = 0;
         while (retry < 3)
         {
             try
             {
-                result = await _service.GetStateByStateRootHash(
-                    block.StateRootHash.ToByteArray(),
-                    accountAddress.ToByteArray(),
-                    address.ToByteArray());
+                result = await _service
+                    .WithCancellationToken(cancellationToken)
+                    .GetStateByStateRootHash(
+                        block.StateRootHash.ToByteArray(),
+                        accountAddress.ToByteArray(),
+                        address.ToByteArray()
+                    );
                 break;
             }
             catch (RpcException)
             {
-                await Task.Delay((3 - retry) * 1000);
+                await Task.Delay((3 - retry) * 1000, cancellationToken);
                 retry++;
             }
         }
@@ -542,13 +606,19 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// </summary>
     /// <param name="block">The world state used to retrieve the collection states.</param>
     /// <param name="avatarAddresses">The list of addresses to retrieve the item slot states for.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A dictionary of Address and <see cref="ItemSlotState"/> pairs representing the item slot states
     /// for the given addresses.</returns>
-    public async Task<IDictionary<Address, ItemSlotState>> GetItemSlotStates(Block block, IReadOnlyList<Address> avatarAddresses)
+    public async Task<IDictionary<Address, ItemSlotState>> GetItemSlotStates(Block block,
+        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var result = new Dictionary<Address, ItemSlotState>();
         var slotAddresses = avatarAddresses.Select(a => ItemSlotState.DeriveAddress(a, BattleType.Arena)).ToList();
-        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses);
+        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses, cancellationToken);
         foreach (var address in avatarAddresses)
         {
             var slotAddress = ItemSlotState.DeriveAddress(address, BattleType.Arena);
@@ -566,13 +636,19 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// </summary>
     /// <param name="block">The world state used to retrieve the collection states.</param>
     /// <param name="avatarAddresses">The list of avatar addresses to retrieve the rune slot states for.</param>
+    /// <param name="cancellationToken"></param>
     /// <returns>A dictionary of Address and <see cref="RuneSlotState"/> pairs representing the rune slot states
     /// for the given addresses.</returns>
-    public async Task<IDictionary<Address, RuneSlotState>> GetRuneSlotStates(Block block, IReadOnlyList<Address> avatarAddresses)
+    public async Task<IDictionary<Address, RuneSlotState>> GetRuneSlotStates(Block block,
+        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var result = new Dictionary<Address, RuneSlotState>();
         var slotAddresses = avatarAddresses.Select(a => RuneSlotState.DeriveAddress(a, BattleType.Arena)).ToList();
-        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses);
+        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses, cancellationToken);
         foreach (var address in avatarAddresses)
         {
             var slotAddress = RuneSlotState.DeriveAddress(address, BattleType.Arena);
@@ -586,10 +662,14 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     }
 
     public async Task<IDictionary<Address, AvatarState>> GetAvatarStates(Block block,
-        IReadOnlyList<Address> avatarAddresses)
+        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
     {
-        var avatarResults = await GetStates(block, Addresses.Avatar, avatarAddresses);
-        var inventoryResults = await GetStates(block, Addresses.Inventory, avatarAddresses);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        var avatarResults = await GetStates(block, Addresses.Avatar, avatarAddresses, cancellationToken);
+        var inventoryResults = await GetStates(block, Addresses.Inventory, avatarAddresses, cancellationToken);
         var result = new Dictionary<Address, AvatarState>();
         foreach (var kv in avatarResults)
         {
@@ -608,10 +688,15 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return result;
     }
 
-    public async Task<List<RuneState>> GetRuneStates(Block block, IReadOnlyList<Address> runeAddresses)
+    public async Task<List<RuneState>> GetRuneStates(Block block, IReadOnlyList<Address> runeAddresses,
+        CancellationToken cancellationToken)
     {
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
         var result = new List<RuneState>();
-        var runeResults = await GetStates(block, ReservedAddresses.LegacyAccount, runeAddresses);
+        var runeResults = await GetStates(block, ReservedAddresses.LegacyAccount, runeAddresses, cancellationToken);
         foreach (var pair in runeResults)
         {
             if (pair.Value is List rawState)
@@ -624,9 +709,13 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     }
 
     public async Task<IDictionary<Address, AllRuneState>> GetAllRuneStates(Block block,
-        IReadOnlyList<Address> avatarAddresses)
+        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
     {
-        var serializedResults = await GetStates(block, Addresses.RuneState, avatarAddresses);
+        if (cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+        }
+        var serializedResults = await GetStates(block, Addresses.RuneState, avatarAddresses, cancellationToken);
         var result = new Dictionary<Address, AllRuneState>();
         foreach (var address in avatarAddresses)
         {
