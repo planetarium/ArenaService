@@ -8,6 +8,7 @@ public class ArenaParticipantsWorker : BackgroundService
     private int _interval;
     private IRedisArenaParticipantsService _service;
     private ILogger<ArenaParticipantsWorker> _logger;
+    private static readonly CancellationTokenSource _cts = new CancellationTokenSource();
 
     public ArenaParticipantsWorker(RpcClient rpcClient, IRedisArenaParticipantsService service, ILogger<ArenaParticipantsWorker> logger)
     {
@@ -27,10 +28,9 @@ public class ArenaParticipantsWorker : BackgroundService
                 await PrepareArenaParticipants();
             }
         }
-        catch (OperationCanceledException)
+        finally
         {
-            //pass
-            _logger.LogInformation("[ArenaParticipantsWorker]Cancel ArenaParticipantsWorker");
+            _cts.Dispose();
         }
     }
 
@@ -46,9 +46,11 @@ public class ArenaParticipantsWorker : BackgroundService
         // Copy from NineChronicles RxProps.Arena
         // https://github.com/planetarium/NineChronicles/blob/80.0.1/nekoyume/Assets/_Scripts/State/RxProps.Arena.cs#L279
         var retry = 0;
+        _cts.CancelAfter(TimeSpan.FromMinutes(5));
+        var cancellationToken = _cts.Token;
         while (_rpcClient.Tip?.Index == _rpcClient.PreviousTip?.Index)
         {
-            await Task.Delay((5 - retry) * 1000);
+            await Task.Delay((5 - retry) * 1000, cancellationToken);
             retry++;
             if (retry >= 3)
             {
@@ -56,9 +58,9 @@ public class ArenaParticipantsWorker : BackgroundService
             }
         }
 
-        var tip = _rpcClient.Tip;
-        var currentRoundData = await _rpcClient.GetRoundData(tip);
-        var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData);
+        var tip = _rpcClient.Tip!;
+        var currentRoundData = await _rpcClient.GetRoundData(tip, cancellationToken);
+        var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData, cancellationToken);
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
         var scoreCacheKey = $"{cacheKey}_scores";
         var prevAddrAndScores = await _service.GetAvatarAddrAndScores(scoreCacheKey);
@@ -73,13 +75,13 @@ public class ArenaParticipantsWorker : BackgroundService
 
         var avatarAddrList = participants.AvatarAddresses;
         // 최신상태의 아바타 주소, 점수를 조회
-        var avatarAddrAndScores = await _rpcClient.GetAvatarAddrAndScores(tip, avatarAddrList, currentRoundData);
+        var avatarAddrAndScores = await _rpcClient.GetAvatarAddrAndScores(tip, avatarAddrList, currentRoundData, cancellationToken);
         // 이전상태의 아바타 주소, 점수를 비교해서 추가되거나 점수가 변경된 대상만 찾음
         var updatedAddressAndScores = avatarAddrAndScores.Except(prevAddrAndScores).ToList();
         // 전체목록의 랭킹 순서 처리
         var avatarAddrAndScoresWithRank = _rpcClient.AvatarAddrAndScoresWithRank(avatarAddrAndScores);
         // 전체목록의 ArenaParticipant 업데이트
-        var result = await _rpcClient.GetArenaParticipants(tip, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants);
+        var result = await _rpcClient.GetArenaParticipants(tip, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
         // 캐시 업데이트
         await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
         await _service.SetSeasonAsync(cacheKey, expiry);
