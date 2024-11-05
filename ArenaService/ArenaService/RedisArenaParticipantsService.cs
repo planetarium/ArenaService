@@ -4,7 +4,7 @@ using StackExchange.Redis;
 
 namespace ArenaService;
 
-public class RedisArenaParticipantsService(IConnectionMultiplexer redis, RedisHealthCheck redisHealthCheck)
+public class RedisArenaParticipantsService(IConnectionMultiplexer redis)
     : IRedisArenaParticipantsService
 {
     public const string SeasonKey = "season";

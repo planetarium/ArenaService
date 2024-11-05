@@ -27,9 +27,7 @@ var redis = await ConnectionMultiplexer.ConnectAsync(configurationOptions);
 builder.Services
     .AddSingleton<IConnectionMultiplexer>(_ => redis)
     .AddScoped<ISchema, StandaloneSchema>()
-    .AddSingleton<RedisHealthCheck>()
     .AddSingleton<IRedisArenaParticipantsService, RedisArenaParticipantsService>()
-    .AddHostedService<RedisHealthCheckService>()
     .AddGraphQL(options => options.EnableMetrics = true)
     .AddSystemTextJson()
     .AddGraphTypes(typeof(AddressType))
@@ -47,7 +45,7 @@ if (enableWorker)
 
 var healthChecksBuilder = builder.Services
     .AddHealthChecks()
-    .AddCheck<RedisHealthCheck>(nameof(RedisHealthCheck));
+    .AddRedis(redis);
 if (enableWorker)
 {
     healthChecksBuilder.AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
