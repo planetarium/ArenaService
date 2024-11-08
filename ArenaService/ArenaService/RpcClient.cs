@@ -32,14 +32,16 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     private IBlockChainService _service;
     private IActionEvaluationHub _hub;
     private readonly Codec _codec;
-    private readonly string _rpcHost;
+    private string _rpcHost;
     private bool _selfDisconnect;
+    private IReadOnlyList<string> _rpcHosts;
+    private ICollection<string> _failedRpcHosts = new List<string>();
 
     public RpcClient(PrivateKey privateKey, IConfiguration configuration)
     {
         _privateKey = privateKey;
         _codec = new Codec();
-        _rpcHost = configuration["Rpc:Host"]!;
+        _rpcHosts = configuration.GetSection("Rpc:Host").Get<List<string>>()!;
     }
 
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -72,6 +74,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
     private async Task Join(CancellationToken cancellationToken)
     {
+        _rpcHost =  _rpcHosts.First(r => !_failedRpcHosts.Contains(r));
         var channel = GrpcChannel.ForAddress(_rpcHost,
             new GrpcChannelOptions
             {
@@ -86,10 +89,18 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             }
         );
 
-        _hub = await StreamingHubClient.ConnectAsync<IActionEvaluationHub, IActionEvaluationHubReceiver>(
-            channel,
-            this,
-            cancellationToken: cancellationToken);
+        try
+        {
+            _hub = await StreamingHubClient.ConnectAsync<IActionEvaluationHub, IActionEvaluationHubReceiver>(
+                channel,
+                this,
+                cancellationToken: cancellationToken);
+        }
+        catch (RpcException)
+        {
+            _failedRpcHosts.Add(_rpcHost);
+            await Join(cancellationToken);
+        }
         _service = MagicOnionClient.Create<IBlockChainService>(channel)
             .WithCancellationToken(cancellationToken);
 
