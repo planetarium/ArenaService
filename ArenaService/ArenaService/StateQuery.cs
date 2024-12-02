@@ -33,7 +33,7 @@ namespace ArenaService
                     var currentAvatarAddr = context.GetArgument<Address>("avatarAddress");
                     var filterBounds = context.GetArgument<bool>("filterBounds");
                     int playerScore = ArenaScore.ArenaScoreDefault;
-                    List<ArenaParticipant> result = new();
+                    List<ArenaService.Models.ArenaParticipant> result = new();
                     string cacheKey;
                     try
                     {
@@ -68,8 +68,8 @@ namespace ArenaService
             );
         }
 
-        public static List<ArenaParticipant> GetBoundsWithPlayerScore(
-            List<ArenaParticipant> arenaInformation,
+        public static List<ArenaService.Models.ArenaParticipant> GetBoundsWithPlayerScore(
+            List<ArenaService.Models.ArenaParticipant> arenaInformation,
             ArenaType arenaType,
             int playerScore)
         {
