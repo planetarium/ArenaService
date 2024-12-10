@@ -1,6 +1,6 @@
 using System.Text.Json;
-using Libplanet.Crypto;
 using StackExchange.Redis;
+using ArenaService.Models;
 
 namespace ArenaService;
 

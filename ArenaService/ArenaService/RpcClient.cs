@@ -364,8 +364,8 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="prevArenaParticipants">The list of previous synced arena participants. if the score has not changed, <see cref="ArenaParticipant"/> is reused.</param>
     /// <param name="cancellationToken"></param>
     /// <returns><see cref="Task"/>A list of arena participants.</returns>
-    public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList,
-        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipant> prevArenaParticipants,
+    public async Task<List<ArenaService.Models.ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList,
+        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaService.Models.ArenaParticipant> prevArenaParticipants,
         CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
@@ -450,7 +450,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
                     RuneHelper.CalculateRuneLevelBonus(runeStates, runeListSheet, runeLevelBonusSheet)
                 );
                 var portraitId = GetPortraitId(equipments, costumes);
-                return new ArenaParticipant(
+                return new ArenaService.Models.ArenaParticipant(
                     avatarAddr,
                     tuple.Score,
                     tuple.Rank,
@@ -465,7 +465,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
 
             // 점수가 그대로인 경우, 순위만 변경한다.
             var prev = prevArenaParticipants.First(r => r.AvatarAddr == avatarAddr);
-            return new ArenaParticipant(
+            return new ArenaService.Models.ArenaParticipant(
                 avatarAddr,
                 tuple.Score,
                 tuple.Rank,
