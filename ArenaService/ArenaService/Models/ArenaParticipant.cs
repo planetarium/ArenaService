@@ -1,9 +1,8 @@
 using Libplanet.Crypto;
-using Nekoyume.Model.State;
 
-namespace ArenaService;
+namespace ArenaService.Models;
 
-public struct ArenaParticipant
+public class ArenaParticipant
 {
     public Address AvatarAddr { get; set; }
     public int Score { get; set; }

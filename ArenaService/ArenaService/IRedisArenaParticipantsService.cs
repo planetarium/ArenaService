@@ -1,4 +1,4 @@
-using Libplanet.Crypto;
+using ArenaService.Models;
 
 namespace ArenaService;
 

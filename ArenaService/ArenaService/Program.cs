@@ -51,6 +51,12 @@ if (enableWorker)
     healthChecksBuilder.AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
 }
 
+// REST API
+builder.Services.AddDbContext<ArenaService.Models.ArenaParticipantContext>();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddControllers();
+builder.Services.AddSwaggerGen();
+
 
 var app = builder.Build();
 app
@@ -60,8 +66,16 @@ app
     {
         GraphQLEndPoint = "/graphql"
     })
-    .UseEndpoints(endpoints =>
-    {
-        endpoints.MapHealthChecks("/ping");
-    });
+    .UseEndpoints(endpoints => { endpoints.MapHealthChecks("/ping"); });
+
+// REST API
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
+
+app.UseHttpsRedirection();
+app.MapControllers();
+
 app.Run();
