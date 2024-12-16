@@ -14,26 +14,39 @@ sequenceDiagram
     participant Blockchain
     participant DB
 
-    Note over User,DB: Arena Entry & Opponent List
-    User->>Client: Enter Arena
-    Client->>ArenaService: Request Current Rank/Score
-    ArenaService->>DB: Query User Status
-    DB-->>ArenaService: Current Rank/Score
-    ArenaService->>ArenaService: Generate Opponent List<br>(Based on Ranking Groups)
-    ArenaService-->>Client: Return Rank/Score/Opponents
-    Client-->>User: Display Arena UI
+    Note over User,DB: Arena Registration
+    User->>Client: Request Arena Registration (Previous season participants are auto-registered)
+    Client->>ArenaService: Send Registration Request
+    ArenaService->>DB: Check Registration Status
+    DB-->>ArenaService: Return Registration Status
+    ArenaService->>DB: Save New Registration (if needed)
+    ArenaService-->>Client: Respond with Registration Complete
+    Client-->>User: Display Registration Result
 
-    Note over User,DB: Battle Process
+    Note over User,DB: Update Opponent List
+    User->>Client: Request List Update
+    Client->>ArenaService: Send Update Request
+    ArenaService->>ArenaService: Verify Costs
+    ArenaService->>DB: Fetch Current Ranking
+    DB-->>ArenaService: Return Ranking Info
+    ArenaService->>ArenaService: Generate New List
+    ArenaService->>DB: Save New List
+    ArenaService-->>Client: Provide Updated Opponent List
+    Client-->>User: Display Updated UI
+
+    Note over User,DB: Conduct Battle
     User->>Client: Start Battle
     Client->>ArenaService: Validate Battle Request
-    ArenaService->>ArenaService: Verify Conditions<br>(Tickets/Valid Opponent)
-    ArenaService-->>Client: Validation Result
-    Client->>Blockchain: Arena Battle TX
-    Blockchain-->>ArenaService: Battle Result Event
-    ArenaService->>ArenaService: Calculate Score
-    ArenaService->>DB: Save Battle Result/Score
-    ArenaService-->>Client: Updated Information
-    Client-->>User: Display Result
+    ArenaService->>ArenaService: Check Conditions (Tickets/Opponent Availability)
+    ArenaService->>ArenaService: Sign Battle Token
+    ArenaService-->>Client: Provide Validation Result and Token
+    Client->>Blockchain: Send Arena Battle TX (with Token)
+    Blockchain-->>ArenaService: Battle Result Event (including TX ID)
+    ArenaService->>ArenaService: Poll TX and Verify Result
+    ArenaService->>ArenaService: Calculate Scores and Generate Result
+    ArenaService->>DB: Save Battle Result/Scores
+    ArenaService-->>Client: Provide Updated Information
+    Client-->>User: Display Battle Result
 ```
 
 ## Getting Started
