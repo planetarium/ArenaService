@@ -1,7 +1,7 @@
-using ArenaForge.Models;
+using ArenaService.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace ArenaForge.Data;
+namespace ArenaService.Data;
 
 public class ArenaDbContext : DbContext
 {

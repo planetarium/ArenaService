@@ -1,4 +1,4 @@
-namespace ArenaForge.Models;
+namespace ArenaService.Models;
 
 public class Participant
 {

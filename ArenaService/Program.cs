@@ -1,4 +1,4 @@
-using ArenaForge.Data;
+using ArenaService.Data;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
