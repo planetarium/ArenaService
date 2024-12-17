@@ -16,6 +16,8 @@ public class Season
 
     public int TicketRefillInterval { get; set; } = 600;
 
+    public bool IsActivated { get; set; } = false;
+
     public required ICollection<Participant> Participants { get; set; }
     public required ICollection<BattleLog> BattleLogs { get; set; }
     public required ICollection<LeaderboardEntry> Leaderboard { get; set; }

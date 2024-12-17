@@ -1,4 +1,5 @@
 using ArenaService.Data;
+using ArenaService.Repositories;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -11,6 +12,8 @@ builder.Services.AddDbContext<ArenaDbContext>(options =>
 );
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
 
 builder.Services.AddCors(options =>
 {
