@@ -8,11 +8,11 @@ public class ArenaDbContext : DbContext
     public ArenaDbContext(DbContextOptions<ArenaDbContext> options)
         : base(options) { }
 
-    public DbSet<Participant> Participants { get; set; }
-    public DbSet<BattleLog> BattleLogs { get; set; }
-    public DbSet<Season> Seasons { get; set; }
-    public DbSet<LeaderboardEntry> LeaderboardEntries { get; set; }
-    public DbSet<AvailableOpponent> AvailableOpponents { get; set; }
+    public required DbSet<Participant> Participants { get; set; }
+    public required DbSet<BattleLog> BattleLogs { get; set; }
+    public required DbSet<Season> Seasons { get; set; }
+    public required DbSet<LeaderboardEntry> Leaderboard { get; set; }
+    public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -28,8 +28,7 @@ public class ArenaDbContext : DbContext
             .Entity<BattleLog>()
             .HasOne(b => b.Opponent)
             .WithMany()
-            .HasForeignKey(b => b.OpponentId)
-            .OnDelete(DeleteBehavior.Restrict);
+            .HasForeignKey(b => b.OpponentId);
 
         modelBuilder
             .Entity<BattleLog>()
@@ -40,13 +39,13 @@ public class ArenaDbContext : DbContext
         modelBuilder
             .Entity<LeaderboardEntry>()
             .HasOne(le => le.Participant)
-            .WithMany(p => p.LeaderboardEntries)
+            .WithMany(p => p.Leaderboard)
             .HasForeignKey(le => le.ParticipantId);
 
         modelBuilder
             .Entity<LeaderboardEntry>()
             .HasOne(le => le.Season)
-            .WithMany(s => s.LeaderboardEntries)
+            .WithMany(s => s.Leaderboard)
             .HasForeignKey(le => le.SeasonId);
 
         modelBuilder
@@ -59,13 +58,6 @@ public class ArenaDbContext : DbContext
             .Entity<AvailableOpponent>()
             .HasOne(ao => ao.Opponent)
             .WithMany()
-            .HasForeignKey(ao => ao.OpponentId)
-            .OnDelete(DeleteBehavior.Restrict);
-
-        modelBuilder
-            .Entity<AvailableOpponent>()
-            .HasOne(ao => ao.Season)
-            .WithMany()
-            .HasForeignKey(ao => ao.SeasonId);
+            .HasForeignKey(ao => ao.OpponentId);
     }
 }
