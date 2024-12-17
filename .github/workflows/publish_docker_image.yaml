@@ -1,10 +1,7 @@
 on:
   push:
     branches:
-      - main
-      - rc-*
-      - hotfix/*
-      - release/*
+      - ncip-24
 env:
   DOCKER_REPO: planetariumhq/arena-service
 jobs:
