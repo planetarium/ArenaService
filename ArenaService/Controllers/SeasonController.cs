@@ -3,7 +3,7 @@ namespace ArenaService.Controllers;
 using ArenaService.Services;
 using Microsoft.AspNetCore.Mvc;
 
-[Route("api/seasons")]
+[Route("seasons")]
 [ApiController]
 public class SeasonController : ControllerBase
 {
