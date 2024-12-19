@@ -62,6 +62,8 @@ public class ArenaParticipantsWorker : BackgroundService
         var blockIndex = tip.Index;
         var currentRoundData = await _rpcClient.GetRoundData(tip, cancellationToken);
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData, cancellationToken);
+        var championshipId = currentRoundData.ChampionshipId;
+        var round = currentRoundData.Round;
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
         var scoreCacheKey = $"{cacheKey}_scores";
         var prevAddrAndScores = await _service.GetAvatarAddrAndScores(scoreCacheKey);
@@ -69,7 +71,7 @@ public class ArenaParticipantsWorker : BackgroundService
         var expiry = TimeSpan.FromMinutes(5);
         if (participants is null)
         {
-            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>(), expiry);
+            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipantStruct>(), expiry);
             _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list on {BlockIndex}", cacheKey, blockIndex);
             return;
         }
@@ -82,7 +84,7 @@ public class ArenaParticipantsWorker : BackgroundService
         // 전체목록의 랭킹 순서 처리
         var avatarAddrAndScoresWithRank = AvatarAddrAndScoresWithRank(avatarAddrAndScores);
         // 전체목록의 ArenaParticipant 업데이트
-        var result = await _rpcClient.GetArenaParticipants(tip, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
+        var result = await _rpcClient.GetArenaParticipants(tip, championshipId, round, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
         // 캐시 업데이트
         await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
         await _service.SetSeasonAsync(cacheKey, expiry);

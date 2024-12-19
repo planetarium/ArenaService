@@ -11,18 +11,18 @@ public class RedisArenaParticipantsService(IConnectionMultiplexer redis)
 
     private readonly IDatabase _db = redis.GetDatabase();
 
-    public async Task<List<ArenaParticipant>> GetArenaParticipantsAsync(string key)
+    public async Task<List<ArenaParticipantStruct>> GetArenaParticipantsAsync(string key)
     {
         RedisValue result = await _db.StringGetAsync(key);
         if (result.IsNull)
         {
-            return new List<ArenaParticipant>();
+            return new List<ArenaParticipantStruct>();
         }
 
-        return JsonSerializer.Deserialize<List<ArenaParticipant>>(result.ToString())!;
+        return JsonSerializer.Deserialize<List<ArenaParticipantStruct>>(result.ToString())!;
     }
 
-    public async Task SetArenaParticipantsAsync(string key, List<ArenaParticipant> value, TimeSpan? expiry = null)
+    public async Task SetArenaParticipantsAsync(string key, List<ArenaParticipantStruct> value, TimeSpan? expiry = null)
     {
         var serialized = JsonSerializer.Serialize(value);
         await _db.StringSetAsync(key, serialized, expiry);

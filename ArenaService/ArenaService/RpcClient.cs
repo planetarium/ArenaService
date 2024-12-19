@@ -8,17 +8,12 @@ using Libplanet.Crypto;
 using Libplanet.Types.Blocks;
 using MagicOnion.Client;
 using Nekoyume;
-using Nekoyume.Battle;
-using Nekoyume.Helper;
 using Nekoyume.Model.Arena;
-using Nekoyume.Model.EnumType;
 using Nekoyume.Model.Item;
-using Nekoyume.Model.Stat;
 using Nekoyume.Model.State;
 using Nekoyume.Shared.Hubs;
 using Nekoyume.Shared.Services;
 using Nekoyume.TableData;
-using Nekoyume.TableData.Rune;
 
 namespace ArenaService;
 
@@ -285,41 +280,23 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// Retrieve a list of arena participants based on the provided world state, avatar address list, and avatar addresses with scores and ranks.
     /// </summary>
     /// <param name="block"><see cref="Block"/> from which to retrieve the arena participants.</param>
+    /// <param name="championshipId">target arena season id</param>
+    /// <param name="round">target arena season round</param>
     /// <param name="avatarAddrList">The list of avatar addresses to filter the matching participants.</param>
     /// <param name="avatarAddrAndScoresWithRank">The list of avatar addresses with their scores and ranks.</param>
-    /// <param name="prevArenaParticipants">The list of previous synced arena participants. if the score has not changed, <see cref="ArenaParticipant"/> is reused.</param>
+    /// <param name="prevArenaParticipants">The list of previous synced arena participants. if the score has not changed, <see cref="ArenaParticipantStruct"/> is reused.</param>
     /// <param name="cancellationToken"></param>
     /// <returns><see cref="Task"/>A list of arena participants.</returns>
-    public async Task<List<ArenaParticipant>> GetArenaParticipants(Block block, List<Address> avatarAddrList,
-        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipant> prevArenaParticipants,
+    public async Task<List<ArenaParticipantStruct>> GetArenaParticipants(Block block, int championshipId, int round, List<Address> avatarAddrList,
+        List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipantStruct> prevArenaParticipants,
         CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
         {
             cancellationToken.ThrowIfCancellationRequested();
         }
-        var runeListSheet = await GetSheet<RuneListSheet>(block, cancellationToken);
-        var costumeSheet = await GetSheet<CostumeStatSheet>(block, cancellationToken);
-        var characterSheet = await GetSheet<CharacterSheet>(block, cancellationToken);
-        var runeOptionSheet = await GetSheet<RuneOptionSheet>(block, cancellationToken);
-        var runeLevelBonusSheet = await GetSheet<RuneLevelBonusSheet>(block, cancellationToken);
-        var row = characterSheet[GameConfig.DefaultAvatarCharacterId];
-        CollectionSheet collectionSheet = new CollectionSheet();
-        var collectionStates = await GetCollectionStates(block, avatarAddrList, cancellationToken);
-        bool collectionSheetExist = true;
-        try
-        {
-            collectionSheet = await GetSheet<CollectionSheet>(block, cancellationToken);
-        }
-        catch (Exception)
-        {
-            collectionSheetExist = false;
-        }
 
-        var itemSlotStates = await GetItemSlotStates(block, avatarAddrList, cancellationToken);
-        var runeSlotStates = await GetRuneSlotStates(block, avatarAddrList, cancellationToken);
-        var avatarStates = await GetAvatarStates(block, avatarAddrList, cancellationToken);
-        var allRuneStates = await GetAllRuneStates(block, avatarAddrList, cancellationToken);
+        var arenaParticipantStates = await GetArenaParticipantStates(block, championshipId, round, avatarAddrList, cancellationToken);
         var tasks = avatarAddrAndScoresWithRank.Select(async tuple =>
         {
             if (cancellationToken.IsCancellationRequested)
@@ -330,68 +307,23 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             // 점수가 변경된 경우, BattleArena를 실행한 아바타기때문에 전체 정보를 업데이트한다.
             if (avatarAddrList.Contains(avatarAddr))
             {
-                if (!allRuneStates.TryGetValue(avatarAddr, out var runeStates))
-                {
-                    runeStates = await GetRuneState(block, avatarAddr, runeListSheet, cancellationToken);
-                }
-                var avatar = avatarStates[avatarAddr];
-                var itemSlotState = itemSlotStates[avatarAddr];
-                var runeSlotState = runeSlotStates[avatarAddr];
-
-                var equippedRuneStates = new List<RuneState>();
-                foreach (var runeId in runeSlotState.GetRuneSlot().Select(slot => slot.RuneId))
-                {
-                    if (!runeId.HasValue)
-                    {
-                        continue;
-                    }
-
-                    if (runeStates.TryGetRuneState(runeId.Value, out var runeState))
-                    {
-                        equippedRuneStates.Add(runeState);
-                    }
-                }
-
-                var equipments = itemSlotState.Equipments
-                    .Select(guid =>
-                        avatar.inventory.Equipments.FirstOrDefault(x => x.ItemId == guid))
-                    .Where(item => item != null).ToList();
-                var costumes = itemSlotState.Costumes
-                    .Select(guid =>
-                        avatar.inventory.Costumes.FirstOrDefault(x => x.ItemId == guid))
-                    .Where(item => item != null).ToList();
-                var runeOptions = GetRuneOptions(equippedRuneStates, runeOptionSheet);
-                var collectionExist = collectionStates.ContainsKey(avatarAddr);
-                var collectionModifiers = new List<StatModifier>();
-                if (collectionSheetExist && collectionExist)
-                {
-                    var collectionState = collectionStates[avatarAddr];
-                    foreach (var collectionId in collectionState.Ids)
-                    {
-                        collectionModifiers.AddRange(collectionSheet[collectionId].StatModifiers);
-                    }
-                }
-
-                var cp = CPHelper.TotalCP(equipments, costumes, runeOptions, avatar.level, row, costumeSheet, collectionModifiers,
-                    RuneHelper.CalculateRuneLevelBonus(runeStates, runeListSheet, runeLevelBonusSheet)
-                );
-                var portraitId = GetPortraitId(equipments, costumes);
-                return new ArenaParticipant(
+                var arenaParticipantState = arenaParticipantStates[avatarAddr];
+                return new ArenaParticipantStruct(
                     avatarAddr,
                     tuple.Score,
                     tuple.Rank,
-                    avatar.NameWithHash,
-                    avatar.level,
-                    portraitId,
+                    $"{arenaParticipantState.Name} <size=80%><color=#A68F7E>#{avatarAddr.ToHex().Substring(0, 4)}</color></size>",
+                    arenaParticipantState.Level,
+                    arenaParticipantState.PortraitId,
                     0,
                     0,
-                    cp
+                    arenaParticipantState.Cp
                 );
             }
 
             // 점수가 그대로인 경우, 순위만 변경한다.
             var prev = prevArenaParticipants.First(r => r.AvatarAddr == avatarAddr);
-            return new ArenaParticipant(
+            return new ArenaParticipantStruct(
                 avatarAddr,
                 tuple.Score,
                 tuple.Rank,
@@ -405,35 +337,6 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         }).ToList();
         var result = await Task.WhenAll(tasks);
         return result.ToList();
-    }
-
-    /// <summary>
-    /// Retrieves the collection states for the given addresses from the world state.
-    /// </summary>
-    /// <param name="block">The world state used to retrieve the collection states.</param>
-    /// <param name="addresses">The list of addresses to retrieve the collection states for.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>A dictionary of Address and CollectionState pairs representing the collection states
-    /// for the given addresses,
-    /// or an empty dictionary for addresses that do not have a collection state.</returns>
-    public async Task<Dictionary<Address, CollectionState>> GetCollectionStates(Block block, IReadOnlyList<Address> addresses, CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        var result = new Dictionary<Address, CollectionState>();
-        var values = await GetStates(block, Addresses.Collection, addresses, cancellationToken);
-        foreach (var address in addresses)
-        {
-            var serialized = values[address];
-            if (serialized is List bencoded)
-            {
-                result.TryAdd(address, new CollectionState(bencoded));
-            }
-        }
-
-        return result;
     }
 
     /// <summary>
@@ -464,34 +367,6 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             foreach (var kv in queryResult) result[new Address(kv.Key)] = _codec.Decode(kv.Value);
         }
         return result.ToDictionary(kv => kv.Key, kv => kv.Value);
-    }
-
-    public async Task<AllRuneState> GetRuneState(Block block, Address avatarAddress, RuneListSheet runeListSheet,
-        CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        var serialized = await GetState(block, Addresses.RuneState, avatarAddress, cancellationToken);
-        AllRuneState allRuneState;
-        if (serialized is null)
-        {
-            // Get legacy rune states
-            allRuneState = new AllRuneState();
-            var runeAddresses = runeListSheet.Values.Select(r => RuneState.DeriveAddress(avatarAddress, r.Id)).ToList();
-            var runeStates = await GetRuneStates(block, runeAddresses, cancellationToken);
-            foreach (var runeState in runeStates)
-            {
-                allRuneState.AddRuneState(runeState);
-            }
-        }
-        else
-        {
-            allRuneState = new AllRuneState((List)serialized);
-        }
-
-        return allRuneState;
     }
 
     /// <summary>
@@ -539,128 +414,30 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     }
 
     /// <summary>
-    /// Retrieves the item slot states for the given avatar addresses from the world state.
+    /// Get <see cref="ArenaParticipant"/> from given arena season.
     /// </summary>
-    /// <param name="block">The world state used to retrieve the collection states.</param>
-    /// <param name="avatarAddresses">The list of addresses to retrieve the item slot states for.</param>
+    /// <param name="block"><see cref="Block"/> from which to retrieve the arena participants.</param>
+    /// <param name="championshipId">target arena season id</param>
+    /// <param name="round">target arena season round</param>
+    /// <param name="avatarAddresses">The list of avatar addresses to filter the matching participants.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns>A dictionary of Address and <see cref="ItemSlotState"/> pairs representing the item slot states
-    /// for the given addresses.</returns>
-    public async Task<IDictionary<Address, ItemSlotState>> GetItemSlotStates(Block block,
-        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
+    /// <returns>A dictionary of Address and <see cref="ArenaParticipant"/> pairs for the given addresses.</returns>
+    public async Task<Dictionary<Address, ArenaParticipant>> GetArenaParticipantStates(Block block, int championshipId, int round, IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
     {
         if (cancellationToken.IsCancellationRequested)
         {
             cancellationToken.ThrowIfCancellationRequested();
         }
-        var result = new Dictionary<Address, ItemSlotState>();
-        var slotAddresses = avatarAddresses.Select(a => ItemSlotState.DeriveAddress(a, BattleType.Arena)).ToList();
-        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses, cancellationToken);
-        foreach (var address in avatarAddresses)
-        {
-            var slotAddress = ItemSlotState.DeriveAddress(address, BattleType.Arena);
-            var serialized = values[slotAddress];
-            var itemSlotState = serialized is List bencoded
-                ? new ItemSlotState(bencoded)
-                : new ItemSlotState(BattleType.Arena);
-            result.TryAdd(address, itemSlotState);
-        }
-        return result;
-    }
-
-    /// <summary>
-    /// Retrieves the rune slot states for the given avatar addresses from the world state.
-    /// </summary>
-    /// <param name="block">The world state used to retrieve the collection states.</param>
-    /// <param name="avatarAddresses">The list of avatar addresses to retrieve the rune slot states for.</param>
-    /// <param name="cancellationToken"></param>
-    /// <returns>A dictionary of Address and <see cref="RuneSlotState"/> pairs representing the rune slot states
-    /// for the given addresses.</returns>
-    public async Task<IDictionary<Address, RuneSlotState>> GetRuneSlotStates(Block block,
-        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        var result = new Dictionary<Address, RuneSlotState>();
-        var slotAddresses = avatarAddresses.Select(a => RuneSlotState.DeriveAddress(a, BattleType.Arena)).ToList();
-        var values = await GetStates(block, ReservedAddresses.LegacyAccount, slotAddresses, cancellationToken);
-        foreach (var address in avatarAddresses)
-        {
-            var slotAddress = RuneSlotState.DeriveAddress(address, BattleType.Arena);
-            var serialized = values[slotAddress];
-            var runeSlotState = serialized is List bencoded
-                ? new RuneSlotState(bencoded)
-                : new RuneSlotState(BattleType.Arena);
-            result.TryAdd(address, runeSlotState);
-        }
-        return result;
-    }
-
-    public async Task<IDictionary<Address, AvatarState>> GetAvatarStates(Block block,
-        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        var avatarResults = await GetStates(block, Addresses.Avatar, avatarAddresses, cancellationToken);
-        var inventoryResults = await GetStates(block, Addresses.Inventory, avatarAddresses, cancellationToken);
-        var result = new Dictionary<Address, AvatarState>();
-        foreach (var kv in avatarResults)
-        {
-            var address = kv.Key;
-            var avatarResult = kv.Value;
-            if (avatarResult is List l)
-            {
-                var avatarState = new AvatarState(l);
-                var inventory = inventoryResults[address] is List l2
-                    ? new Inventory(l2)
-                    : new Inventory();
-                avatarState.inventory = inventory;
-                result.TryAdd(address, avatarState);
-            }
-        }
-        return result;
-    }
-
-    public async Task<List<RuneState>> GetRuneStates(Block block, IReadOnlyList<Address> runeAddresses,
-        CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        var result = new List<RuneState>();
-        var runeResults = await GetStates(block, ReservedAddresses.LegacyAccount, runeAddresses, cancellationToken);
-        foreach (var pair in runeResults)
-        {
-            if (pair.Value is List rawState)
-            {
-                var runeState = new RuneState(rawState);
-                result.Add(runeState);
-            }
-        }
-        return result;
-    }
-
-    public async Task<IDictionary<Address, AllRuneState>> GetAllRuneStates(Block block,
-        IReadOnlyList<Address> avatarAddresses, CancellationToken cancellationToken)
-    {
-        if (cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-        }
-        var serializedResults = await GetStates(block, Addresses.RuneState, avatarAddresses, cancellationToken);
-        var result = new Dictionary<Address, AllRuneState>();
+        var accountAddress = Addresses.GetArenaParticipantAccountAddress(championshipId, round);
+        var serializedResults = await GetStates(block, accountAddress, avatarAddresses, cancellationToken);
+        var result = new Dictionary<Address, ArenaParticipant>();
         foreach (var address in avatarAddresses)
         {
             var serialized = serializedResults[address];
             if (serialized is List l)
             {
-                var allRuneState = new AllRuneState(l);
-                result.TryAdd(address, allRuneState);
+                var arenaParticipant = new ArenaParticipant(l);
+                result.TryAdd(address, arenaParticipant);
             }
         }
         return result;
