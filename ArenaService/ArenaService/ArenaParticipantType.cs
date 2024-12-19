@@ -2,44 +2,44 @@ using GraphQL.Types;
 
 namespace ArenaService;
 
-public class ArenaParticipantType : ObjectGraphType<ArenaParticipant>
+public class ArenaParticipantType : ObjectGraphType<ArenaParticipantStruct>
 {
     public ArenaParticipantType()
     {
         Field<NonNullGraphType<AddressType>>(
-            nameof(ArenaParticipant.AvatarAddr),
+            nameof(ArenaParticipantStruct.AvatarAddr),
             description: "Address of avatar.",
             resolve: context => context.Source.AvatarAddr);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.Score),
+            nameof(ArenaParticipantStruct.Score),
             description: "Arena score of avatar.",
             resolve: context => context.Source.Score);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.Rank),
+            nameof(ArenaParticipantStruct.Rank),
             description: "Arena rank of avatar.",
             resolve: context => context.Source.Rank);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.WinScore),
+            nameof(ArenaParticipantStruct.WinScore),
             description: "Score for victory.",
             resolve: context => context.Source.WinScore);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.LoseScore),
+            nameof(ArenaParticipantStruct.LoseScore),
             description: "Score for defeat.",
             resolve: context => context.Source.LoseScore);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.Cp),
+            nameof(ArenaParticipantStruct.Cp),
             description: "Cp of avatar.",
             resolve: context => context.Source.Cp);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.PortraitId),
+            nameof(ArenaParticipantStruct.PortraitId),
             description: "Portrait icon id.",
             resolve: context => context.Source.PortraitId);
         Field<NonNullGraphType<IntGraphType>>(
-            nameof(ArenaParticipant.Level),
+            nameof(ArenaParticipantStruct.Level),
             description: "Level of avatar.",
             resolve: context => context.Source.Level);
         Field<NonNullGraphType<StringGraphType>>(
-            nameof(ArenaParticipant.NameWithHash),
+            nameof(ArenaParticipantStruct.NameWithHash),
             description: "Name of avatar.",
             resolve: context => context.Source.NameWithHash);
     }
