@@ -59,6 +59,7 @@ public class ArenaParticipantsWorker : BackgroundService
         }
 
         var tip = _rpcClient.Tip!;
+        var blockIndex = tip.Index;
         var currentRoundData = await _rpcClient.GetRoundData(tip, cancellationToken);
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData, cancellationToken);
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
@@ -69,7 +70,7 @@ public class ArenaParticipantsWorker : BackgroundService
         if (participants is null)
         {
             await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>(), expiry);
-            _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list", cacheKey);
+            _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list on {BlockIndex}", cacheKey, blockIndex);
             return;
         }
 
@@ -87,7 +88,7 @@ public class ArenaParticipantsWorker : BackgroundService
         await _service.SetSeasonAsync(cacheKey, expiry);
         await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores, expiry);
         sw.Stop();
-        _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}]: {Elapsed}", cacheKey, sw.Elapsed);
+        _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}] on {BlockIndex}: {Elapsed}", cacheKey, blockIndex, sw.Elapsed);
     }
 
 
