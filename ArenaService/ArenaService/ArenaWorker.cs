@@ -98,68 +98,47 @@ public class ArenaParticipantsWorker : BackgroundService
     /// <returns>The list of avatar addresses, scores, and ranks.</returns>
     public static List<ArenaScoreAndRank> AvatarAddrAndScoresWithRank(List<AvatarAddressAndScore> avatarAddrAndScores)
     {
-        List<ArenaScoreAndRank> orderedTuples = avatarAddrAndScores
+        if (avatarAddrAndScores.Count == 0)
+        {
+            return new List<ArenaScoreAndRank>();
+        }
+
+        if (avatarAddrAndScores.Count == 1)
+        {
+            var score = avatarAddrAndScores.Single();
+            return [new ArenaScoreAndRank(score.AvatarAddr, score.Score, 1)];
+        }
+
+        var orderedTuples = avatarAddrAndScores
             .OrderByDescending(tuple => tuple.Score)
             .ThenBy(tuple => tuple.AvatarAddr)
-            .Select(tuple => new ArenaScoreAndRank(tuple.AvatarAddr, tuple.Score, 0))
             .ToList();
-        int? currentScore = null;
-        var currentRank = 1;
+
         var avatarAddrAndScoresWithRank = new List<ArenaScoreAndRank>();
-        var trunk = new List<ArenaScoreAndRank>();
-        for (var i = 0; i < orderedTuples.Count; i++)
+        while (orderedTuples.Count > 0)
         {
-            var tuple = orderedTuples[i];
-            if (!currentScore.HasValue)
+            // 동점자를 찾기위해 기준 점수 설정
+            var currentScore = orderedTuples.First().Score;
+            var groupSize = 0;
+            var targets = new List<AvatarAddressAndScore>();
+            foreach (var tuple in orderedTuples)
             {
-                currentScore = tuple.Score;
-                trunk.Add(tuple);
-                continue;
-            }
-
-            if (currentScore.Value == tuple.Score)
-            {
-                trunk.Add(tuple);
-                currentRank++;
-                if (i < orderedTuples.Count - 1)
+                if (currentScore == tuple.Score)
                 {
-                    continue;
+                    groupSize++;
+                    targets.Add(tuple);
                 }
-
-                foreach (var tupleInTrunk in trunk)
+                else
                 {
-                    avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
-                        tupleInTrunk.AvatarAddr,
-                        tupleInTrunk.Score,
-                        currentRank));
+                    break;
                 }
-
-                trunk.Clear();
-
-                continue;
             }
 
-            foreach (var tupleInTrunk in trunk)
-            {
-                avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
-                    tupleInTrunk.AvatarAddr,
-                    tupleInTrunk.Score,
-                    currentRank));
-            }
-
-            trunk.Clear();
-            if (i < orderedTuples.Count - 1)
-            {
-                trunk.Add(tuple);
-                currentScore = tuple.Score;
-                currentRank++;
-                continue;
-            }
-
-            avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
-                tuple.AvatarAddr,
-                tuple.Score,
-                currentRank + 1));
+            // 순위는 기존 상위권 순위 + 동점자의 숫자
+            var rank = avatarAddrAndScoresWithRank.Count + groupSize;
+            avatarAddrAndScoresWithRank.AddRange(targets.Select(tuple => new ArenaScoreAndRank(tuple.AvatarAddr, tuple.Score, rank)));
+            // 다음 순위 설정을 위해 이번 그룹 숫자만큼 삭제
+            orderedTuples.RemoveRange(0, groupSize);
         }
 
         return avatarAddrAndScoresWithRank;
