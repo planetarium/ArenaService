@@ -3,6 +3,7 @@ using GraphQL.Server;
 using GraphQL.Server.Ui.Playground;
 using GraphQL.Types;
 using Libplanet.Crypto;
+using Microsoft.AspNetCore.Server.Kestrel.Core;
 using StackExchange.Redis;
 using AddressType = ArenaService.AddressType;
 
@@ -50,6 +51,11 @@ if (enableWorker)
 {
     healthChecksBuilder.AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
 }
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.Limits.MinRequestBodyDataRate = new MinDataRate(240, TimeSpan.FromMinutes(1));
+});
 
 
 var app = builder.Build();
