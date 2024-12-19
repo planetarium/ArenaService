@@ -79,7 +79,7 @@ public class ArenaParticipantsWorker : BackgroundService
         // 이전상태의 아바타 주소, 점수를 비교해서 추가되거나 점수가 변경된 대상만 찾음
         var updatedAddressAndScores = avatarAddrAndScores.Except(prevAddrAndScores).ToList();
         // 전체목록의 랭킹 순서 처리
-        var avatarAddrAndScoresWithRank = _rpcClient.AvatarAddrAndScoresWithRank(avatarAddrAndScores);
+        var avatarAddrAndScoresWithRank = AvatarAddrAndScoresWithRank(avatarAddrAndScores);
         // 전체목록의 ArenaParticipant 업데이트
         var result = await _rpcClient.GetArenaParticipants(tip, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
         // 캐시 업데이트
@@ -88,5 +88,80 @@ public class ArenaParticipantsWorker : BackgroundService
         await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores, expiry);
         sw.Stop();
         _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}]: {Elapsed}", cacheKey, sw.Elapsed);
+    }
+
+
+    /// <summary>
+    /// Retrieves the avatar addresses and scores with ranks for a given list of avatar addresses, current round data, and world state.
+    /// </summary>
+    /// <param name="avatarAddrAndScores">Ths list of avatar address and score tuples.</param>
+    /// <returns>The list of avatar addresses, scores, and ranks.</returns>
+    public static List<ArenaScoreAndRank> AvatarAddrAndScoresWithRank(List<AvatarAddressAndScore> avatarAddrAndScores)
+    {
+        List<ArenaScoreAndRank> orderedTuples = avatarAddrAndScores
+            .OrderByDescending(tuple => tuple.Score)
+            .ThenBy(tuple => tuple.AvatarAddr)
+            .Select(tuple => new ArenaScoreAndRank(tuple.AvatarAddr, tuple.Score, 0))
+            .ToList();
+        int? currentScore = null;
+        var currentRank = 1;
+        var avatarAddrAndScoresWithRank = new List<ArenaScoreAndRank>();
+        var trunk = new List<ArenaScoreAndRank>();
+        for (var i = 0; i < orderedTuples.Count; i++)
+        {
+            var tuple = orderedTuples[i];
+            if (!currentScore.HasValue)
+            {
+                currentScore = tuple.Score;
+                trunk.Add(tuple);
+                continue;
+            }
+
+            if (currentScore.Value == tuple.Score)
+            {
+                trunk.Add(tuple);
+                currentRank++;
+                if (i < orderedTuples.Count - 1)
+                {
+                    continue;
+                }
+
+                foreach (var tupleInTrunk in trunk)
+                {
+                    avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
+                        tupleInTrunk.AvatarAddr,
+                        tupleInTrunk.Score,
+                        currentRank));
+                }
+
+                trunk.Clear();
+
+                continue;
+            }
+
+            foreach (var tupleInTrunk in trunk)
+            {
+                avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
+                    tupleInTrunk.AvatarAddr,
+                    tupleInTrunk.Score,
+                    currentRank));
+            }
+
+            trunk.Clear();
+            if (i < orderedTuples.Count - 1)
+            {
+                trunk.Add(tuple);
+                currentScore = tuple.Score;
+                currentRank++;
+                continue;
+            }
+
+            avatarAddrAndScoresWithRank.Add(new ArenaScoreAndRank(
+                tuple.AvatarAddr,
+                tuple.Score,
+                currentRank + 1));
+        }
+
+        return avatarAddrAndScoresWithRank;
     }
 }
