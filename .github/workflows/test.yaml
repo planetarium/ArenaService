@@ -1,0 +1,21 @@
+name: Test Projects
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    name: 'Test (${{ matrix.project }})'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [ArenaService.Tests]
+    steps:
+      -
+        name: Checkout
+        uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+      - run: dotnet test ${{ matrix.project }}
