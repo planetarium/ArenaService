@@ -286,8 +286,8 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
     /// <param name="avatarAddrAndScoresWithRank">The list of avatar addresses with their scores and ranks.</param>
     /// <param name="prevArenaParticipants">The list of previous synced arena participants. if the score has not changed, <see cref="ArenaParticipantStruct"/> is reused.</param>
     /// <param name="cancellationToken"></param>
-    /// <returns><see cref="Task"/>A list of arena participants.</returns>
-    public async Task<List<ArenaParticipantStruct>> GetArenaParticipants(Block block, int championshipId, int round, List<Address> avatarAddrList,
+    /// <returns><see cref="Task"/>A list of arena participants and latest RankingBattle executed block index.</returns>
+    public async Task<(List<ArenaParticipantStruct>, long)> GetArenaParticipants(Block block, int championshipId, int round, List<Address> avatarAddrList,
         List<ArenaScoreAndRank> avatarAddrAndScoresWithRank, List<ArenaParticipantStruct> prevArenaParticipants,
         CancellationToken cancellationToken)
     {
@@ -297,6 +297,9 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         }
 
         var arenaParticipantStates = await GetArenaParticipantStates(block, championshipId, round, avatarAddrList, cancellationToken);
+        var latestBlockIndex = arenaParticipantStates.Count > 0
+        ? arenaParticipantStates.Values.Max(i => i.LastBattleBlockIndex)
+        : 0L;
         var tasks = avatarAddrAndScoresWithRank.Select(async tuple =>
         {
             if (cancellationToken.IsCancellationRequested)
@@ -336,7 +339,7 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
             );
         }).ToList();
         var result = await Task.WhenAll(tasks);
-        return result.ToList();
+        return (result.ToList(), latestBlockIndex);
     }
 
     /// <summary>

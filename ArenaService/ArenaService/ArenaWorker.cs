@@ -84,13 +84,13 @@ public class ArenaParticipantsWorker : BackgroundService
         // 전체목록의 랭킹 순서 처리
         var avatarAddrAndScoresWithRank = AvatarAddrAndScoresWithRank(avatarAddrAndScores);
         // 전체목록의 ArenaParticipant 업데이트
-        var result = await _rpcClient.GetArenaParticipants(tip, championshipId, round, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
+        var tuple = await _rpcClient.GetArenaParticipants(tip, championshipId, round, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
         // 캐시 업데이트
-        await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
+        await _service.SetArenaParticipantsAsync(cacheKey, tuple.Item1, expiry);
         await _service.SetSeasonAsync(cacheKey, expiry);
         await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores, expiry);
         sw.Stop();
-        _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}] on {BlockIndex}: {Elapsed}", cacheKey, blockIndex, sw.Elapsed);
+        _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}] on {BlockIndex}/{LatestBattleBlockIndex}: {Elapsed}", cacheKey, blockIndex, tuple.Item2, sw.Elapsed);
     }
 
 
