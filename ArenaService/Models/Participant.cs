@@ -19,11 +19,10 @@ public class Participant
     [Required]
     public int SeasonId { get; set; }
 
-    public int Cp { get; set; } = 0;
-
+    [Required]
     public int PortraitId { get; set; }
 
-    public required Season Season { get; set; }
-    public required ICollection<BattleLog> BattleLogs { get; set; }
-    public required ICollection<LeaderboardEntry> Leaderboard { get; set; }
+    public Season Season { get; set; } = null!;
+    public ICollection<BattleLog> BattleLogs { get; set; } = null!;
+    public ICollection<LeaderboardEntry> Leaderboard { get; set; } = null!;
 }

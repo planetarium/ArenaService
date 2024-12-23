@@ -5,9 +5,9 @@ using ArenaService.Models;
 
 public static class SeasonExtensions
 {
-    public static SeasonDto ToDto(this Season season)
+    public static SeasonResponse ToResponse(this Season season)
     {
-        return new SeasonDto
+        return new SeasonResponse
         {
             Id = season.Id,
             StartBlockIndex = season.StartBlockIndex,

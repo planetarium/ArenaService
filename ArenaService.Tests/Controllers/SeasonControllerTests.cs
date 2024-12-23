@@ -8,19 +8,18 @@ using Moq;
 
 namespace ArenaService.Tests.Controllers;
 
-public class SeasonControllerTests : BaseControllerTest<ISeasonRepository, SeasonService>
+public class SeasonControllerTests
 {
     private readonly SeasonController _controller;
+    private Mock<ISeasonRepository> _repositoryMock;
+    private SeasonService _service;
 
     public SeasonControllerTests()
-        : base()
     {
-        _controller = new SeasonController(Service);
-    }
-
-    protected override SeasonService CreateService(ISeasonRepository repository)
-    {
-        return new SeasonService(repository);
+        var repositoryMock = new Mock<ISeasonRepository>();
+        _repositoryMock = repositoryMock;
+        _service = new SeasonService(repositoryMock.Object);
+        _controller = new SeasonController(_service);
     }
 
     [Fact]
@@ -53,12 +52,12 @@ public class SeasonControllerTests : BaseControllerTest<ISeasonRepository, Seaso
             }
         };
 
-        RepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(season);
+        _repositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(season);
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnValue = Assert.IsType<SeasonDto>(okResult.Value);
+        var returnValue = Assert.IsType<SeasonResponse>(okResult.Value);
 
         Assert.Equal(season[1].Id, returnValue.Id);
     }
@@ -93,12 +92,12 @@ public class SeasonControllerTests : BaseControllerTest<ISeasonRepository, Seaso
             }
         };
 
-        RepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(season);
+        _repositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(season);
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnValue = Assert.IsType<SeasonDto>(okResult.Value);
+        var returnValue = Assert.IsType<SeasonResponse>(okResult.Value);
 
         Assert.Equal(season[0].Id, returnValue.Id);
     }
@@ -134,7 +133,7 @@ public class SeasonControllerTests : BaseControllerTest<ISeasonRepository, Seaso
             }
         };
 
-        RepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(season);
+        _repositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(season);
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 
@@ -146,7 +145,7 @@ public class SeasonControllerTests : BaseControllerTest<ISeasonRepository, Seaso
     {
         var blockIndex = 1000;
 
-        RepositoryMock
+        _repositoryMock
             .Setup(repo => repo.GetActivatedSeasonsAsync())
             .ReturnsAsync(new List<Season>());
 

@@ -13,13 +13,13 @@ public class SeasonService
         _seasonRepository = seasonRepository;
     }
 
-    public async Task<SeasonDto?> GetCurrentSeasonAsync(int blockIndex)
+    public async Task<SeasonResponse?> GetCurrentSeasonAsync(int blockIndex)
     {
         var seasons = await _seasonRepository.GetActivatedSeasonsAsync();
         var currentSeason = seasons.FirstOrDefault(s =>
             s.StartBlockIndex <= blockIndex && s.EndBlockIndex >= blockIndex
         );
 
-        return currentSeason?.ToDto();
+        return currentSeason?.ToResponse();
     }
 }
