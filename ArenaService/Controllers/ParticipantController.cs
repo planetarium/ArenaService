@@ -11,10 +11,12 @@ using Microsoft.AspNetCore.Mvc;
 public class ParticipantController : ControllerBase
 {
     private readonly ParticipantService _participantService;
+    private readonly SeasonService _seasonService;
 
-    public ParticipantController(ParticipantService participantService)
+    public ParticipantController(ParticipantService participantService, SeasonService seasonService)
     {
         _participantService = participantService;
+        _seasonService = seasonService;
     }
 
     [HttpPost]
@@ -23,17 +25,12 @@ public class ParticipantController : ControllerBase
         [FromBody] JoinRequest joinRequest
     )
     {
-        try
+        if (await _seasonService.IsActivatedSeason(seasonId))
         {
-            var participantResponse = await _participantService.AddParticipantAsync(
-                seasonId,
-                joinRequest
-            );
+            await _participantService.AddParticipantAsync(seasonId, joinRequest);
             return TypedResults.Created();
         }
-        catch (SeasonNotFoundException)
-        {
-            return TypedResults.NotFound("No active season found.");
-        }
+
+        return TypedResults.NotFound("No active season found.");
     }
 }

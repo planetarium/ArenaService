@@ -25,7 +25,7 @@ public class ParticipantControllerTests
         _participantRepositoryMock = participantRepositoryMock;
         _seasonService = new SeasonService(_seasonRepositoryMock.Object);
         _participantService = new ParticipantService(_participantRepositoryMock.Object);
-        _controller = new ParticipantController(_participantService);
+        _controller = new ParticipantController(_participantService, _seasonService);
     }
 
     [Fact]
@@ -37,10 +37,7 @@ public class ParticipantControllerTests
             StartBlockIndex = 700,
             EndBlockIndex = 899,
             TicketRefillInterval = 600,
-            IsActivated = true,
-            Participants = new List<Participant>(),
-            BattleLogs = new List<BattleLog>(),
-            Leaderboard = new List<LeaderboardEntry>()
+            IsActivated = true
         };
         var participant = new Participant
         {
@@ -49,9 +46,54 @@ public class ParticipantControllerTests
             NameWithHash = "test",
             SeasonId = 1,
             PortraitId = 1,
-            Season = season,
-            BattleLogs = new List<BattleLog>(),
-            Leaderboard = new List<LeaderboardEntry>()
+            Season = season
+        };
+
+        _seasonRepositoryMock.Setup(repo => repo.GetSeasonAsync(season.Id)).ReturnsAsync(season);
+        _participantRepositoryMock
+            .Setup(repo =>
+                repo.InsertParticipantToSpecificSeason(
+                    season.Id,
+                    participant.AvatarAddress,
+                    participant.NameWithHash,
+                    participant.PortraitId
+                )
+            )
+            .ReturnsAsync(participant);
+
+        var result = await _controller.Join(
+            1,
+            new JoinRequest
+            {
+                AvatarAddress = "test",
+                AuthToken = "test",
+                NameWithHash = "test",
+                PortraitId = 1
+            }
+        );
+
+        var okResult = Assert.IsType<Created>(result.Result);
+    }
+
+    [Fact]
+    public async Task Join_ActivatedSeasonsNotExist_ReturnsNotFound()
+    {
+        var season = new Season
+        {
+            Id = 1,
+            StartBlockIndex = 700,
+            EndBlockIndex = 899,
+            TicketRefillInterval = 600,
+            IsActivated = false
+        };
+        var participant = new Participant
+        {
+            Id = 1,
+            AvatarAddress = "test",
+            NameWithHash = "test",
+            SeasonId = 1,
+            PortraitId = 1,
+            Season = season
         };
 
         _seasonRepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
@@ -68,11 +110,62 @@ public class ParticipantControllerTests
 
         var result = await _controller.Join(
             1,
-            new JoinRequest { AvatarAddress = "test", AuthToken = "test" }
+            new JoinRequest
+            {
+                AvatarAddress = "test",
+                AuthToken = "test",
+                NameWithHash = "test",
+                PortraitId = 1
+            }
         );
 
-        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.IsType<NotFound<string>>(result.Result);
+    }
 
-        Assert.True(okResult.StatusCode == 201);
+    [Fact]
+    public async Task Join_SeasonsNotExist_ReturnsNotFound()
+    {
+        var season = new Season
+        {
+            Id = 1,
+            StartBlockIndex = 700,
+            EndBlockIndex = 899,
+            TicketRefillInterval = 600,
+            IsActivated = true
+        };
+        var participant = new Participant
+        {
+            Id = 1,
+            AvatarAddress = "test",
+            NameWithHash = "test",
+            SeasonId = 1,
+            PortraitId = 1,
+            Season = season
+        };
+
+        _seasonRepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
+        _participantRepositoryMock
+            .Setup(repo =>
+                repo.InsertParticipantToSpecificSeason(
+                    season.Id,
+                    participant.AvatarAddress,
+                    participant.NameWithHash,
+                    participant.PortraitId
+                )
+            )
+            .ReturnsAsync(participant);
+
+        var result = await _controller.Join(
+            2,
+            new JoinRequest
+            {
+                AvatarAddress = "test",
+                AuthToken = "test",
+                NameWithHash = "test",
+                PortraitId = 1
+            }
+        );
+
+        var okResult = Assert.IsType<NotFound<string>>(result.Result);
     }
 }

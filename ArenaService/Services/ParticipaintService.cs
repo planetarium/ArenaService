@@ -2,7 +2,6 @@ namespace ArenaService.Services;
 
 using ArenaService.Dtos;
 using ArenaService.Extensions;
-using ArenaService.Models;
 using ArenaService.Repositories;
 
 public class ParticipantService

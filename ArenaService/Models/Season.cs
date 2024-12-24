@@ -18,7 +18,7 @@ public class Season
 
     public bool IsActivated { get; set; } = false;
 
-    public required ICollection<Participant> Participants { get; set; }
-    public required ICollection<BattleLog> BattleLogs { get; set; }
-    public required ICollection<LeaderboardEntry> Leaderboard { get; set; }
+    public ICollection<Participant> Participants { get; set; } = null!;
+    public ICollection<BattleLog> BattleLogs { get; set; } = null!;
+    public ICollection<LeaderboardEntry> Leaderboard { get; set; } = null!;
 }
