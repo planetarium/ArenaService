@@ -1,6 +1,8 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Dtos;
 using ArenaService.Services;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
 [Route("seasons")]
@@ -15,15 +17,17 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet("current")]
-    public async Task<IActionResult> GetCurrentSeason(int blockIndex)
+    public async Task<Results<NotFound<string>, Ok<SeasonResponse>>> GetCurrentSeason(
+        int blockIndex
+    )
     {
         var currentSeason = await _seasonService.GetCurrentSeasonAsync(blockIndex);
 
         if (currentSeason == null)
         {
-            return NotFound("No active season found.");
+            return TypedResults.NotFound("No active season found.");
         }
 
-        return Ok(currentSeason);
+        return TypedResults.Ok(currentSeason);
     }
 }

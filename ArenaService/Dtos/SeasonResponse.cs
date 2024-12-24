@@ -1,6 +1,6 @@
 namespace ArenaService.Dtos;
 
-public class SeasonDto
+public class SeasonResponse
 {
     public int Id { get; set; }
     public long StartBlockIndex { get; set; }

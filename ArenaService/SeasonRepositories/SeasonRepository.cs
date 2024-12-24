@@ -8,6 +8,7 @@ public interface ISeasonRepository
 {
     Task<List<Season>> GetActivatedSeasonsAsync();
     Task<List<Season>> GetAllSeasonsAsync();
+    Task<Season?> GetSeasonAsync(int id);
 }
 
 public class SeasonRepository : ISeasonRepository
@@ -30,5 +31,10 @@ public class SeasonRepository : ISeasonRepository
     public async Task<List<Season>> GetAllSeasonsAsync()
     {
         return await _context.Seasons.OrderByDescending(s => s.StartBlockIndex).ToListAsync();
+    }
+
+    public async Task<Season?> GetSeasonAsync(int id)
+    {
+        return await _context.Seasons.FindAsync(id);
     }
 }
