@@ -3,24 +3,28 @@ namespace ArenaService.Controllers;
 using System.Security.Claims;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
+using ArenaService.Repositories;
 using ArenaService.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-[Route("seasons/{seasonId}/available-opponents")]
+[Route("seasons/{seasonId}/opponent/{opponentId}/battle")]
 [ApiController]
-public class AvailableOpponentController : ControllerBase
+public class BattleController : ControllerBase
 {
     private readonly AvailableOpponentService _availableOpponentService;
     private readonly ParticipantService _participantService;
+    private readonly IBattleLogRepository _battleLogRepository;
 
-    public AvailableOpponentController(
+    public BattleController(
         AvailableOpponentService availableOpponentService,
-        ParticipantService participantService
+        ParticipantService participantService,
+        IBattleLogRepository battleLogRepository
     )
     {
         _availableOpponentService = availableOpponentService;
         _participantService = participantService;
+        _battleLogRepository = battleLogRepository;
     }
 
     private string? ExtractAvatarAddress()
@@ -33,10 +37,10 @@ public class AvailableOpponentController : ControllerBase
         return null;
     }
 
-    [HttpGet]
+    [HttpPost]
     public async Task<
-        Results<UnauthorizedHttpResult, NotFound<string>, Ok<AvailableOpponentsResponse>>
-    > GetAvailableOpponents(int seasonId)
+        Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>>
+    > CreateBattleToken(int seasonId, int opponentId)
     {
         var avatarAddress = ExtractAvatarAddress();
 
@@ -56,25 +60,13 @@ public class AvailableOpponentController : ControllerBase
         }
 
         var opponents = await _availableOpponentService.GetAvailableOpponents(participant.Id);
-
-        return TypedResults.Ok(
-            new AvailableOpponentsResponse { AvailableOpponents = opponents.ToResponse() }
+        var battleLog = await _battleLogRepository.AddBattleLogAsync(
+            participant.Id,
+            opponentId,
+            seasonId,
+            "token"
         );
-    }
 
-    [HttpPost]
-    public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Created>> ResetOpponents(
-        int seasonId
-    )
-    {
-        var avatarAddress = ExtractAvatarAddress();
-
-        if (avatarAddress is null)
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        // Dummy implementation
-        return TypedResults.Created();
+        return TypedResults.Ok(battleLog.Token);
     }
 }
