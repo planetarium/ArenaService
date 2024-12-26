@@ -6,7 +6,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/ArenaService/bin/Debug/net9.0/ArenaService.dll",
+            "program": "${workspaceFolder}/ArenaService/bin/Debug/net8.0/ArenaService.dll",
             "cwd": "${workspaceFolder}/ArenaService",
             "stopAtEntry": false,
             "env": {

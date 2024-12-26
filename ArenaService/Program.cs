@@ -1,5 +1,6 @@
 using ArenaService.Data;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +15,13 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
+builder.Services.AddScoped<SeasonService>();
+builder.Services.AddScoped<IParticipantRepository, ParticipantRepository>();
+builder.Services.AddScoped<ParticipantService>();
+builder.Services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
+builder.Services.AddScoped<AvailableOpponentService>();
+builder.Services.AddScoped<IBattleLogRepository, BattleLogRepository>();
+builder.Services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
 
 builder.Services.AddCors(options =>
 {
