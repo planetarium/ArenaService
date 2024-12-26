@@ -19,7 +19,8 @@ namespace ArenaService.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     start_block_index = table.Column<long>(type: "bigint", nullable: false),
                     end_block_index = table.Column<long>(type: "bigint", nullable: false),
-                    ticket_refill_interval = table.Column<int>(type: "integer", nullable: false)
+                    ticket_refill_interval = table.Column<int>(type: "integer", nullable: false),
+                    is_activated = table.Column<bool>(type: "boolean", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -35,7 +36,6 @@ namespace ArenaService.Migrations
                     avatar_address = table.Column<string>(type: "text", nullable: false),
                     name_with_hash = table.Column<string>(type: "text", nullable: false),
                     season_id = table.Column<int>(type: "integer", nullable: false),
-                    cp = table.Column<int>(type: "integer", nullable: false),
                     portrait_id = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -86,10 +86,11 @@ namespace ArenaService.Migrations
                     participant_id = table.Column<int>(type: "integer", nullable: false),
                     opponent_id = table.Column<int>(type: "integer", nullable: false),
                     season_id = table.Column<int>(type: "integer", nullable: false),
-                    battle_block_index = table.Column<long>(type: "bigint", nullable: false),
-                    is_victory = table.Column<bool>(type: "boolean", nullable: false),
-                    participant_score_change = table.Column<int>(type: "integer", nullable: false),
-                    opponent_score_change = table.Column<int>(type: "integer", nullable: false)
+                    token = table.Column<string>(type: "text", nullable: false),
+                    is_victory = table.Column<bool>(type: "boolean", nullable: true),
+                    participant_score_change = table.Column<int>(type: "integer", nullable: true),
+                    opponent_score_change = table.Column<int>(type: "integer", nullable: true),
+                    battle_block_index = table.Column<long>(type: "bigint", nullable: true)
                 },
                 constraints: table =>
                 {
