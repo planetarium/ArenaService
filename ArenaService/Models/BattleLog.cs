@@ -10,21 +10,21 @@ public class BattleLog
 
     [Required]
     public int ParticipantId { get; set; }
-    public required Participant Participant { get; set; }
+    public Participant Participant { get; set; } = null!;
 
     [Required]
     public int OpponentId { get; set; }
-    public required Participant Opponent { get; set; }
+    public Participant Opponent { get; set; } = null!;
 
     [Required]
     public int SeasonId { get; set; }
-    public required Season Season { get; set; }
-
-    public long BattleBlockIndex { get; set; }
+    public Season Season { get; set; } = null!;
 
     [Required]
-    public bool IsVictory { get; set; }
+    public required string Token { get; set; }
 
-    public int ParticipantScoreChange { get; set; }
-    public int OpponentScoreChange { get; set; }
+    public bool? IsVictory { get; set; }
+    public int? ParticipantScoreChange { get; set; }
+    public int? OpponentScoreChange { get; set; }
+    public long? BattleBlockIndex { get; set; }
 }
