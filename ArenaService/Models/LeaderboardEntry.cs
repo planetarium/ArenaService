@@ -10,11 +10,11 @@ public class LeaderboardEntry
 
     [Required]
     public int ParticipantId { get; set; }
-    public required Participant Participant { get; set; }
+    public Participant Participant { get; set; } = null!;
 
     [Required]
     public int SeasonId { get; set; }
-    public required Season Season { get; set; }
+    public Season Season { get; set; } = null!;
 
     [Required]
     public int Rank { get; set; }
