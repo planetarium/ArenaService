@@ -10,14 +10,14 @@ public class AvailableOpponent
 
     [Required]
     public int ParticipantId { get; set; }
-    public required Participant Participant { get; set; }
+    public Participant Participant { get; set; } = null!;
 
     [Required]
     public int OpponentId { get; set; }
-    public required Participant Opponent { get; set; }
+    public Participant Opponent { get; set; } = null!;
 
     [Required]
     public long RefillBlockIndex { get; set; }
 
-    public bool IsBattled { get; set; }
+    public bool IsBattled { get; set; } = false;
 }

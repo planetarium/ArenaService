@@ -2,15 +2,17 @@ namespace ArenaService.Repositories;
 
 using ArenaService.Data;
 using ArenaService.Models;
+using Microsoft.EntityFrameworkCore;
 
 public interface IParticipantRepository
 {
-    Task<Participant> InsertParticipantToSpecificSeason(
+    Task<Participant> InsertParticipantToSpecificSeasonAsync(
         int seasonId,
         string avatarAddress,
         string nameWithHash,
         int portraitId
     );
+    Task<Participant?> GetParticipantByAvatarAddressAsync(int seasonId, string avatarAddress);
 }
 
 public class ParticipantRepository : IParticipantRepository
@@ -22,7 +24,7 @@ public class ParticipantRepository : IParticipantRepository
         _context = context;
     }
 
-    public async Task<Participant> InsertParticipantToSpecificSeason(
+    public async Task<Participant> InsertParticipantToSpecificSeasonAsync(
         int seasonId,
         string avatarAddress,
         string nameWithHash,
@@ -40,5 +42,15 @@ public class ParticipantRepository : IParticipantRepository
         );
         _context.SaveChanges();
         return participant.Entity;
+    }
+
+    public async Task<Participant?> GetParticipantByAvatarAddressAsync(
+        int seasonId,
+        string avatarAddress
+    )
+    {
+        return await _context.Participants.FirstOrDefaultAsync(p =>
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
+        );
     }
 }

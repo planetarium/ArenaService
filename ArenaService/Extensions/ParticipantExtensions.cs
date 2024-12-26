@@ -14,4 +14,16 @@ public static class ParticipantExtensions
             PortraitId = participant.PortraitId,
         };
     }
+
+    public static List<ParticipantResponse> ToResponse(this List<Participant> participants)
+    {
+        return participants
+            .Select(p => new ParticipantResponse
+            {
+                AvatarAddress = p.AvatarAddress,
+                NameWithHash = p.NameWithHash,
+                PortraitId = p.PortraitId,
+            })
+            .ToList();
+    }
 }

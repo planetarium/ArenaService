@@ -52,7 +52,7 @@ public class ParticipantControllerTests
         _seasonRepositoryMock.Setup(repo => repo.GetSeasonAsync(season.Id)).ReturnsAsync(season);
         _participantRepositoryMock
             .Setup(repo =>
-                repo.InsertParticipantToSpecificSeason(
+                repo.InsertParticipantToSpecificSeasonAsync(
                     season.Id,
                     participant.AvatarAddress,
                     participant.NameWithHash,
@@ -99,7 +99,7 @@ public class ParticipantControllerTests
         _seasonRepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
         _participantRepositoryMock
             .Setup(repo =>
-                repo.InsertParticipantToSpecificSeason(
+                repo.InsertParticipantToSpecificSeasonAsync(
                     season.Id,
                     participant.AvatarAddress,
                     participant.NameWithHash,
@@ -146,7 +146,7 @@ public class ParticipantControllerTests
         _seasonRepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
         _participantRepositoryMock
             .Setup(repo =>
-                repo.InsertParticipantToSpecificSeason(
+                repo.InsertParticipantToSpecificSeasonAsync(
                     season.Id,
                     participant.AvatarAddress,
                     participant.NameWithHash,
