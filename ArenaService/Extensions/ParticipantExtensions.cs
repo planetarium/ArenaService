@@ -17,13 +17,6 @@ public static class ParticipantExtensions
 
     public static List<ParticipantResponse> ToResponse(this List<Participant> participants)
     {
-        return participants
-            .Select(p => new ParticipantResponse
-            {
-                AvatarAddress = p.AvatarAddress,
-                NameWithHash = p.NameWithHash,
-                PortraitId = p.PortraitId,
-            })
-            .ToList();
+        return participants.Select(p => p.ToResponse()).ToList();
     }
 }
