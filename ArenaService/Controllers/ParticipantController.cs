@@ -6,7 +6,7 @@ using ArenaService.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-[Route("api/seasons/{seasonId}/participants")]
+[Route("seasons/{seasonId}/participants")]
 [ApiController]
 public class ParticipantController : ControllerBase
 {
