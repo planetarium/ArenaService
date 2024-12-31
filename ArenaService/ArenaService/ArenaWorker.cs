@@ -59,8 +59,11 @@ public class ArenaParticipantsWorker : BackgroundService
         }
 
         var tip = _rpcClient.Tip!;
+        var blockIndex = tip.Index;
         var currentRoundData = await _rpcClient.GetRoundData(tip, cancellationToken);
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData, cancellationToken);
+        var championshipId = currentRoundData.ChampionshipId;
+        var round = currentRoundData.Round;
         var cacheKey = $"{currentRoundData.ChampionshipId}_{currentRoundData.Round}";
         var scoreCacheKey = $"{cacheKey}_scores";
         var prevAddrAndScores = await _service.GetAvatarAddrAndScores(scoreCacheKey);
@@ -68,8 +71,8 @@ public class ArenaParticipantsWorker : BackgroundService
         var expiry = TimeSpan.FromMinutes(5);
         if (participants is null)
         {
-            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipant>(), expiry);
-            _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list", cacheKey);
+            await _service.SetArenaParticipantsAsync(cacheKey, new List<ArenaParticipantStruct>(), expiry);
+            _logger.LogInformation("[ArenaParticipantsWorker] participants({CacheKey}) is null. set empty list on {BlockIndex}", cacheKey, blockIndex);
             return;
         }
 
@@ -79,14 +82,68 @@ public class ArenaParticipantsWorker : BackgroundService
         // 이전상태의 아바타 주소, 점수를 비교해서 추가되거나 점수가 변경된 대상만 찾음
         var updatedAddressAndScores = avatarAddrAndScores.Except(prevAddrAndScores).ToList();
         // 전체목록의 랭킹 순서 처리
-        var avatarAddrAndScoresWithRank = _rpcClient.AvatarAddrAndScoresWithRank(avatarAddrAndScores);
+        var avatarAddrAndScoresWithRank = AvatarAddrAndScoresWithRank(avatarAddrAndScores);
         // 전체목록의 ArenaParticipant 업데이트
-        var result = await _rpcClient.GetArenaParticipants(tip, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
+        var tuple = await _rpcClient.GetArenaParticipants(tip, championshipId, round, updatedAddressAndScores.Select(i => i.AvatarAddr).ToList(), avatarAddrAndScoresWithRank, prevArenaParticipants, cancellationToken);
         // 캐시 업데이트
-        await _service.SetArenaParticipantsAsync(cacheKey, result, expiry);
+        await _service.SetArenaParticipantsAsync(cacheKey, tuple.Item1, expiry);
         await _service.SetSeasonAsync(cacheKey, expiry);
         await _service.SetAvatarAddrAndScores(scoreCacheKey, avatarAddrAndScores, expiry);
         sw.Stop();
-        _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}]: {Elapsed}", cacheKey, sw.Elapsed);
+        _logger.LogInformation("[ArenaParticipantsWorker]Set Arena Cache[{CacheKey}] on {BlockIndex}/{LatestBattleBlockIndex}: {Elapsed}", cacheKey, blockIndex, tuple.Item2, sw.Elapsed);
+    }
+
+
+    /// <summary>
+    /// Retrieves the avatar addresses and scores with ranks for a given list of avatar addresses, current round data, and world state.
+    /// </summary>
+    /// <param name="avatarAddrAndScores">Ths list of avatar address and score tuples.</param>
+    /// <returns>The list of avatar addresses, scores, and ranks.</returns>
+    public static List<ArenaScoreAndRank> AvatarAddrAndScoresWithRank(List<AvatarAddressAndScore> avatarAddrAndScores)
+    {
+        if (avatarAddrAndScores.Count == 0)
+        {
+            return new List<ArenaScoreAndRank>();
+        }
+
+        if (avatarAddrAndScores.Count == 1)
+        {
+            var score = avatarAddrAndScores.Single();
+            return [new ArenaScoreAndRank(score.AvatarAddr, score.Score, 1)];
+        }
+
+        var orderedTuples = avatarAddrAndScores
+            .OrderByDescending(tuple => tuple.Score)
+            .ThenBy(tuple => tuple.AvatarAddr)
+            .ToList();
+
+        var avatarAddrAndScoresWithRank = new List<ArenaScoreAndRank>();
+        while (orderedTuples.Count > 0)
+        {
+            // 동점자를 찾기위해 기준 점수 설정
+            var currentScore = orderedTuples.First().Score;
+            var groupSize = 0;
+            var targets = new List<AvatarAddressAndScore>();
+            foreach (var tuple in orderedTuples)
+            {
+                if (currentScore == tuple.Score)
+                {
+                    groupSize++;
+                    targets.Add(tuple);
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            // 순위는 기존 상위권 순위 + 동점자의 숫자
+            var rank = avatarAddrAndScoresWithRank.Count + groupSize;
+            avatarAddrAndScoresWithRank.AddRange(targets.Select(tuple => new ArenaScoreAndRank(tuple.AvatarAddr, tuple.Score, rank)));
+            // 다음 순위 설정을 위해 이번 그룹 숫자만큼 삭제
+            orderedTuples.RemoveRange(0, groupSize);
+        }
+
+        return avatarAddrAndScoresWithRank;
     }
 }

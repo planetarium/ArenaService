@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService", "ArenaServic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NineChronicles.RPC.Shared", "..\NineChronicles.RPC.Shared\NineChronicles.RPC.Shared\NineChronicles.RPC.Shared.csproj", "{C936C300-10D8-4A70-8815-67F16CEC6A0A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.Tests", "..\ArenaService.Tests\ArenaService.Tests.csproj", "{B8F66D71-6DAB-4CF3-B5DA-E35FAAB393F9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{C936C300-10D8-4A70-8815-67F16CEC6A0A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C936C300-10D8-4A70-8815-67F16CEC6A0A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C936C300-10D8-4A70-8815-67F16CEC6A0A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B8F66D71-6DAB-4CF3-B5DA-E35FAAB393F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8F66D71-6DAB-4CF3-B5DA-E35FAAB393F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8F66D71-6DAB-4CF3-B5DA-E35FAAB393F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8F66D71-6DAB-4CF3-B5DA-E35FAAB393F9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal
