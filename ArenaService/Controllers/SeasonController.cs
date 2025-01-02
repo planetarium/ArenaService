@@ -1,7 +1,9 @@
 namespace ArenaService.Controllers;
 
 using ArenaService.Dtos;
-using ArenaService.Services;
+using ArenaService.Extensions;
+using ArenaService.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,11 +11,11 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class SeasonController : ControllerBase
 {
-    private readonly SeasonService _seasonService;
+    private readonly ISeasonRepository _seasonRepo;
 
-    public SeasonController(SeasonService seasonService)
+    public SeasonController(ISeasonRepository seasonRepo)
     {
-        _seasonService = seasonService;
+        _seasonRepo = seasonRepo;
     }
 
     [HttpGet("current")]
@@ -21,13 +23,23 @@ public class SeasonController : ControllerBase
         int blockIndex
     )
     {
-        var currentSeason = await _seasonService.GetCurrentSeasonAsync(blockIndex);
+        var seasons = await _seasonRepo.GetActivatedSeasonsAsync();
+        var currentSeason = seasons.FirstOrDefault(s =>
+            s.StartBlockIndex <= blockIndex && s.EndBlockIndex >= blockIndex
+        );
 
         if (currentSeason == null)
         {
             return TypedResults.NotFound("No active season found.");
         }
 
-        return TypedResults.Ok(currentSeason);
+        return TypedResults.Ok(currentSeason?.ToResponse());
+    }
+
+    [HttpPost("/{id}")]
+    [Authorize(Roles = "Admin", AuthenticationSchemes = "ES256K")]
+    public async Task<Results<NotFound<string>, Ok>> AddSeason()
+    {
+        return TypedResults.Ok();
     }
 }

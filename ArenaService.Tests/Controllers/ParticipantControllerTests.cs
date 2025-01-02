@@ -1,8 +1,10 @@
-﻿using ArenaService.Controllers;
+﻿using System.Security.Claims;
+using ArenaService.Controllers;
 using ArenaService.Dtos;
 using ArenaService.Models;
 using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Tests.Utils;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -12,25 +14,26 @@ namespace ArenaService.Tests.Controllers;
 public class ParticipantControllerTests
 {
     private readonly ParticipantController _controller;
-    private Mock<ISeasonRepository> _seasonRepositoryMock;
-    private Mock<IParticipantRepository> _participantRepositoryMock;
-    private SeasonService _seasonService;
-    private ParticipantService _participantService;
+    private Mock<ISeasonRepository> _seasonRepoMock;
+    private Mock<IParticipantRepository> _participantRepoMock;
 
     public ParticipantControllerTests()
     {
-        var seasonRepositoryMock = new Mock<ISeasonRepository>();
-        var participantRepositoryMock = new Mock<IParticipantRepository>();
-        _seasonRepositoryMock = seasonRepositoryMock;
-        _participantRepositoryMock = participantRepositoryMock;
-        _seasonService = new SeasonService(_seasonRepositoryMock.Object);
-        _participantService = new ParticipantService(_participantRepositoryMock.Object);
-        _controller = new ParticipantController(_participantService, _seasonService);
+        var seasonRepoMock = new Mock<ISeasonRepository>();
+        var participantRepoMock = new Mock<IParticipantRepository>();
+        _seasonRepoMock = seasonRepoMock;
+        _participantRepoMock = participantRepoMock;
+        _controller = new ParticipantController(
+            _participantRepoMock.Object,
+            _seasonRepoMock.Object
+        );
     }
 
     [Fact]
     public async Task Join_ActivatedSeasonsExist_ReturnsOk()
     {
+        ControllerTestUtils.ConfigureMockHttpContextWithAuth(_controller, "test-avatar-address");
+
         var season = new Season
         {
             Id = 1,
@@ -49,8 +52,8 @@ public class ParticipantControllerTests
             Season = season
         };
 
-        _seasonRepositoryMock.Setup(repo => repo.GetSeasonAsync(season.Id)).ReturnsAsync(season);
-        _participantRepositoryMock
+        _seasonRepoMock.Setup(repo => repo.GetSeasonAsync(season.Id)).ReturnsAsync(season);
+        _participantRepoMock
             .Setup(repo =>
                 repo.InsertParticipantToSpecificSeasonAsync(
                     season.Id,
@@ -63,13 +66,7 @@ public class ParticipantControllerTests
 
         var result = await _controller.Join(
             1,
-            new JoinRequest
-            {
-                AvatarAddress = "test",
-                AuthToken = "test",
-                NameWithHash = "test",
-                PortraitId = 1
-            }
+            new JoinRequest { NameWithHash = "test", PortraitId = 1 }
         );
 
         var okResult = Assert.IsType<Created>(result.Result);
@@ -78,6 +75,7 @@ public class ParticipantControllerTests
     [Fact]
     public async Task Join_ActivatedSeasonsNotExist_ReturnsNotFound()
     {
+        ControllerTestUtils.ConfigureMockHttpContextWithAuth(_controller, "test-avatar-address");
         var season = new Season
         {
             Id = 1,
@@ -96,8 +94,8 @@ public class ParticipantControllerTests
             Season = season
         };
 
-        _seasonRepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
-        _participantRepositoryMock
+        _seasonRepoMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
+        _participantRepoMock
             .Setup(repo =>
                 repo.InsertParticipantToSpecificSeasonAsync(
                     season.Id,
@@ -110,13 +108,7 @@ public class ParticipantControllerTests
 
         var result = await _controller.Join(
             1,
-            new JoinRequest
-            {
-                AvatarAddress = "test",
-                AuthToken = "test",
-                NameWithHash = "test",
-                PortraitId = 1
-            }
+            new JoinRequest { NameWithHash = "test", PortraitId = 1 }
         );
 
         Assert.IsType<NotFound<string>>(result.Result);
@@ -125,6 +117,7 @@ public class ParticipantControllerTests
     [Fact]
     public async Task Join_SeasonsNotExist_ReturnsNotFound()
     {
+        ControllerTestUtils.ConfigureMockHttpContextWithAuth(_controller, "test-avatar-address");
         var season = new Season
         {
             Id = 1,
@@ -143,8 +136,8 @@ public class ParticipantControllerTests
             Season = season
         };
 
-        _seasonRepositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
-        _participantRepositoryMock
+        _seasonRepoMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync([season]);
+        _participantRepoMock
             .Setup(repo =>
                 repo.InsertParticipantToSpecificSeasonAsync(
                     season.Id,
@@ -157,13 +150,7 @@ public class ParticipantControllerTests
 
         var result = await _controller.Join(
             2,
-            new JoinRequest
-            {
-                AvatarAddress = "test",
-                AuthToken = "test",
-                NameWithHash = "test",
-                PortraitId = 1
-            }
+            new JoinRequest { NameWithHash = "test", PortraitId = 1 }
         );
 
         var okResult = Assert.IsType<NotFound<string>>(result.Result);

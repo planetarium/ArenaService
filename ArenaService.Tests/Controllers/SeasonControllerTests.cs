@@ -2,9 +2,7 @@
 using ArenaService.Dtos;
 using ArenaService.Models;
 using ArenaService.Repositories;
-using ArenaService.Services;
 using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.AspNetCore.Mvc;
 using Moq;
 
 namespace ArenaService.Tests.Controllers;
@@ -12,15 +10,13 @@ namespace ArenaService.Tests.Controllers;
 public class SeasonControllerTests
 {
     private readonly SeasonController _controller;
-    private Mock<ISeasonRepository> _repositoryMock;
-    private SeasonService _service;
+    private Mock<ISeasonRepository> _repoMock;
 
     public SeasonControllerTests()
     {
-        var repositoryMock = new Mock<ISeasonRepository>();
-        _repositoryMock = repositoryMock;
-        _service = new SeasonService(repositoryMock.Object);
-        _controller = new SeasonController(_service);
+        var repoMock = new Mock<ISeasonRepository>();
+        _repoMock = repoMock;
+        _controller = new SeasonController(_repoMock.Object);
     }
 
     [Fact]
@@ -47,7 +43,7 @@ public class SeasonControllerTests
             }
         };
 
-        _repositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(seasons);
+        _repoMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(seasons);
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 
@@ -87,7 +83,7 @@ public class SeasonControllerTests
             }
         };
 
-        _repositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(seasons);
+        _repoMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(seasons);
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 
@@ -128,7 +124,7 @@ public class SeasonControllerTests
             }
         };
 
-        _repositoryMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(seasons);
+        _repoMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(seasons);
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 
@@ -140,9 +136,7 @@ public class SeasonControllerTests
     {
         var blockIndex = 1000;
 
-        _repositoryMock
-            .Setup(repo => repo.GetActivatedSeasonsAsync())
-            .ReturnsAsync(new List<Season>());
+        _repoMock.Setup(repo => repo.GetActivatedSeasonsAsync()).ReturnsAsync(new List<Season>());
 
         var result = await _controller.GetCurrentSeason(blockIndex);
 

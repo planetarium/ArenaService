@@ -1,9 +1,9 @@
 namespace ArenaService.Controllers;
 
-using System.Security.Claims;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
-using ArenaService.Services;
+using ArenaService.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,41 +11,27 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class AvailableOpponentController : ControllerBase
 {
-    private readonly AvailableOpponentService _availableOpponentService;
-    private readonly ParticipantService _participantService;
+    private readonly IAvailableOpponentRepository _availableOpponentRepo;
+    private readonly IParticipantRepository _participantRepo;
 
     public AvailableOpponentController(
-        AvailableOpponentService availableOpponentService,
-        ParticipantService participantService
+        IAvailableOpponentRepository availableOpponentRepo,
+        IParticipantRepository participantRepo
     )
     {
-        _availableOpponentService = availableOpponentService;
-        _participantService = participantService;
-    }
-
-    private string? ExtractAvatarAddress()
-    {
-        if (HttpContext.User.Identity is ClaimsIdentity identity)
-        {
-            var claim = identity.FindFirst("avatar");
-            return claim?.Value;
-        }
-        return null;
+        _availableOpponentRepo = availableOpponentRepo;
+        _participantRepo = participantRepo;
     }
 
     [HttpGet]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<AvailableOpponentsResponse>>
     > GetAvailableOpponents(int seasonId)
     {
-        var avatarAddress = ExtractAvatarAddress();
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        if (avatarAddress is null)
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        var participant = await _participantService.GetParticipantByAvatarAddressAsync(
+        var participant = await _participantRepo.GetParticipantByAvatarAddressAsync(
             seasonId,
             avatarAddress
         );
@@ -55,7 +41,8 @@ public class AvailableOpponentController : ControllerBase
             return TypedResults.NotFound("Not participant user.");
         }
 
-        var opponents = await _availableOpponentService.GetAvailableOpponents(participant.Id);
+        var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(participant.Id);
+        var opponents = availableOpponents.Select(ao => ao.Opponent).ToList();
 
         return TypedResults.Ok(
             new AvailableOpponentsResponse { AvailableOpponents = opponents.ToResponse() }
@@ -63,16 +50,12 @@ public class AvailableOpponentController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Created>> ResetOpponents(
         int seasonId
     )
     {
-        var avatarAddress = ExtractAvatarAddress();
-
-        if (avatarAddress is null)
-        {
-            return TypedResults.Unauthorized();
-        }
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
         // Dummy implementation
         return TypedResults.Created();

@@ -10,19 +10,19 @@ namespace ArenaService.Tests.Controllers;
 public class LeaderboardControllerTests
 {
     private readonly LeaderboardController _controller;
-    private Mock<ILeaderboardRepository> _leaderboardRepositoryMock;
+    private Mock<ILeaderboardRepository> _leaderboardRepoMock;
 
     public LeaderboardControllerTests()
     {
-        var leaderboardRepositoryMock = new Mock<ILeaderboardRepository>();
-        _leaderboardRepositoryMock = leaderboardRepositoryMock;
-        _controller = new LeaderboardController(_leaderboardRepositoryMock.Object);
+        var leaderboardRepoMock = new Mock<ILeaderboardRepository>();
+        _leaderboardRepoMock = leaderboardRepoMock;
+        _controller = new LeaderboardController(_leaderboardRepoMock.Object);
     }
 
     [Fact]
     public async Task Join_ActivatedSeasonsExist_ReturnsOk()
     {
-        _leaderboardRepositoryMock
+        _leaderboardRepoMock
             .Setup(repo => repo.GetMyRankAsync(1, 1))
             .ReturnsAsync(
                 new LeaderboardEntry
