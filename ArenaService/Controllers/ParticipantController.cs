@@ -1,8 +1,9 @@
 namespace ArenaService.Controllers;
 
 using ArenaService.Dtos;
-using ArenaService.Exceptions;
-using ArenaService.Services;
+using ArenaService.Extensions;
+using ArenaService.Repositories;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,24 +11,37 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class ParticipantController : ControllerBase
 {
-    private readonly ParticipantService _participantService;
-    private readonly SeasonService _seasonService;
+    private readonly IParticipantRepository _participantRepo;
+    private readonly ISeasonRepository _seasonRepo;
 
-    public ParticipantController(ParticipantService participantService, SeasonService seasonService)
+    public ParticipantController(
+        IParticipantRepository participantRepo,
+        ISeasonRepository seasonRepo
+    )
     {
-        _participantService = participantService;
-        _seasonService = seasonService;
+        _participantRepo = participantRepo;
+        _seasonRepo = seasonRepo;
     }
 
     [HttpPost]
-    public async Task<Results<NotFound<string>, Created>> Join(
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Created>> Join(
         int seasonId,
         [FromBody] JoinRequest joinRequest
     )
     {
-        if (await _seasonService.IsActivatedSeason(seasonId))
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
+
+        var season = await _seasonRepo.GetSeasonAsync(seasonId);
+
+        if (season is not null && season.IsActivated)
         {
-            await _participantService.AddParticipantAsync(seasonId, joinRequest);
+            await _participantRepo.InsertParticipantToSpecificSeasonAsync(
+                seasonId,
+                avatarAddress,
+                joinRequest.NameWithHash,
+                joinRequest.PortraitId
+            );
             return TypedResults.Created();
         }
 

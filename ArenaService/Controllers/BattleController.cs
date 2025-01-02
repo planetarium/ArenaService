@@ -1,10 +1,8 @@
 namespace ArenaService.Controllers;
 
-using System.Security.Claims;
-using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
-using ArenaService.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -12,44 +10,30 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class BattleController : ControllerBase
 {
-    private readonly AvailableOpponentService _availableOpponentService;
-    private readonly ParticipantService _participantService;
-    private readonly IBattleLogRepository _battleLogRepository;
+    private readonly IAvailableOpponentRepository _availableOpponentRepo;
+    private readonly IParticipantRepository _participantRepo;
+    private readonly IBattleLogRepository _battleLogRepo;
 
     public BattleController(
-        AvailableOpponentService availableOpponentService,
-        ParticipantService participantService,
-        IBattleLogRepository battleLogRepository
+        IAvailableOpponentRepository availableOpponentService,
+        IParticipantRepository participantService,
+        IBattleLogRepository battleLogRepo
     )
     {
-        _availableOpponentService = availableOpponentService;
-        _participantService = participantService;
-        _battleLogRepository = battleLogRepository;
-    }
-
-    private string? ExtractAvatarAddress()
-    {
-        if (HttpContext.User.Identity is ClaimsIdentity identity)
-        {
-            var claim = identity.FindFirst("avatar");
-            return claim?.Value;
-        }
-        return null;
+        _availableOpponentRepo = availableOpponentService;
+        _participantRepo = participantService;
+        _battleLogRepo = battleLogRepo;
     }
 
     [HttpPost]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>>
     > CreateBattleToken(int seasonId, int opponentId)
     {
-        var avatarAddress = ExtractAvatarAddress();
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        if (avatarAddress is null)
-        {
-            return TypedResults.Unauthorized();
-        }
-
-        var participant = await _participantService.GetParticipantByAvatarAddressAsync(
+        var participant = await _participantRepo.GetParticipantByAvatarAddressAsync(
             seasonId,
             avatarAddress
         );
@@ -59,8 +43,8 @@ public class BattleController : ControllerBase
             return TypedResults.NotFound("Not participant user.");
         }
 
-        var opponents = await _availableOpponentService.GetAvailableOpponents(participant.Id);
-        var battleLog = await _battleLogRepository.AddBattleLogAsync(
+        var opponents = await _availableOpponentRepo.GetAvailableOpponents(participant.Id);
+        var battleLog = await _battleLogRepo.AddBattleLogAsync(
             participant.Id,
             opponentId,
             seasonId,

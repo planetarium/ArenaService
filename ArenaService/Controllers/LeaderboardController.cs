@@ -10,11 +10,11 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class LeaderboardController : ControllerBase
 {
-    private readonly ILeaderboardRepository _leaderboardRepository;
+    private readonly ILeaderboardRepository _leaderboardRepo;
 
-    public LeaderboardController(ILeaderboardRepository leaderboardRepository)
+    public LeaderboardController(ILeaderboardRepository leaderboardRepo)
     {
-        _leaderboardRepository = leaderboardRepository;
+        _leaderboardRepo = leaderboardRepo;
     }
 
     // [HttpGet]
@@ -33,7 +33,7 @@ public class LeaderboardController : ControllerBase
         int participantId
     )
     {
-        var leaderboardEntry = await _leaderboardRepository.GetMyRankAsync(seasonId, participantId);
+        var leaderboardEntry = await _leaderboardRepo.GetMyRankAsync(seasonId, participantId);
 
         if (leaderboardEntry == null)
         {
