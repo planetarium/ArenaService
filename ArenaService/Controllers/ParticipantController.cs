@@ -25,7 +25,10 @@ public class ParticipantController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Created>> Join(
+    [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    public async Task<Results<NotFound<string>, Created>> Join(
         int seasonId,
         [FromBody] JoinRequest joinRequest
     )

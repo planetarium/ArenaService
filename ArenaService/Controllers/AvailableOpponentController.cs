@@ -25,6 +25,9 @@ public class AvailableOpponentController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [ProducesResponseType(typeof(AvailableOpponentsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<AvailableOpponentsResponse>>
     > GetAvailableOpponents(int seasonId)
@@ -51,6 +54,9 @@ public class AvailableOpponentController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
     public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Created>> ResetOpponents(
         int seasonId
     )

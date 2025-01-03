@@ -27,6 +27,9 @@ public class BattleController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>>
     > CreateBattleToken(int seasonId, int opponentId)

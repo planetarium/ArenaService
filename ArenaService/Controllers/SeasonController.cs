@@ -19,6 +19,8 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet("current")]
+    [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
     public async Task<Results<NotFound<string>, Ok<SeasonResponse>>> GetCurrentSeason(
         int blockIndex
     )
@@ -37,6 +39,10 @@ public class SeasonController : ControllerBase
     }
 
     [HttpPost("/{id}")]
+    [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(typeof(ForbidHttpResult), StatusCodes.Status403Forbidden)]
+    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
     [Authorize(Roles = "Admin", AuthenticationSchemes = "ES256K")]
     public async Task<Results<NotFound<string>, Ok>> AddSeason()
     {
