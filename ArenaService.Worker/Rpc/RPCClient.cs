@@ -1,40 +1,33 @@
-namespace ArenaService.Worker;
+namespace ArenaService.Worker.Rpc;
 
 using System.Collections.Concurrent;
-using System.Diagnostics;
+using ArenaService.Worker.Options;
 using Bencodex;
 using Bencodex.Types;
 using Grpc.Core;
 using Grpc.Net.Client;
-using Lib9c.Model.Order;
 using Lib9c.Renderers;
 using Libplanet.Action;
-using Libplanet.Action.State;
 using Libplanet.Crypto;
 using Libplanet.Types.Blocks;
 using MagicOnion.Client;
 using Microsoft.Extensions.Options;
-using Nekoyume;
 using Nekoyume.Action;
-using Nekoyume.Model.Item;
-using Nekoyume.Model.Market;
-using Nekoyume.Model.State;
 using Nekoyume.Shared.Hubs;
 using Nekoyume.Shared.Services;
-using Nekoyume.TableData;
-using Nekoyume.TableData.Crystal;
 
 public class RpcClient
 {
+    private const int MaxDegreeOfParallelism = 8;
+    private readonly Codec _codec = new();
+    private readonly Receiver _receiver;
     private readonly Address _address;
     private readonly GrpcChannel _channel;
-    private readonly Codec _codec = new();
     private readonly ILogger<RpcClient> _logger;
-    private readonly Receiver _receiver;
+    public IBlockChainService Service = null!;
     private bool _ready;
     private bool _selfDisconnect;
 
-    public IBlockChainService Service = null!;
     private IActionEvaluationHub _hub;
 
     public bool Ready => _ready;
@@ -43,12 +36,18 @@ public class RpcClient
 
     private readonly ActionRenderer _actionRenderer;
 
-    public RpcClient(ILogger<RpcClient> logger, Receiver receiver, ActionRenderer actionRenderer)
+    public RpcClient(
+        IOptions<RpcConfigOptions> options,
+        ILogger<RpcClient> logger,
+        Receiver receiver,
+        ActionRenderer actionRenderer
+    )
     {
         _logger = logger;
         _address = new PrivateKey().Address;
+        var rpcConfigOptions = options.Value;
         _channel = GrpcChannel.ForAddress(
-            "http://odin-rpc-1.nine-chronicles.com:31238",
+            $"http://{rpcConfigOptions.Host}:{rpcConfigOptions.Port}",
             new GrpcChannelOptions
             {
                 Credentials = ChannelCredentials.Insecure,
@@ -116,6 +115,28 @@ public class RpcClient
         }
     }
 
+    public async Task<Dictionary<Address, IValue>> GetStates(
+        byte[] hashBytes,
+        byte[] accountBytes,
+        List<byte[]> addressList
+    )
+    {
+        var result = new ConcurrentDictionary<Address, IValue>();
+        var queryResult = await Service.GetBulkStateByStateRootHash(
+            hashBytes,
+            accountBytes,
+            addressList
+        );
+        queryResult
+            .AsParallel()
+            .WithDegreeOfParallelism(MaxDegreeOfParallelism)
+            .ForAll(kv =>
+            {
+                result.TryAdd(new Address(kv.Key), _codec.Decode(kv.Value));
+            });
+        return result.ToDictionary(kv => kv.Key, kv => kv.Value);
+    }
+
     private async Task Join(CancellationToken stoppingToken)
     {
         _hub = await StreamingHubClient.ConnectAsync<
@@ -141,15 +162,6 @@ public class RpcClient
     {
         _selfDisconnect = true;
         await _hub.LeaveAsync();
-    }
-
-    public async Task<byte[]> GetBlockStateRootHashBytes()
-    {
-        while (Tip is null)
-        {
-            await Task.Delay(1000);
-        }
-        return _receiver.Tip.StateRootHash.ToByteArray();
     }
 
     internal class LocalRandom : Random, IRandom

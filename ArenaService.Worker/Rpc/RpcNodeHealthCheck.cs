@@ -1,4 +1,4 @@
-namespace ArenaService.Worker;
+namespace ArenaService.Worker.Rpc;
 
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 

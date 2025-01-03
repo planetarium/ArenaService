@@ -1,4 +1,4 @@
-namespace ArenaService.Worker;
+namespace ArenaService.Worker.Rpc;
 
 public class RpcService(RpcClient rpcClient, RpcNodeHealthCheck rpcNodeHealthCheck) : IHostedService
 {

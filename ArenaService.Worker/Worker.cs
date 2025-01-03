@@ -1,3 +1,5 @@
+using ArenaService.Worker.Rpc;
+
 namespace ArenaService.Worker;
 
 public class Worker : BackgroundService

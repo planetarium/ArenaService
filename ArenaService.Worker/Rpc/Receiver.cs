@@ -1,4 +1,4 @@
-namespace ArenaService.Worker;
+namespace ArenaService.Worker.Rpc;
 
 using System.IO.Compression;
 using Bencodex;
@@ -18,10 +18,7 @@ public class Receiver : IActionEvaluationHubReceiver
     private readonly Codec _codec = new Codec();
     private readonly ActionRenderer _actionRenderer;
 
-    public Receiver(
-        ILogger<Receiver> logger,
-        ActionRenderer actionRenderer
-    )
+    public Receiver(ILogger<Receiver> logger, ActionRenderer actionRenderer)
     {
         _logger = logger;
         _actionRenderer = actionRenderer;

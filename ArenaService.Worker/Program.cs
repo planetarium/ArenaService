@@ -1,6 +1,7 @@
 using ArenaService.Worker;
-using Lib9c.Renderers;
+using ArenaService.Worker.Rpc;
 using Lib9c.Formatters;
+using Lib9c.Renderers;
 using MessagePack;
 using MessagePack.Resolvers;
 
@@ -13,10 +14,7 @@ builder.Services.AddSingleton<Receiver>();
 builder.Services.AddHostedService<RpcService>();
 builder.Services.AddSingleton<ActionRenderer>();
 
-var resolver = MessagePack.Resolvers.CompositeResolver.Create(
-    NineChroniclesResolver.Instance,
-    StandardResolver.Instance
-);
+var resolver = CompositeResolver.Create(NineChroniclesResolver.Instance, StandardResolver.Instance);
 var options = MessagePackSerializerOptions.Standard.WithResolver(resolver);
 MessagePackSerializer.DefaultOptions = options;
 
