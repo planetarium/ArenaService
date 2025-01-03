@@ -12,6 +12,19 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Development"
             }
-        }
+        },
+        {
+            "name": "Debug ArenaService.Worker",
+            "type": "coreclr",
+            "request": "launch",
+            "program": "${workspaceFolder}/ArenaService.Worker/bin/Debug/net8.0/ArenaService.Worker.dll",
+            "cwd": "${workspaceFolder}/ArenaService.Worker",
+            "stopAtEntry": false,
+            "console": "internalConsole",
+            "preLaunchTask": "build-worker",
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
+      },
     ]
 } 
