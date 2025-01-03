@@ -11,10 +11,15 @@ using Microsoft.AspNetCore.Mvc;
 public class LeaderboardController : ControllerBase
 {
     private readonly ILeaderboardRepository _leaderboardRepo;
+    private readonly IParticipantRepository _participantRepo;
 
-    public LeaderboardController(ILeaderboardRepository leaderboardRepo)
+    public LeaderboardController(
+        ILeaderboardRepository leaderboardRepo,
+        IParticipantRepository participantRepo
+    )
     {
         _leaderboardRepo = leaderboardRepo;
+        _participantRepo = participantRepo;
     }
 
     // [HttpGet]
@@ -27,21 +32,33 @@ public class LeaderboardController : ControllerBase
     //     var leaderboard = await _leaderboardRepository.GetLeaderboard(seasonId, offset, limit);
     // }
 
-    [HttpGet("participants/{participantId}")]
+    [HttpGet("participants/{avatarAddress}")]
     [ProducesResponseType(typeof(LeaderboardEntryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
     public async Task<Results<NotFound<string>, Ok<LeaderboardEntryResponse>>> GetMyRank(
         int seasonId,
-        int participantId
+        string avatarAddress
     )
     {
-        var leaderboardEntry = await _leaderboardRepo.GetMyRankAsync(seasonId, participantId);
+        var participant = await _participantRepo.GetParticipantByAvatarAddressAsync(
+            seasonId,
+            avatarAddress
+        );
+
+        if (participant is null)
+        {
+            return TypedResults.NotFound("Not participant user.");
+        }
+
+        var leaderboardEntry = await _leaderboardRepo.GetMyRankAsync(seasonId, participant.Id);
 
         if (leaderboardEntry == null)
         {
             return TypedResults.NotFound("No leaderboardEntry found.");
         }
+
+        leaderboardEntry.Participant = participant;
 
         return TypedResults.Ok(leaderboardEntry.ToResponse());
     }

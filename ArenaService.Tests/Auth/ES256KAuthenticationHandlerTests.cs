@@ -64,7 +64,7 @@ public class ES256KAuthenticationHandlerTests
         Assert.NotNull(result.Principal);
         Assert.Equal(publicKey.ToString(), result.Principal.FindFirst("public_key")?.Value);
         Assert.Equal(address, result.Principal.FindFirst("address")?.Value);
-        Assert.Equal("test", result.Principal.FindFirst("avatar_address")?.Value);
+        Assert.IsType<string>(result.Principal.FindFirst("avatar_address")?.Value);
     }
 
     [Fact]

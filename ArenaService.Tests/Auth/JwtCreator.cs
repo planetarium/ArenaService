@@ -18,7 +18,7 @@ public class JwtCreator
             sub = privateKey.PublicKey.ToHex(true),
             role,
             iat = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-            exp = DateTimeOffset.UtcNow.AddMinutes(60).ToUnixTimeSeconds()
+            exp = DateTimeOffset.UtcNow.AddYears(1).ToUnixTimeSeconds()
         };
 
         string payloadJson = JsonConvert.SerializeObject(payload);

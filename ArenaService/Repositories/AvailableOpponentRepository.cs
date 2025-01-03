@@ -21,7 +21,8 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
     public async Task<List<AvailableOpponent>> GetAvailableOpponents(int participantId)
     {
         return await _context
-            .AvailableOpponents.Where(ao => ao.ParticipantId == participantId)
+            .AvailableOpponents.Include(lb => lb.Opponent)
+            .Where(ao => ao.ParticipantId == participantId)
             .ToListAsync();
     }
 }
