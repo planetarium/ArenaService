@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 public class HealthCheckController : ControllerBase
 {
     [HttpGet]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Index()
     {
         return Ok();

@@ -30,7 +30,6 @@ public class Startup
                 .UseSnakeCaseNamingConvention()
         );
         services.AddEndpointsApiExplorer();
-        services.AddSwaggerGen();
 
         services.AddSwaggerGen(options =>
         {
@@ -40,7 +39,7 @@ public class Startup
             );
 
             options.AddSecurityDefinition(
-                "Bearer",
+                "BearerAuth",
                 new OpenApiSecurityScheme
                 {
                     Name = "Authorization",
@@ -53,22 +52,7 @@ public class Startup
                 }
             );
 
-            options.AddSecurityRequirement(
-                new OpenApiSecurityRequirement
-                {
-                    {
-                        new OpenApiSecurityScheme
-                        {
-                            Reference = new OpenApiReference
-                            {
-                                Type = ReferenceType.SecurityScheme,
-                                Id = "Bearer"
-                            }
-                        },
-                        Array.Empty<string>()
-                    }
-                }
-            );
+            options.OperationFilter<AuthorizeCheckOperationFilter>();
         });
 
         services.AddScoped<ISeasonRepository, SeasonRepository>();
@@ -102,6 +86,7 @@ public class Startup
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
+            endpoints.MapSwagger();
         });
     }
 }
