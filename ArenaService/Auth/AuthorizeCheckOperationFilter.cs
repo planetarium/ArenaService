@@ -39,7 +39,7 @@ public class AuthorizeCheckOperationFilter : IOperationFilter
             operation.Parameters.Add(
                 new OpenApiParameter
                 {
-                    Name = "JWT Authorization",
+                    Name = "Authorization",
                     In = ParameterLocation.Header,
                     Description =
                         "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",

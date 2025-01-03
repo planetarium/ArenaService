@@ -14,7 +14,7 @@ public class JwtCreator
         var payload = new
         {
             iss = "user",
-            avt_adr = "test",
+            avt_adr = "c106714d1bf09c37bcff24362eea5508d925f37a",
             sub = privateKey.PublicKey.ToHex(true),
             role,
             iat = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
