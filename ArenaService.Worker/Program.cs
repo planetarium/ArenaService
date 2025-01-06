@@ -1,4 +1,5 @@
 using ArenaService.Worker;
+using ArenaService.Worker.Options;
 using ArenaService.Worker.Rpc;
 using Lib9c.Formatters;
 using Lib9c.Renderers;
@@ -6,8 +7,12 @@ using MessagePack;
 using MessagePack.Resolvers;
 
 var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
 
+builder.Services.Configure<RpcConfigOptions>(
+    builder.Configuration.GetSection(RpcConfigOptions.RpcConfig)
+);
+
+builder.Services.AddHostedService<Worker>();
 builder.Services.AddHostedService<RpcNodeCheckService>().AddSingleton<RpcNodeHealthCheck>();
 builder.Services.AddSingleton<RpcClient>();
 builder.Services.AddSingleton<Receiver>();

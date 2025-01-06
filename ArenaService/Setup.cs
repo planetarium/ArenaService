@@ -87,6 +87,7 @@ public class Startup
         {
             endpoints.MapControllers();
             endpoints.MapSwagger();
+            endpoints.MapHealthChecks("/ping");
         });
     }
 }

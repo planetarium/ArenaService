@@ -25,22 +25,20 @@ public class RpcClient
     private readonly GrpcChannel _channel;
     private readonly ILogger<RpcClient> _logger;
     public IBlockChainService Service = null!;
-    private bool _ready;
-    private bool _selfDisconnect;
-
     private IActionEvaluationHub _hub;
 
+    private bool _ready;
     public bool Ready => _ready;
+    private bool _selfDisconnect;
+
     public Block Tip => _receiver.Tip;
     public Block PreviousTip => _receiver.PreviousTip;
 
-    private readonly ActionRenderer _actionRenderer;
 
     public RpcClient(
         IOptions<RpcConfigOptions> options,
         ILogger<RpcClient> logger,
-        Receiver receiver,
-        ActionRenderer actionRenderer
+        Receiver receiver
     )
     {
         _logger = logger;
@@ -61,31 +59,6 @@ public class RpcClient
             }
         );
         _receiver = receiver;
-        _actionRenderer = actionRenderer;
-        _actionRenderer.ActionRenderSubject.Subscribe(RenderAction);
-    }
-
-    /// <summary>
-    /// Insert or Update <see cref="ProductModel"/> by Market related actions.
-    /// </summary>
-    /// <param name="ev"></param>
-    public async void RenderAction(ActionEvaluation<ActionBase> ev)
-    {
-        if (ev.Exception is null)
-        {
-            var seed = ev.RandomSeed;
-            var random = new LocalRandom(seed);
-            var stateRootHash = ev.OutputState;
-            var hashBytes = stateRootHash.ToByteArray();
-            switch (ev.Action)
-            {
-                // Insert new product
-                case DailyReward d:
-                {
-                    break;
-                }
-            }
-        }
     }
 
     public async Task StartAsync(CancellationToken stoppingToken)
@@ -162,16 +135,5 @@ public class RpcClient
     {
         _selfDisconnect = true;
         await _hub.LeaveAsync();
-    }
-
-    internal class LocalRandom : Random, IRandom
-    {
-        public int Seed { get; }
-
-        public LocalRandom(int seed)
-            : base(seed)
-        {
-            Seed = seed;
-        }
     }
 }
