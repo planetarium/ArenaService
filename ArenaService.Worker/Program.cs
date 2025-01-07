@@ -12,12 +12,12 @@ builder.Services.Configure<RpcConfigOptions>(
     builder.Configuration.GetSection(RpcConfigOptions.RpcConfig)
 );
 
-builder.Services.AddHostedService<Worker>();
-builder.Services.AddHostedService<RpcNodeCheckService>().AddSingleton<RpcNodeHealthCheck>();
-builder.Services.AddSingleton<RpcClient>();
-builder.Services.AddSingleton<Receiver>();
-builder.Services.AddHostedService<RpcService>();
-builder.Services.AddSingleton<ActionRenderer>();
+// builder.Services.AddHostedService<Worker>();
+// builder.Services.AddHostedService<RpcNodeCheckService>().AddSingleton<RpcNodeHealthCheck>();
+// builder.Services.AddSingleton<RpcClient>();
+// builder.Services.AddSingleton<Receiver>();
+// builder.Services.AddHostedService<RpcService>();
+// builder.Services.AddSingleton<ActionRenderer>();
 
 var resolver = CompositeResolver.Create(NineChroniclesResolver.Instance, StandardResolver.Instance);
 var options = MessagePackSerializerOptions.Standard.WithResolver(resolver);
