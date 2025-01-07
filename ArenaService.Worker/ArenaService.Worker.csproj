@@ -9,14 +9,14 @@
 
   <ItemGroup>
     <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
-    <PackageReference Include="Lib9c.MessagePack" Version="1.20.1" />
     <PackageReference Include="MagicOnion.Client" Version="6.1.4" />
-    <PackageReference Include="Lib9c" Version="1.21.0-dev.8613e22c127154ca86ddf988efd125974e9fc50f" />
-    <PackageReference Include="Lib9c.Renderers" Version="1.20.1" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Lib9c\Lib9c\Lib9c.csproj" />
+    <ProjectReference Include="..\Lib9c\Lib9c.MessagePack\Lib9c.MessagePack.csproj" />
+    <ProjectReference Include="..\Lib9c\Lib9c.Renderers\Lib9c.Renderers.csproj" />
     <ProjectReference Include="..\NineChronicles.RPC.Shared\NineChronicles.RPC.Shared\NineChronicles.RPC.Shared.csproj" />
   </ItemGroup>
 </Project>
