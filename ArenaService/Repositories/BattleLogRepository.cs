@@ -2,6 +2,7 @@ namespace ArenaService.Repositories;
 
 using ArenaService.Data;
 using ArenaService.Models;
+using Microsoft.EntityFrameworkCore;
 
 public interface IBattleLogRepository
 {
@@ -11,6 +12,14 @@ public interface IBattleLogRepository
         int seasonId,
         string token
     );
+    Task<BattleLog> UpdateBattleResultAsync(
+        int battleLogId,
+        bool isVictory,
+        int participantScoreChange,
+        int OpponentScoreChange,
+        long blockIndex
+    );
+    Task<BattleLog?> GetBattleLogAsync(int battleLogId);
 }
 
 public class BattleLogRepository : IBattleLogRepository
@@ -40,5 +49,38 @@ public class BattleLogRepository : IBattleLogRepository
         );
         _context.SaveChanges();
         return battleLog.Entity;
+    }
+
+    public async Task<BattleLog> UpdateBattleResultAsync(
+        int battleLogId,
+        bool isVictory,
+        int participantScoreChange,
+        int opponentScoreChange,
+        long blockIndex
+    )
+    {
+        var battleLog = await _context.BattleLogs.FindAsync(battleLogId);
+        if (battleLog == null)
+        {
+            throw new KeyNotFoundException($"BattleLog with ID {battleLogId} not found.");
+        }
+
+        battleLog.IsVictory = isVictory;
+        battleLog.ParticipantScoreChange = participantScoreChange;
+        battleLog.OpponentScoreChange = opponentScoreChange;
+        battleLog.BattleBlockIndex = blockIndex;
+
+        _context.BattleLogs.Update(battleLog);
+        await _context.SaveChangesAsync();
+
+        return battleLog;
+    }
+
+    public async Task<BattleLog?> GetBattleLogAsync(int battleLogId)
+    {
+        var battleLog = await _context
+            .BattleLogs.Include(b => b.Participant)
+            .FirstOrDefaultAsync(b => b.Id == battleLogId);
+        return battleLog;
     }
 }
