@@ -81,7 +81,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
-    public Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>> ResultBattle(
+    public Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>> RequestBattle(
         string txId,
         int logId
     )

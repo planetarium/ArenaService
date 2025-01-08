@@ -4,6 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace ArenaService.Models;
 
 [Table("leaderboard")]
+// score board
 public class LeaderboardEntry
 {
     public int Id { get; set; }
@@ -16,7 +17,5 @@ public class LeaderboardEntry
     public int SeasonId { get; set; }
     public Season Season { get; set; } = null!;
 
-    [Required]
-    public int Rank { get; set; }
     public int TotalScore { get; set; } = 1000;
 }

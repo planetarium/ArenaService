@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using StackExchange.Redis;
 
 public class Startup
 {
@@ -68,6 +69,15 @@ public class Startup
                 .UseNpgsql(Configuration.GetConnectionString("DefaultConnection"))
                 .UseSnakeCaseNamingConvention()
         );
+
+        services.AddSingleton<IConnectionMultiplexer>(provider =>
+        {
+            var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
+            return ConnectionMultiplexer.Connect(
+                $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}"
+            );
+        });
+
         services.AddEndpointsApiExplorer();
 
         services.AddSwaggerGen(options =>
@@ -94,6 +104,7 @@ public class Startup
             options.OperationFilter<AuthorizeCheckOperationFilter>();
         });
 
+        services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
@@ -113,8 +124,8 @@ public class Startup
             {
                 var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
                 config.UseRedisStorage(
-                    $"{redisOptions.Host}:{redisOptions.Port}",
-                    new RedisStorageOptions { Prefix = redisOptions.Prefix }
+                    $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.HangfireDbNumber}",
+                    new RedisStorageOptions { Prefix = redisOptions.HangfirePrefix }
                 );
             }
         );
