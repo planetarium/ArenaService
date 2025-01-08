@@ -1,21 +1,26 @@
+using ArenaService.Client;
+
 namespace ArenaService.Worker;
 
 public class BattleTaskProcessor
 {
     private readonly ILogger<BattleTaskProcessor> _logger;
+    private readonly IHeadlessClient _client;
 
-    public BattleTaskProcessor(ILogger<BattleTaskProcessor> logger)
+    public BattleTaskProcessor(ILogger<BattleTaskProcessor> logger, IHeadlessClient client)
     {
         _logger = logger;
+        _client = client;
     }
 
-    public async Task ProcessAsync(string taskId)
+    public async Task ProcessAsync(string txId, int battleLogId)
     {
-        _logger.LogInformation($"Starting long-running task for TaskId: {taskId}");
+        var response = await _client.GetTransactionResult.ExecuteAsync(txId);
 
-        // 예: 시간이 오래 걸리는 작업 (3초 대기)
+        _logger.LogInformation(
+            $"Temp: {txId}, {response.Data?.Transaction.TransactionResult.TxStatus}"
+        );
+
         await Task.Delay(300000);
-
-        _logger.LogInformation($"Completed long-running task for TaskId: {taskId}");
     }
 }

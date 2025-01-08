@@ -23,6 +23,39 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         services.Configure<RedisOptions>(Configuration.GetSection(RedisOptions.SectionName));
+        services.Configure<HeadlessOptions>(Configuration.GetSection(HeadlessOptions.SectionName));
+
+        services
+            .AddHeadlessClient()
+            .ConfigureHttpClient(
+                (provider, client) =>
+                {
+                    var headlessOptions = provider.GetRequiredService<IOptions<HeadlessOptions>>();
+                    client.BaseAddress = headlessOptions.Value.HeadlessEndpoint;
+
+                    // if (
+                    //     headlessStateServiceOption.Value.JwtSecretKey is not null
+                    //     && headlessStateServiceOption.Value.JwtIssuer is not null
+                    // )
+                    // {
+                    //     var key = new SymmetricSecurityKey(
+                    //         Encoding.UTF8.GetBytes(headlessStateServiceOption.Value.JwtSecretKey)
+                    //     );
+                    //     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                    //     var token = new JwtSecurityToken(
+                    //         issuer: headlessStateServiceOption.Value.JwtIssuer,
+                    //         expires: DateTime.UtcNow.AddMinutes(5),
+                    //         signingCredentials: creds
+                    //     );
+
+                    //     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                    //         "Bearer",
+                    //         new JwtSecurityTokenHandler().WriteToken(token)
+                    //     );
+                    // }
+                }
+            );
 
         services.AddControllers();
 
