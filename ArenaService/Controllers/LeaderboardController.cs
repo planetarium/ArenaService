@@ -12,14 +12,17 @@ public class LeaderboardController : ControllerBase
 {
     private readonly ILeaderboardRepository _leaderboardRepo;
     private readonly IParticipantRepository _participantRepo;
+    private readonly IRankingRepository _rankingRepository;
 
     public LeaderboardController(
         ILeaderboardRepository leaderboardRepo,
-        IParticipantRepository participantRepo
+        IParticipantRepository participantRepo,
+        IRankingRepository rankingRepository
     )
     {
         _leaderboardRepo = leaderboardRepo;
         _participantRepo = participantRepo;
+        _rankingRepository = rankingRepository;
     }
 
     // [HttpGet]
@@ -51,15 +54,25 @@ public class LeaderboardController : ControllerBase
             return TypedResults.NotFound("Not participant user.");
         }
 
-        var leaderboardEntry = await _leaderboardRepo.GetMyRankAsync(seasonId, participant.Id);
+        var rankingKey = $"ranking:season:{seasonId}";
 
-        if (leaderboardEntry == null)
+        var rank = await _rankingRepository.GetRankAsync(rankingKey, participant.Id);
+        var score = await _rankingRepository.GetScoreAsync(rankingKey, participant.Id);
+
+        if (rank is null || score is null)
         {
-            return TypedResults.NotFound("No leaderboardEntry found.");
+            return TypedResults.NotFound("Not participant user.");
         }
 
-        leaderboardEntry.Participant = participant;
-
-        return TypedResults.Ok(leaderboardEntry.ToResponse());
+        return TypedResults.Ok(
+            new LeaderboardEntryResponse
+            {
+                AvatarAddress = participant.AvatarAddress,
+                NameWithHash = participant.NameWithHash,
+                PortraitId = participant.PortraitId,
+                Rank = rank.Value,
+                TotalScore = score.Value,
+            }
+        );
     }
 }
