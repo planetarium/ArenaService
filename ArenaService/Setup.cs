@@ -2,9 +2,13 @@ namespace ArenaService;
 
 using ArenaService.Auth;
 using ArenaService.Data;
+using ArenaService.Options;
 using ArenaService.Repositories;
+using Hangfire;
+using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 
 public class Startup
@@ -18,6 +22,41 @@ public class Startup
 
     public void ConfigureServices(IServiceCollection services)
     {
+        services.Configure<RedisOptions>(Configuration.GetSection(RedisOptions.SectionName));
+        services.Configure<HeadlessOptions>(Configuration.GetSection(HeadlessOptions.SectionName));
+
+        services
+            .AddHeadlessClient()
+            .ConfigureHttpClient(
+                (provider, client) =>
+                {
+                    var headlessOptions = provider.GetRequiredService<IOptions<HeadlessOptions>>();
+                    client.BaseAddress = headlessOptions.Value.HeadlessEndpoint;
+
+                    // if (
+                    //     headlessStateServiceOption.Value.JwtSecretKey is not null
+                    //     && headlessStateServiceOption.Value.JwtIssuer is not null
+                    // )
+                    // {
+                    //     var key = new SymmetricSecurityKey(
+                    //         Encoding.UTF8.GetBytes(headlessStateServiceOption.Value.JwtSecretKey)
+                    //     );
+                    //     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+                    //     var token = new JwtSecurityToken(
+                    //         issuer: headlessStateServiceOption.Value.JwtIssuer,
+                    //         expires: DateTime.UtcNow.AddMinutes(5),
+                    //         signingCredentials: creds
+                    //     );
+
+                    //     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                    //         "Bearer",
+                    //         new JwtSecurityTokenHandler().WriteToken(token)
+                    //     );
+                    // }
+                }
+            );
+
         services.AddControllers();
 
         services
@@ -68,6 +107,21 @@ public class Startup
                 builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
             );
         });
+
+        services.AddHangfire(
+            (provider, config) =>
+            {
+                var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
+                config.UseRedisStorage(
+                    $"{redisOptions.Host}:{redisOptions.Port}",
+                    new RedisStorageOptions { Prefix = redisOptions.Prefix }
+                );
+            }
+        );
+
+        services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
+
+        services.AddHangfireServer();
     }
 
     public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -83,10 +137,13 @@ public class Startup
         app.UseRouting();
         app.UseAuthorization();
 
+        app.UseHangfireDashboard("/hangfire");
+
         app.UseEndpoints(endpoints =>
         {
             endpoints.MapControllers();
             endpoints.MapSwagger();
+            // endpoints.MapHealthChecks("/ping");
         });
     }
 }

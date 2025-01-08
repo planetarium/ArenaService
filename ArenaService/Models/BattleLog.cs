@@ -13,12 +13,11 @@ public class BattleLog
     public Participant Participant { get; set; } = null!;
 
     [Required]
-    public int OpponentId { get; set; }
-    public Participant Opponent { get; set; } = null!;
-
-    [Required]
     public int SeasonId { get; set; }
     public Season Season { get; set; } = null!;
+
+    public int OpponentId { get; set; }
+    public Participant Opponent { get; set; } = null!;
 
     [Required]
     public required string Token { get; set; }

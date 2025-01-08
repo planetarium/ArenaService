@@ -12,6 +12,24 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+
+  redis:
+    image: redis:latest
+    container_name: redis-test
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
 
 volumes:
-  postgres_data: 
+  postgres_data:
+  redis-data:
+
+
+networks:
+  app-network:
+    driver: bridge

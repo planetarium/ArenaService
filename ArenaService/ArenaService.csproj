@@ -8,11 +8,17 @@
 
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="8.0.0" />
+    <PackageReference Include="Hangfire" Version="1.8.17" />
+    <PackageReference Include="Hangfire.Redis.StackExchange" Version="1.9.4" />
     <PackageReference Include="Libplanet.Crypto" Version="5.4.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
     <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
+    <PackageReference Include="StrawberryShake.Server" Version="14.3.0" />
     <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Lib9c\Lib9c\Lib9c.csproj" />
+  </ItemGroup>
 </Project>
