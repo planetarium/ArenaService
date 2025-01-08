@@ -7,8 +7,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService", "ArenaServic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.Tests", "ArenaService.Tests\ArenaService.Tests.csproj", "{C9C1D7B6-AB58-43C4-9043-8D934B21F10F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.Worker", "ArenaService.Worker\ArenaService.Worker.csproj", "{628EBB8C-A264-4491-92E8-D7CE892F9BC7}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

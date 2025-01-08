@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 public class JwtCreator
 {
-    public static string CreateJwt(PrivateKey privateKey, string role = "user")
+    public static string CreateJwt(PrivateKey privateKey, string role = "User")
     {
         var payload = new
         {
