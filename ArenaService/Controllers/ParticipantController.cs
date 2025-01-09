@@ -13,14 +13,17 @@ public class ParticipantController : ControllerBase
 {
     private readonly IParticipantRepository _participantRepo;
     private readonly ISeasonRepository _seasonRepo;
+    private readonly IUserRepository _userRepo;
 
     public ParticipantController(
         IParticipantRepository participantRepo,
-        ISeasonRepository seasonRepo
+        ISeasonRepository seasonRepo,
+        IUserRepository userRepo
     )
     {
         _participantRepo = participantRepo;
         _seasonRepo = seasonRepo;
+        _userRepo = userRepo;
     }
 
     [HttpPost]
@@ -28,26 +31,42 @@ public class ParticipantController : ControllerBase
     [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
-    public async Task<Results<NotFound<string>, Created>> Join(
+    [ProducesResponseType(typeof(Conflict<string>), StatusCodes.Status409Conflict)]
+    public async Task<Results<NotFound<string>, Conflict<string>, Created>> Participate(
         int seasonId,
-        [FromBody] JoinRequest joinRequest
+        [FromBody] ParticipateRequest participateRequest
     )
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
+        var agentAddress = HttpContext.User.RequireAgentAddress();
 
         var season = await _seasonRepo.GetSeasonAsync(seasonId);
 
-        if (season is not null && season.IsActivated)
+        if (season is null)
         {
-            await _participantRepo.InsertParticipantToSpecificSeasonAsync(
-                seasonId,
-                avatarAddress,
-                joinRequest.NameWithHash,
-                joinRequest.PortraitId
-            );
-            return TypedResults.Created();
+            return TypedResults.NotFound("No season found.");
         }
 
-        return TypedResults.NotFound("No active season found.");
+        var existingParticipant = await _participantRepo.GetParticipantAsync(
+            seasonId,
+            avatarAddress
+        );
+        if (existingParticipant is not null)
+        {
+            return TypedResults.Conflict(
+                $"User with AvatarAddress {avatarAddress} is already participating in this season."
+            );
+        }
+
+        await _userRepo.AddOrGetUserAsync(
+            agentAddress,
+            avatarAddress,
+            participateRequest.NameWithHash,
+            participateRequest.PortraitId,
+            participateRequest.Cp,
+            participateRequest.Level
+        );
+        await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
+        return TypedResults.Created();
     }
 }

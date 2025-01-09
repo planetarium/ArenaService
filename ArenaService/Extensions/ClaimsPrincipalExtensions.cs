@@ -1,14 +1,27 @@
 using System.Security.Claims;
+using Libplanet.Crypto;
 
 namespace ArenaService.Extensions;
 
 public static class ClaimsPrincipalExtensions
 {
-    public static string RequireAvatarAddress(this ClaimsPrincipal user)
+    public static Address RequireAvatarAddress(this ClaimsPrincipal user)
     {
-        return user?.Claims.FirstOrDefault(c => c.Type == "avatar_address")?.Value
+        var address =
+            user?.Claims.FirstOrDefault(c => c.Type == "avatar_address")?.Value
             ?? throw new UnauthorizedAccessException(
                 "Avatar address is required but not provided."
             );
+
+        return new Address(address);
+    }
+
+    public static Address RequireAgentAddress(this ClaimsPrincipal user)
+    {
+        var address =
+            user?.Claims.FirstOrDefault(c => c.Type == "address")?.Value
+            ?? throw new UnauthorizedAccessException("Agent address is required but not provided.");
+
+        return new Address(address);
     }
 }

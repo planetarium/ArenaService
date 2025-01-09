@@ -3,6 +3,7 @@ namespace ArenaService.Controllers;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
+using Libplanet.Crypto;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -10,17 +11,14 @@ using Microsoft.AspNetCore.Mvc;
 [ApiController]
 public class LeaderboardController : ControllerBase
 {
-    private readonly ILeaderboardRepository _leaderboardRepo;
     private readonly IParticipantRepository _participantRepo;
     private readonly IRankingRepository _rankingRepository;
 
     public LeaderboardController(
-        ILeaderboardRepository leaderboardRepo,
         IParticipantRepository participantRepo,
         IRankingRepository rankingRepository
     )
     {
-        _leaderboardRepo = leaderboardRepo;
         _participantRepo = participantRepo;
         _rankingRepository = rankingRepository;
     }
@@ -44,9 +42,9 @@ public class LeaderboardController : ControllerBase
         string avatarAddress
     )
     {
-        var participant = await _participantRepo.GetParticipantByAvatarAddressAsync(
+        var participant = await _participantRepo.GetParticipantAsync(
             seasonId,
-            avatarAddress
+            new Address(avatarAddress)
         );
 
         if (participant is null)
@@ -56,22 +54,35 @@ public class LeaderboardController : ControllerBase
 
         var rankingKey = $"ranking:season:{seasonId}";
 
-        var rank = await _rankingRepository.GetRankAsync(rankingKey, participant.Id);
-        var score = await _rankingRepository.GetScoreAsync(rankingKey, participant.Id);
+        var rank = await _rankingRepository.GetRankAsync(
+            rankingKey,
+            participant.AvatarAddress,
+            seasonId
+        );
+        var score = await _rankingRepository.GetScoreAsync(
+            rankingKey,
+            participant.AvatarAddress,
+            seasonId
+        );
 
         if (rank is null || score is null)
         {
-            return TypedResults.NotFound("Not participant user.");
+            return TypedResults.NotFound("rank null.");
         }
+
+        var participantResponse = participant.ToResponse();
 
         return TypedResults.Ok(
             new LeaderboardEntryResponse
             {
-                AvatarAddress = participant.AvatarAddress,
-                NameWithHash = participant.NameWithHash,
-                PortraitId = participant.PortraitId,
+                AvatarAddress = participantResponse.AvatarAddress,
+                NameWithHash = participantResponse.NameWithHash,
+                PortraitId = participantResponse.PortraitId,
+                Cp = participantResponse.Cp,
+                Level = participantResponse.Level,
+                SeasonId = participantResponse.SeasonId,
+                Score = participantResponse.Score,
                 Rank = rank.Value,
-                TotalScore = score.Value,
             }
         );
     }

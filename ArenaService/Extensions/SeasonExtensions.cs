@@ -10,9 +10,9 @@ public static class SeasonExtensions
         return new SeasonResponse
         {
             Id = season.Id,
-            StartBlockIndex = season.StartBlockIndex,
-            EndBlockIndex = season.EndBlockIndex,
-            TicketRefillInterval = season.TicketRefillInterval
+            StartBlockIndex = season.StartBlock,
+            EndBlockIndex = season.EndBlock,
+            Interval = season.Interval
         };
     }
 }

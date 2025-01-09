@@ -2,14 +2,15 @@ namespace ArenaService.Repositories;
 
 using ArenaService.Data;
 using ArenaService.Models;
+using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
 public interface IBattleLogRepository
 {
     Task<BattleLog> AddBattleLogAsync(
-        int participantId,
-        int opponentId,
         int seasonId,
+        Address attackerAvatarAddress,
+        Address defenderAvatarAddress,
         string token
     );
     Task<BattleLog> UpdateBattleResultAsync(
@@ -32,18 +33,18 @@ public class BattleLogRepository : IBattleLogRepository
     }
 
     public async Task<BattleLog> AddBattleLogAsync(
-        int participantId,
-        int opponentId,
         int seasonId,
+        Address attackerAvatarAddress,
+        Address defenderAvatarAddress,
         string token
     )
     {
         var battleLog = await _context.BattleLogs.AddAsync(
             new BattleLog
             {
-                ParticipantId = participantId,
-                OpponentId = opponentId,
                 SeasonId = seasonId,
+                AttackerAvatarAddress = attackerAvatarAddress.ToHex(),
+                DefenderAvatarAddress = defenderAvatarAddress.ToHex(),
                 Token = token
             }
         );
@@ -79,7 +80,8 @@ public class BattleLogRepository : IBattleLogRepository
     public async Task<BattleLog?> GetBattleLogAsync(int battleLogId)
     {
         var battleLog = await _context
-            .BattleLogs.Include(b => b.Participant)
+            .BattleLogs.Include(b => b.Attacker)
+            .Include(b => b.Defender)
             .FirstOrDefaultAsync(b => b.Id == battleLogId);
         return battleLog;
     }
