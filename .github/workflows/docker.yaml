@@ -17,6 +17,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          submodules: true
 
       - # Add support for more platforms with QEMU (optional)
         # https://github.com/docker/setup-qemu-action
