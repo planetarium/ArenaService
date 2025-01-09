@@ -5,6 +5,7 @@ using ArenaService.Extensions;
 using ArenaService.Repositories;
 using ArenaService.Worker;
 using Hangfire;
+using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -41,33 +42,12 @@ public class BattleController : ControllerBase
     > CreateBattleToken(int seasonId, string opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
-
-        var participant = await _participantRepo.GetParticipantByAvatarAddressAsync(
-            seasonId,
-            avatarAddress
-        );
-
-        if (participant is null)
-        {
-            return TypedResults.NotFound("Not participant user.");
-        }
-
-        // var opponents = await _availableOpponentRepo.GetAvailableOpponents(participant.Id);
-
-        var opponent = await _participantRepo.GetParticipantByAvatarAddressAsync(
-            seasonId,
-            opponentAvatarAddress
-        );
-
-        if (opponent is null)
-        {
-            return TypedResults.NotFound("Not participant user.");
-        }
+        var defenderAvatarAddress = new Address(opponentAvatarAddress);
 
         var battleLog = await _battleLogRepo.AddBattleLogAsync(
-            participant.Id,
-            opponent.Id,
             seasonId,
+            avatarAddress,
+            defenderAvatarAddress,
             "token"
         );
 
@@ -81,7 +61,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
-    public Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>> RequestBattle(
+    public Results<UnauthorizedHttpResult, NotFound<string>, Ok> RequestBattle(
         string txId,
         int logId
     )
@@ -90,7 +70,7 @@ public class BattleController : ControllerBase
             processor.ProcessAsync(txId, logId)
         );
 
-        return TypedResults.Ok("test");
+        return TypedResults.Ok();
     }
 
     [HttpGet("{battleLogId}")]
@@ -98,7 +78,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
-    public Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>> GetBattleLog(int logId)
+    public Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>> GetBattleLog(int battleLogId)
     {
         return TypedResults.Ok("test");
     }

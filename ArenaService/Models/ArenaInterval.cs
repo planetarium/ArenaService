@@ -3,19 +3,18 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArenaService.Models;
 
-[Table("leaderboard")]
-// score board
-public class LeaderboardEntry
+[Table("arena_interval")]
+public class ArenaInterval
 {
     public int Id { get; set; }
-
-    [Required]
-    public int ParticipantId { get; set; }
-    public Participant Participant { get; set; } = null!;
 
     [Required]
     public int SeasonId { get; set; }
     public Season Season { get; set; } = null!;
 
-    public int TotalScore { get; set; } = 1000;
+    [Required]
+    public long StartBlock { get; set; }
+
+    [Required]
+    public long EndBlock { get; set; }
 }

@@ -2,17 +2,14 @@ namespace ArenaService.Repositories;
 
 using ArenaService.Data;
 using ArenaService.Models;
+using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
 public interface IParticipantRepository
 {
-    Task<Participant> InsertParticipantToSpecificSeasonAsync(
-        int seasonId,
-        string avatarAddress,
-        string nameWithHash,
-        int portraitId
-    );
-    Task<Participant?> GetParticipantByAvatarAddressAsync(int seasonId, string avatarAddress);
+    Task<Participant> AddParticipantAsync(int seasonId, Address avatarAddress);
+    Task<Participant?> GetParticipantAsync(int seasonId, Address avatarAddress);
+    Task<Participant> UpdateScoreAsync(int seasonId, Address avatarAddress, int scoreChange);
 }
 
 public class ParticipantRepository : IParticipantRepository
@@ -24,33 +21,44 @@ public class ParticipantRepository : IParticipantRepository
         _context = context;
     }
 
-    public async Task<Participant> InsertParticipantToSpecificSeasonAsync(
-        int seasonId,
-        string avatarAddress,
-        string nameWithHash,
-        int portraitId
-    )
+    public async Task<Participant> AddParticipantAsync(int seasonId, Address avatarAddress)
     {
         var participant = await _context.Participants.AddAsync(
-            new Participant
-            {
-                AvatarAddress = avatarAddress,
-                NameWithHash = nameWithHash,
-                PortraitId = portraitId,
-                SeasonId = seasonId
-            }
+            new Participant { AvatarAddress = avatarAddress.ToHex(), SeasonId = seasonId }
         );
         _context.SaveChanges();
         return participant.Entity;
     }
 
-    public async Task<Participant?> GetParticipantByAvatarAddressAsync(
+    public async Task<Participant?> GetParticipantAsync(int seasonId, Address avatarAddress)
+    {
+        return await _context
+            .Participants.Include(p => p.User)
+            .FirstOrDefaultAsync(p =>
+                p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex()
+            );
+    }
+
+    public async Task<Participant> UpdateScoreAsync(
         int seasonId,
-        string avatarAddress
+        Address avatarAddress,
+        int scoreChange
     )
     {
-        return await _context.Participants.FirstOrDefaultAsync(p =>
-            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
+        var participant = await _context.Participants.FirstOrDefaultAsync(p =>
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex()
         );
+        ;
+        if (participant == null)
+        {
+            throw new KeyNotFoundException($"Participants {seasonId}, {avatarAddress} not found.");
+        }
+
+        participant.Score += scoreChange;
+
+        _context.Participants.Update(participant);
+        await _context.SaveChangesAsync();
+
+        return participant;
     }
 }

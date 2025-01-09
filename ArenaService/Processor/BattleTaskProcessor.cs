@@ -55,7 +55,7 @@ public class BattleTaskProcessor
                     var accountAddress = Addresses.Battle.Derive(
                         ArenaProvider.PLANETARIUM.ToString()
                     );
-                    var stateAddress = new Address(battleLog.Participant.AvatarAddress).Derive(
+                    var stateAddress = new Address(battleLog.Attacker.AvatarAddress).Derive(
                         txId.ToString()
                     );
 

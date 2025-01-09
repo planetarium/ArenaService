@@ -10,8 +10,12 @@ public static class ParticipantExtensions
         return new ParticipantResponse
         {
             AvatarAddress = participant.AvatarAddress,
-            NameWithHash = participant.NameWithHash,
-            PortraitId = participant.PortraitId,
+            NameWithHash = participant.User.NameWithHash,
+            PortraitId = participant.User.PortraitId,
+            Cp = participant.User.Cp,
+            Level = participant.User.Level,
+            Score = participant.Score,
+            SeasonId = participant.SeasonId,
         };
     }
 

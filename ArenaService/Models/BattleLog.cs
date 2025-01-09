@@ -9,15 +9,14 @@ public class BattleLog
     public int Id { get; set; }
 
     [Required]
-    public int ParticipantId { get; set; }
-    public Participant Participant { get; set; } = null!;
+    public int SeasonId { get; set; }
 
     [Required]
-    public int SeasonId { get; set; }
-    public Season Season { get; set; } = null!;
+    public required string AttackerAvatarAddress { get; set; }
+    public Participant Attacker { get; set; } = null!;
 
-    public int OpponentId { get; set; }
-    public Participant Opponent { get; set; } = null!;
+    public required string DefenderAvatarAddress { get; set; }
+    public Participant Defender { get; set; } = null!;
 
     [Required]
     public required string Token { get; set; }

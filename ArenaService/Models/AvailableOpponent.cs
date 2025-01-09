@@ -3,21 +3,31 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArenaService.Models;
 
+public enum UpdateSource
+{
+    FREE,
+    UserPaid
+}
+
 [Table("available_opponents")]
 public class AvailableOpponent
 {
-    public int Id { get; set; }
+    [Required]
+    public int SeasonId { get; set; }
 
     [Required]
-    public int ParticipantId { get; set; }
+    public required string ParticipantAvatarAddress { get; set; }
     public Participant Participant { get; set; } = null!;
 
     [Required]
-    public int OpponentId { get; set; }
-    public Participant Opponent { get; set; } = null!;
+    public int IntervalId { get; set; }
+    public ArenaInterval ArenaInterval { get; set; } = null!;
 
     [Required]
-    public long RefillBlockIndex { get; set; }
+    [Column("opponent_avatar_addresses", TypeName = "text[]")]
+    public List<string> OpponentAvatarAddresses { get; set; } = new List<string>();
 
-    public bool IsBattled { get; set; } = false;
+    public UpdateSource UpdateSource { get; set; }
+
+    public string CostPaid { get; set; }
 }

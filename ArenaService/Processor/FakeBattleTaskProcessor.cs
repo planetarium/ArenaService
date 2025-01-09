@@ -15,16 +15,19 @@ public class FakeBattleTaskProcessor
     private readonly ILogger<BattleTaskProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly IBattleLogRepository _battleLogRepo;
+    private readonly IParticipantRepository _participantRepo;
 
     public FakeBattleTaskProcessor(
         ILogger<BattleTaskProcessor> logger,
         IHeadlessClient client,
-        IBattleLogRepository battleLogRepo
+        IBattleLogRepository battleLogRepo,
+        IParticipantRepository participantRepo
     )
     {
         _logger = logger;
         _client = client;
         _battleLogRepo = battleLogRepo;
+        _participantRepo = participantRepo;
     }
 
     public async Task ProcessAsync(string txId, int battleLogId)
@@ -35,5 +38,10 @@ public class FakeBattleTaskProcessor
         await Task.Delay(8000);
 
         await _battleLogRepo.UpdateBattleResultAsync(battleLogId, true, 10, 10, 1);
+        await _participantRepo.UpdateScoreAsync(
+            battleLog.SeasonId,
+            new Address(battleLog.Attacker.AvatarAddress),
+            10
+        );
     }
 }

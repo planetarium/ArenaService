@@ -9,16 +9,14 @@ public class Season
     public int Id { get; set; }
 
     [Required]
-    public long StartBlockIndex { get; set; }
+    public long StartBlock { get; set; }
 
     [Required]
-    public long EndBlockIndex { get; set; }
+    public long EndBlock { get; set; }
 
-    public int TicketRefillInterval { get; set; } = 600;
-
-    public bool IsActivated { get; set; } = false;
+    [Required]
+    public int Interval { get; set; } = 100;
 
     public ICollection<Participant> Participants { get; set; } = null!;
-    public ICollection<BattleLog> BattleLogs { get; set; } = null!;
-    public ICollection<LeaderboardEntry> Leaderboard { get; set; } = null!;
+    public ICollection<ArenaInterval> ArenaIntervals { get; set; } = null!;
 }

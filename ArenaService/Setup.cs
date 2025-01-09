@@ -104,12 +104,13 @@ public class Startup
             options.OperationFilter<AuthorizeCheckOperationFilter>();
         });
 
-        services.AddScoped<IRankingRepository, RankingRepository>();
+        services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
+        services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
-        services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
         services.AddScoped<IBattleLogRepository, BattleLogRepository>();
-        services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
+        services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
+        services.AddScoped<IArenaIntervalRepository, ArenaIntervalRepository>();
 
         services.AddCors(options =>
         {

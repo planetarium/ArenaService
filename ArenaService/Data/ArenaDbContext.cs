@@ -8,56 +8,62 @@ public class ArenaDbContext : DbContext
     public ArenaDbContext(DbContextOptions<ArenaDbContext> options)
         : base(options) { }
 
+    public required DbSet<User> Users { get; set; }
+    public required DbSet<Season> Seasons { get; set; }
     public required DbSet<Participant> Participants { get; set; }
     public required DbSet<BattleLog> BattleLogs { get; set; }
-    public required DbSet<Season> Seasons { get; set; }
-    public required DbSet<LeaderboardEntry> Leaderboard { get; set; }
     public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
+    public required DbSet<ArenaInterval> ArenaIntervals { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder
-            .Entity<BattleLog>()
-            .HasOne(b => b.Participant)
-            .WithMany(p => p.BattleLogs)
-            .HasForeignKey(b => b.ParticipantId);
+        modelBuilder.Entity<Participant>().HasKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
-            .Entity<BattleLog>()
-            .HasOne(b => b.Opponent)
+            .Entity<Participant>()
+            .HasOne(p => p.User)
             .WithMany()
-            .HasForeignKey(b => b.OpponentId);
+            .HasForeignKey(p => p.AvatarAddress)
+            .HasPrincipalKey(u => u.AvatarAddress);
 
         modelBuilder
             .Entity<BattleLog>()
-            .HasOne(b => b.Season)
-            .WithMany(s => s.BattleLogs)
-            .HasForeignKey(b => b.SeasonId);
+            .HasOne(b => b.Defender)
+            .WithMany()
+            .HasForeignKey(b => new { b.DefenderAvatarAddress, b.SeasonId })
+            .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
-            .Entity<LeaderboardEntry>()
-            .HasOne(le => le.Participant)
-            .WithMany(p => p.Leaderboard)
-            .HasForeignKey(le => le.ParticipantId);
+            .Entity<BattleLog>()
+            .HasOne(b => b.Attacker)
+            .WithMany()
+            .HasForeignKey(b => new { b.AttackerAvatarAddress, b.SeasonId })
+            .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
-            .Entity<LeaderboardEntry>()
-            .HasOne(le => le.Season)
-            .WithMany(s => s.Leaderboard)
-            .HasForeignKey(le => le.SeasonId);
+            .Entity<AvailableOpponent>()
+            .HasKey(ao => new { ao.ParticipantAvatarAddress, ao.IntervalId });
 
         modelBuilder
             .Entity<AvailableOpponent>()
             .HasOne(ao => ao.Participant)
             .WithMany()
-            .HasForeignKey(ao => ao.ParticipantId);
+            .HasForeignKey(ao => new { ao.ParticipantAvatarAddress, ao.SeasonId })
+            .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
             .Entity<AvailableOpponent>()
-            .HasOne(ao => ao.Opponent)
+            .HasOne(ao => ao.ArenaInterval)
             .WithMany()
-            .HasForeignKey(ao => ao.OpponentId);
+            .HasForeignKey(ao => ao.IntervalId)
+            .HasPrincipalKey(ai => ai.Id);
+
+        modelBuilder
+            .Entity<ArenaInterval>()
+            .HasOne(ai => ai.Season)
+            .WithMany(s => s.ArenaIntervals)
+            .HasForeignKey(ai => ai.SeasonId);
     }
 }
