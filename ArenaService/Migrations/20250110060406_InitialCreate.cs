@@ -44,7 +44,7 @@ namespace ArenaService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "arena_interval",
+                name: "rounds",
                 columns: table => new
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
@@ -55,9 +55,9 @@ namespace ArenaService.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_arena_interval", x => x.id);
+                    table.PrimaryKey("pk_rounds", x => x.id);
                     table.ForeignKey(
-                        name: "fk_arena_interval_seasons_season_id",
+                        name: "fk_rounds_seasons_season_id",
                         column: x => x.season_id,
                         principalTable: "seasons",
                         principalColumn: "id",
@@ -105,16 +105,16 @@ namespace ArenaService.Migrations
                 {
                     table.PrimaryKey("pk_available_opponents", x => new { x.participant_avatar_address, x.interval_id });
                     table.ForeignKey(
-                        name: "fk_available_opponents_arena_interval_interval_id",
-                        column: x => x.interval_id,
-                        principalTable: "arena_interval",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
                         name: "fk_available_opponents_participants_participant_avatar_address",
                         columns: x => new { x.participant_avatar_address, x.season_id },
                         principalTable: "participants",
                         principalColumns: new[] { "avatar_address", "season_id" },
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_available_opponents_rounds_interval_id",
+                        column: x => x.interval_id,
+                        principalTable: "rounds",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -128,6 +128,8 @@ namespace ArenaService.Migrations
                     attacker_avatar_address = table.Column<string>(type: "text", nullable: false),
                     defender_avatar_address = table.Column<string>(type: "text", nullable: false),
                     token = table.Column<string>(type: "text", nullable: false),
+                    tx_id = table.Column<string>(type: "text", nullable: true),
+                    tx_status = table.Column<int>(type: "integer", nullable: true),
                     is_victory = table.Column<bool>(type: "boolean", nullable: true),
                     participant_score_change = table.Column<int>(type: "integer", nullable: true),
                     opponent_score_change = table.Column<int>(type: "integer", nullable: true),
@@ -149,11 +151,6 @@ namespace ArenaService.Migrations
                         principalColumns: new[] { "avatar_address", "season_id" },
                         onDelete: ReferentialAction.Cascade);
                 });
-
-            migrationBuilder.CreateIndex(
-                name: "ix_arena_interval_season_id",
-                table: "arena_interval",
-                column: "season_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_available_opponents_interval_id",
@@ -184,6 +181,11 @@ namespace ArenaService.Migrations
                 name: "ix_participants_season_id",
                 table: "participants",
                 column: "season_id");
+
+            migrationBuilder.CreateIndex(
+                name: "ix_rounds_season_id",
+                table: "rounds",
+                column: "season_id");
         }
 
         /// <inheritdoc />
@@ -196,7 +198,7 @@ namespace ArenaService.Migrations
                 name: "battle_logs");
 
             migrationBuilder.DropTable(
-                name: "arena_interval");
+                name: "rounds");
 
             migrationBuilder.DropTable(
                 name: "participants");

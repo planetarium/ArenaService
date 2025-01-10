@@ -19,7 +19,7 @@ public class SeasonController : ControllerBase
 
     [HttpGet("by-block/{blockIndex}")]
     [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<Results<NotFound<string>, Ok<SeasonResponse>>> GetSeasonByBlock(
         int blockIndex
     )

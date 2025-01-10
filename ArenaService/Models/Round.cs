@@ -3,8 +3,8 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArenaService.Models;
 
-[Table("arena_interval")]
-public class ArenaInterval
+[Table("rounds")]
+public class Round
 {
     public int Id { get; set; }
 

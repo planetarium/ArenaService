@@ -10,12 +10,12 @@ public interface IAvailableOpponentRepository
     Task<AvailableOpponent?> GetAvailableOpponents(
         Address participantAvatarAddress,
         int seasonId,
-        int arenaIntervalId
+        int roundId
     );
     Task<AvailableOpponent> AddAvailableOpponents(
         Address participantAvatarAddress,
         int seasonId,
-        int arenaIntervalId,
+        int roundId,
         List<Address> opponentAvatarAddresses
     );
 }
@@ -32,14 +32,14 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
     public async Task<AvailableOpponent?> GetAvailableOpponents(
         Address participantAvatarAddress,
         int seasonId,
-        int arenaIntervalId
+        int roundId
     )
     {
         var availableOpponents = await _context
             .AvailableOpponents.Where(ao =>
                 ao.SeasonId == seasonId
                 && ao.ParticipantAvatarAddress == participantAvatarAddress.ToHex()
-                && ao.IntervalId == arenaIntervalId
+                && ao.IntervalId == roundId
             )
             .FirstOrDefaultAsync();
 
@@ -49,7 +49,7 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
     public async Task<AvailableOpponent> AddAvailableOpponents(
         Address participantAvatarAddress,
         int seasonId,
-        int arenaIntervalId,
+        int roundId,
         List<Address> opponentAvatarAddresses
     )
     {
@@ -58,7 +58,7 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
             {
                 SeasonId = seasonId,
                 ParticipantAvatarAddress = participantAvatarAddress.ToHex(),
-                IntervalId = arenaIntervalId,
+                IntervalId = roundId,
                 OpponentAvatarAddresses = opponentAvatarAddresses
                     .Select(oaa => oaa.ToHex())
                     .ToList(),

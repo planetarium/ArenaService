@@ -47,7 +47,7 @@ def add_season_and_intervals(start_block, end_block, interval):
                     interval_end = min(current_block + interval, end_block)
                     cursor.execute(
                         sql.SQL("""
-                            INSERT INTO arena_interval (season_id, start_block, end_block)
+                            INSERT INTO rounds (season_id, start_block, end_block)
                             VALUES (%s, %s, %s)
                         """),
                         (season_id, current_block, interval_end)

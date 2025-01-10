@@ -26,8 +26,6 @@ public class SeasonRepository : ISeasonRepository
 
     public async Task<Season?> GetSeasonAsync(int id)
     {
-        return await _context
-            .Seasons.Include(s => s.ArenaIntervals)
-            .FirstOrDefaultAsync(s => s.Id == id);
+        return await _context.Seasons.Include(s => s.Rounds).FirstOrDefaultAsync(s => s.Id == id);
     }
 }

@@ -14,24 +14,27 @@ public class ParticipantController : ControllerBase
     private readonly IParticipantRepository _participantRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly IUserRepository _userRepo;
+    private readonly IRankingRepository _rankingRepo;
 
     public ParticipantController(
         IParticipantRepository participantRepo,
         ISeasonRepository seasonRepo,
-        IUserRepository userRepo
+        IUserRepository userRepo,
+        IRankingRepository rankingRepo
     )
     {
         _participantRepo = participantRepo;
         _seasonRepo = seasonRepo;
         _userRepo = userRepo;
+        _rankingRepo = rankingRepo;
     }
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
-    [ProducesResponseType(typeof(Conflict<string>), StatusCodes.Status409Conflict)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
     public async Task<Results<NotFound<string>, Conflict<string>, Created>> Participate(
         int seasonId,
         [FromBody] ParticipateRequest participateRequest
@@ -66,7 +69,16 @@ public class ParticipantController : ControllerBase
             participateRequest.Cp,
             participateRequest.Level
         );
-        await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
+        var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
+
+        var rankingKey = $"ranking:season:{seasonId}";
+
+        await _rankingRepo.UpdateScoreAsync(
+            rankingKey,
+            participant.AvatarAddress,
+            seasonId,
+            participant.Score
+        );
         return TypedResults.Created();
     }
 }

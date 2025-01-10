@@ -1,4 +1,5 @@
 using ArenaService.Client;
+using ArenaService.Extensions;
 using ArenaService.Repositories;
 using Bencodex;
 using Bencodex.Types;
@@ -15,21 +16,26 @@ public class BattleTaskProcessor
     private readonly ILogger<BattleTaskProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly IBattleLogRepository _battleLogRepo;
+    private readonly IParticipantRepository _participantRepo;
 
     public BattleTaskProcessor(
         ILogger<BattleTaskProcessor> logger,
         IHeadlessClient client,
-        IBattleLogRepository battleLogRepo
+        IBattleLogRepository battleLogRepo,
+        IParticipantRepository participantRepo
     )
     {
         _logger = logger;
         _client = client;
         _battleLogRepo = battleLogRepo;
+        _participantRepo = participantRepo;
     }
 
     public async Task ProcessAsync(string txId, int battleLogId)
     {
         _logger.LogInformation($"Watch the battle: {txId}, {battleLogId}");
+        var battleLog = await _battleLogRepo.GetBattleLogAsync(battleLogId);
+        await _battleLogRepo.UpdateTxIdAsync(battleLogId, txId);
 
         for (int i = 0; i < 30; i++)
         {
@@ -41,11 +47,14 @@ public class BattleTaskProcessor
                 await Task.Delay(1000);
                 continue;
             }
+            await _battleLogRepo.UpdateTxStatusAsync(
+                battleLogId,
+                txResultResponse.Data.Transaction.TransactionResult.TxStatus.ToModelTxStatus()
+            );
 
             switch (txResultResponse.Data.Transaction.TransactionResult.TxStatus)
             {
                 case TxStatus.Success:
-                    var battleLog = await _battleLogRepo.GetBattleLogAsync(battleLogId);
                     if (battleLog is null)
                     {
                         _logger.LogInformation($"battleLog is null");
@@ -71,13 +80,26 @@ public class BattleTaskProcessor
                     }
 
                     var state = Codec.Decode(Convert.FromHexString(stateResponse.Data.State));
+                    var IsVictory = (Integer)state == 1;
+                    var myScoreChange = IsVictory ? 10 : -10;
+                    var enemyScoreChange = IsVictory ? -10 : 10;
 
                     await _battleLogRepo.UpdateBattleResultAsync(
                         battleLogId,
-                        (Integer)state == 1,
-                        10,
-                        10,
+                        IsVictory,
+                        myScoreChange,
+                        enemyScoreChange,
                         1
+                    );
+                    await _participantRepo.UpdateScoreAsync(
+                        battleLog.SeasonId,
+                        new Address(battleLog.Attacker.AvatarAddress),
+                        myScoreChange
+                    );
+                    await _participantRepo.UpdateScoreAsync(
+                        battleLog.SeasonId,
+                        new Address(battleLog.Defender.AvatarAddress),
+                        enemyScoreChange
                     );
                     return;
                 default:

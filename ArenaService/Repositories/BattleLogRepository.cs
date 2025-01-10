@@ -13,6 +13,8 @@ public interface IBattleLogRepository
         Address defenderAvatarAddress,
         string token
     );
+    Task<BattleLog> UpdateTxIdAsync(int battleLogId, string txId);
+    Task<BattleLog> UpdateTxStatusAsync(int battleLogId, TxStatus txStatus);
     Task<BattleLog> UpdateBattleResultAsync(
         int battleLogId,
         bool isVictory,
@@ -50,6 +52,38 @@ public class BattleLogRepository : IBattleLogRepository
         );
         _context.SaveChanges();
         return battleLog.Entity;
+    }
+
+    public async Task<BattleLog> UpdateTxStatusAsync(int battleLogId, TxStatus txStatus)
+    {
+        var battleLog = await _context.BattleLogs.FindAsync(battleLogId);
+        if (battleLog == null)
+        {
+            throw new KeyNotFoundException($"BattleLog with ID {battleLogId} not found.");
+        }
+
+        battleLog.TxStatus = txStatus;
+
+        _context.BattleLogs.Update(battleLog);
+        await _context.SaveChangesAsync();
+
+        return battleLog;
+    }
+
+    public async Task<BattleLog> UpdateTxIdAsync(int battleLogId, string txId)
+    {
+        var battleLog = await _context.BattleLogs.FindAsync(battleLogId);
+        if (battleLog == null)
+        {
+            throw new KeyNotFoundException($"BattleLog with ID {battleLogId} not found.");
+        }
+
+        battleLog.TxId = txId;
+
+        _context.BattleLogs.Update(battleLog);
+        await _context.SaveChangesAsync();
+
+        return battleLog;
     }
 
     public async Task<BattleLog> UpdateBattleResultAsync(

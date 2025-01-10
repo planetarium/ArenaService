@@ -18,5 +18,5 @@ public class Season
     public int Interval { get; set; } = 100;
 
     public ICollection<Participant> Participants { get; set; } = null!;
-    public ICollection<ArenaInterval> ArenaIntervals { get; set; } = null!;
+    public ICollection<Round> Rounds { get; set; } = null!;
 }

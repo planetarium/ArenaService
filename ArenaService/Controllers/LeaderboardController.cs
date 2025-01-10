@@ -36,7 +36,7 @@ public class LeaderboardController : ControllerBase
     [HttpGet("participants/{avatarAddress}")]
     [ProducesResponseType(typeof(LeaderboardEntryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<Results<NotFound<string>, Ok<LeaderboardEntryResponse>>> GetMyRank(
         int seasonId,
         string avatarAddress

@@ -13,7 +13,7 @@ public class ArenaDbContext : DbContext
     public required DbSet<Participant> Participants { get; set; }
     public required DbSet<BattleLog> BattleLogs { get; set; }
     public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
-    public required DbSet<ArenaInterval> ArenaIntervals { get; set; }
+    public required DbSet<Round> Rounds { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -55,15 +55,15 @@ public class ArenaDbContext : DbContext
 
         modelBuilder
             .Entity<AvailableOpponent>()
-            .HasOne(ao => ao.ArenaInterval)
+            .HasOne(ao => ao.Round)
             .WithMany()
             .HasForeignKey(ao => ao.IntervalId)
             .HasPrincipalKey(ai => ai.Id);
 
         modelBuilder
-            .Entity<ArenaInterval>()
+            .Entity<Round>()
             .HasOne(ai => ai.Season)
-            .WithMany(s => s.ArenaIntervals)
+            .WithMany(s => s.Rounds)
             .HasForeignKey(ai => ai.SeasonId);
     }
 }

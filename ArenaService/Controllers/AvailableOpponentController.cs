@@ -37,7 +37,7 @@ public class AvailableOpponentController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(AvailableOpponentsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<AvailableOpponentsResponse>>
     > GetAvailableOpponents(int seasonId, long blockIndex)
@@ -51,11 +51,11 @@ public class AvailableOpponentController : ControllerBase
             return TypedResults.NotFound("No season found.");
         }
 
-        var currentArenaInterval = season.ArenaIntervals.FirstOrDefault(ai =>
+        var currentRound = season.Rounds.FirstOrDefault(ai =>
             ai.StartBlock <= blockIndex && ai.EndBlock >= blockIndex
         );
 
-        if (currentArenaInterval == null)
+        if (currentRound == null)
         {
             return TypedResults.NotFound(
                 $"No active arena interval found for block index {blockIndex}."
@@ -65,7 +65,7 @@ public class AvailableOpponentController : ControllerBase
         var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(
             avatarAddress,
             seasonId,
-            currentArenaInterval.Id
+            currentRound.Id
         );
 
         if (availableOpponents == null)
@@ -96,7 +96,7 @@ public class AvailableOpponentController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public Results<UnauthorizedHttpResult, NotFound<string>, Ok> RequestResetOpponents(int seasonId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();

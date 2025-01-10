@@ -21,7 +21,7 @@ public class AvailableOpponent
 
     [Required]
     public int IntervalId { get; set; }
-    public ArenaInterval ArenaInterval { get; set; } = null!;
+    public Round Round { get; set; } = null!;
 
     [Required]
     [Column("opponent_avatar_addresses", TypeName = "text[]")]

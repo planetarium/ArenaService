@@ -23,36 +23,6 @@ namespace ArenaService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ArenaService.Models.ArenaInterval", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<long>("EndBlock")
-                        .HasColumnType("bigint")
-                        .HasColumnName("end_block");
-
-                    b.Property<int>("SeasonId")
-                        .HasColumnType("integer")
-                        .HasColumnName("season_id");
-
-                    b.Property<long>("StartBlock")
-                        .HasColumnType("bigint")
-                        .HasColumnName("start_block");
-
-                    b.HasKey("Id")
-                        .HasName("pk_arena_interval");
-
-                    b.HasIndex("SeasonId")
-                        .HasDatabaseName("ix_arena_interval_season_id");
-
-                    b.ToTable("arena_interval", (string)null);
-                });
-
             modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
                 {
                     b.Property<string>("ParticipantAvatarAddress")
@@ -77,7 +47,7 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("season_id");
 
-                    b.Property<int>("updateSource")
+                    b.Property<int>("UpdateSource")
                         .HasColumnType("integer")
                         .HasColumnName("update_source");
 
@@ -137,6 +107,14 @@ namespace ArenaService.Migrations
                         .HasColumnType("text")
                         .HasColumnName("token");
 
+                    b.Property<string>("TxId")
+                        .HasColumnType("text")
+                        .HasColumnName("tx_id");
+
+                    b.Property<int?>("TxStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("tx_status");
+
                     b.HasKey("Id")
                         .HasName("pk_battle_logs");
 
@@ -177,6 +155,36 @@ namespace ArenaService.Migrations
                         .HasDatabaseName("ix_participants_season_id");
 
                     b.ToTable("participants", (string)null);
+                });
+
+            modelBuilder.Entity("ArenaService.Models.Round", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<long>("EndBlock")
+                        .HasColumnType("bigint")
+                        .HasColumnName("end_block");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("integer")
+                        .HasColumnName("season_id");
+
+                    b.Property<long>("StartBlock")
+                        .HasColumnType("bigint")
+                        .HasColumnName("start_block");
+
+                    b.HasKey("Id")
+                        .HasName("pk_rounds");
+
+                    b.HasIndex("SeasonId")
+                        .HasDatabaseName("ix_rounds_season_id");
+
+                    b.ToTable("rounds", (string)null);
                 });
 
             modelBuilder.Entity("ArenaService.Models.Season", b =>
@@ -240,26 +248,14 @@ namespace ArenaService.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.ArenaInterval", b =>
-                {
-                    b.HasOne("ArenaService.Models.Season", "Season")
-                        .WithMany("ArenaIntervals")
-                        .HasForeignKey("SeasonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_arena_interval_seasons_season_id");
-
-                    b.Navigation("Season");
-                });
-
             modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
                 {
-                    b.HasOne("ArenaService.Models.ArenaInterval", "ArenaInterval")
+                    b.HasOne("ArenaService.Models.Round", "Round")
                         .WithMany()
                         .HasForeignKey("IntervalId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_available_opponents_arena_interval_interval_id");
+                        .HasConstraintName("fk_available_opponents_rounds_interval_id");
 
                     b.HasOne("ArenaService.Models.Participant", "Participant")
                         .WithMany()
@@ -268,9 +264,9 @@ namespace ArenaService.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_available_opponents_participants_participant_avatar_address");
 
-                    b.Navigation("ArenaInterval");
-
                     b.Navigation("Participant");
+
+                    b.Navigation("Round");
                 });
 
             modelBuilder.Entity("ArenaService.Models.BattleLog", b =>
@@ -315,11 +311,23 @@ namespace ArenaService.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("ArenaService.Models.Round", b =>
+                {
+                    b.HasOne("ArenaService.Models.Season", "Season")
+                        .WithMany("Rounds")
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_rounds_seasons_season_id");
+
+                    b.Navigation("Season");
+                });
+
             modelBuilder.Entity("ArenaService.Models.Season", b =>
                 {
-                    b.Navigation("ArenaIntervals");
-
                     b.Navigation("Participants");
+
+                    b.Navigation("Rounds");
                 });
 #pragma warning restore 612, 618
         }

@@ -34,9 +34,9 @@ public class BattleController : ControllerBase
 
     [HttpGet("token")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<BattleTokenResponse>>
     > CreateBattleToken(int seasonId, string opponentAvatarAddress)
@@ -60,26 +60,34 @@ public class BattleController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public Results<UnauthorizedHttpResult, NotFound<string>, Ok> RequestBattle(
         string txId,
-        int logId
+        int logId,
+        int seasonId
     )
     {
-        _jobClient.Enqueue<FakeBattleTaskProcessor>(processor =>
-            processor.ProcessAsync(txId, logId)
-        );
+        _jobClient.Enqueue<BattleTaskProcessor>(processor => processor.ProcessAsync(txId, logId));
 
         return TypedResults.Ok();
     }
 
     [HttpGet("{battleLogId}")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BattleLogResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(NotFound<string>), StatusCodes.Status404NotFound)]
-    public Results<UnauthorizedHttpResult, NotFound<string>, Ok<string>> GetBattleLog(int battleLogId)
+    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    public async Task<
+        Results<UnauthorizedHttpResult, NotFound<string>, Ok<BattleLogResponse>>
+    > GetBattleLog(int battleLogId)
     {
-        return TypedResults.Ok("test");
+        var battleLog = await _battleLogRepo.GetBattleLogAsync(battleLogId);
+
+        if (battleLog is null)
+        {
+            return TypedResults.NotFound("Not battleLog.");
+        }
+
+        return TypedResults.Ok(battleLog.ToResponse());
     }
 }

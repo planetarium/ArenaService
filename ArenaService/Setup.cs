@@ -110,7 +110,7 @@ public class Startup
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
         services.AddScoped<IBattleLogRepository, BattleLogRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
-        services.AddScoped<IArenaIntervalRepository, ArenaIntervalRepository>();
+        services.AddScoped<IRoundRepository, RoundRepository>();
 
         services.AddCors(options =>
         {
@@ -149,7 +149,10 @@ public class Startup
         app.UseRouting();
         app.UseAuthorization();
 
-        app.UseHangfireDashboard("/hangfire");
+        app.UseHangfireDashboard(
+            "/hangfire",
+            new DashboardOptions { Authorization = [new AllowAllDashboardAuthorizationFilter()] }
+        );
 
         app.UseEndpoints(endpoints =>
         {
@@ -157,5 +160,13 @@ public class Startup
             endpoints.MapSwagger();
             // endpoints.MapHealthChecks("/ping");
         });
+    }
+}
+
+public class AllowAllDashboardAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
+{
+    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
+    {
+        return true;
     }
 }

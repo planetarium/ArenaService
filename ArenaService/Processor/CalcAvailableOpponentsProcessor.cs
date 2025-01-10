@@ -9,7 +9,7 @@ public class CalcAvailableOpponentsProcessor
     private readonly ILogger<CalcAvailableOpponentsProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly ISeasonRepository _seasonRepo;
-    private readonly IArenaIntervalRepository _arenaIntervalRepo;
+    private readonly IRoundRepository _roundRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepository;
     private readonly IRankingRepository _rankingRepository;
 
@@ -17,14 +17,14 @@ public class CalcAvailableOpponentsProcessor
         ILogger<CalcAvailableOpponentsProcessor> logger,
         IHeadlessClient client,
         ISeasonRepository seasonRepo,
-        IArenaIntervalRepository arenaIntervalRepo,
+        IRoundRepository roundRepo,
         IAvailableOpponentRepository availableOpponentRepository,
         IRankingRepository rankingRepository
     )
     {
         _logger = logger;
         _client = client;
-        _arenaIntervalRepo = arenaIntervalRepo;
+        _roundRepo = roundRepo;
         _availableOpponentRepository = availableOpponentRepository;
         _rankingRepository = rankingRepository;
         _seasonRepo = seasonRepo;
@@ -52,13 +52,13 @@ public class CalcAvailableOpponentsProcessor
             return;
         }
 
-        var currentArenaInterval = season.ArenaIntervals.FirstOrDefault(ai =>
+        var currentRound = season.Rounds.FirstOrDefault(ai =>
             ai.StartBlock <= blockIndex && ai.EndBlock >= blockIndex
         );
 
-        if (currentArenaInterval == null)
+        if (currentRound == null)
         {
-            _logger.LogInformation($"currentArenaInterval is null");
+            _logger.LogInformation($"currentRound is null");
             return;
         }
 
@@ -79,7 +79,7 @@ public class CalcAvailableOpponentsProcessor
         await _availableOpponentRepository.AddAvailableOpponents(
             participantAvatarAddress,
             seasonId,
-            currentArenaInterval.Id,
+            currentRound.Id,
             opponents.Select(o => o.ParticipantAvatarAddress).ToList()
         );
     }

@@ -3,6 +3,15 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArenaService.Models;
 
+public enum TxStatus
+{
+    INVALID,
+    STAGING,
+    SUCCESS,
+    FAILURE,
+    INCLUDED,
+}
+
 [Table("battle_logs")]
 public class BattleLog
 {
@@ -21,6 +30,8 @@ public class BattleLog
     [Required]
     public required string Token { get; set; }
 
+    public string? TxId { get; set; }
+    public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }
     public int? ParticipantScoreChange { get; set; }
     public int? OpponentScoreChange { get; set; }
