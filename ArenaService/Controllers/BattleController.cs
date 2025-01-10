@@ -79,7 +79,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<BattleLogResponse>>
-    > GetBattleLog(int battleLogId)
+    > GetBattleLog(int battleLogId, int seasonId)
     {
         var battleLog = await _battleLogRepo.GetBattleLogAsync(battleLogId);
 
