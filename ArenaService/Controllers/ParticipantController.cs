@@ -31,8 +31,8 @@ public class ParticipantController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
     public async Task<Results<NotFound<string>, Conflict<string>, Created>> Participate(

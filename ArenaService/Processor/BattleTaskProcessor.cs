@@ -39,74 +39,81 @@ public class BattleTaskProcessor
 
         for (int i = 0; i < 30; i++)
         {
-            var txResultResponse = await _client.GetTransactionResult.ExecuteAsync(txId);
-
-            if (txResultResponse.Data is null)
+            try
             {
-                _logger.LogInformation($"TxResult is null");
-                await Task.Delay(1000);
-                continue;
+                var txResultResponse = await _client.GetTransactionResult.ExecuteAsync(txId);
+
+                if (txResultResponse.Data is null)
+                {
+                    _logger.LogInformation($"TxResult is null");
+                    await Task.Delay(1000);
+                    continue;
+                }
+                await _battleLogRepo.UpdateTxStatusAsync(
+                    battleLogId,
+                    txResultResponse.Data.Transaction.TransactionResult.TxStatus.ToModelTxStatus()
+                );
+
+                switch (txResultResponse.Data.Transaction.TransactionResult.TxStatus)
+                {
+                    case TxStatus.Success:
+                        if (battleLog is null)
+                        {
+                            _logger.LogInformation($"battleLog is null");
+                            return;
+                        }
+
+                        var accountAddress = Addresses.Battle.Derive(
+                            ArenaProvider.PLANETARIUM.ToString()
+                        );
+                        var stateAddress = new Address(battleLog.Attacker.AvatarAddress).Derive(
+                            txId.ToString()
+                        );
+
+                        var stateResponse = await _client.GetState.ExecuteAsync(
+                            accountAddress.ToHex(),
+                            stateAddress.ToHex()
+                        );
+
+                        if (stateResponse.Data is null || stateResponse.Data.State is null)
+                        {
+                            _logger.LogInformation($"state is null");
+                            continue;
+                        }
+
+                        var state = Codec.Decode(Convert.FromHexString(stateResponse.Data.State));
+                        var IsVictory = (Integer)state == 1;
+                        var myScoreChange = IsVictory ? 10 : -10;
+                        var enemyScoreChange = IsVictory ? -10 : 10;
+
+                        await _battleLogRepo.UpdateBattleResultAsync(
+                            battleLogId,
+                            IsVictory,
+                            myScoreChange,
+                            enemyScoreChange,
+                            1
+                        );
+                        await _participantRepo.UpdateScoreAsync(
+                            battleLog.SeasonId,
+                            new Address(battleLog.Attacker.AvatarAddress),
+                            myScoreChange
+                        );
+                        await _participantRepo.UpdateScoreAsync(
+                            battleLog.SeasonId,
+                            new Address(battleLog.Defender.AvatarAddress),
+                            enemyScoreChange
+                        );
+                        return;
+                    default:
+                        _logger.LogInformation(
+                            $"TxResult is {txResultResponse.Data.Transaction.TransactionResult.TxStatus}"
+                        );
+                        break;
+                }
             }
-            await _battleLogRepo.UpdateTxStatusAsync(
-                battleLogId,
-                txResultResponse.Data.Transaction.TransactionResult.TxStatus.ToModelTxStatus()
-            );
-
-            switch (txResultResponse.Data.Transaction.TransactionResult.TxStatus)
+            catch (Exception e)
             {
-                case TxStatus.Success:
-                    if (battleLog is null)
-                    {
-                        _logger.LogInformation($"battleLog is null");
-                        return;
-                    }
-
-                    var accountAddress = Addresses.Battle.Derive(
-                        ArenaProvider.PLANETARIUM.ToString()
-                    );
-                    var stateAddress = new Address(battleLog.Attacker.AvatarAddress).Derive(
-                        txId.ToString()
-                    );
-
-                    var stateResponse = await _client.GetState.ExecuteAsync(
-                        accountAddress.ToHex(),
-                        stateAddress.ToHex()
-                    );
-
-                    if (stateResponse.Data is null || stateResponse.Data.State is null)
-                    {
-                        _logger.LogInformation($"state is null");
-                        return;
-                    }
-
-                    var state = Codec.Decode(Convert.FromHexString(stateResponse.Data.State));
-                    var IsVictory = (Integer)state == 1;
-                    var myScoreChange = IsVictory ? 10 : -10;
-                    var enemyScoreChange = IsVictory ? -10 : 10;
-
-                    await _battleLogRepo.UpdateBattleResultAsync(
-                        battleLogId,
-                        IsVictory,
-                        myScoreChange,
-                        enemyScoreChange,
-                        1
-                    );
-                    await _participantRepo.UpdateScoreAsync(
-                        battleLog.SeasonId,
-                        new Address(battleLog.Attacker.AvatarAddress),
-                        myScoreChange
-                    );
-                    await _participantRepo.UpdateScoreAsync(
-                        battleLog.SeasonId,
-                        new Address(battleLog.Defender.AvatarAddress),
-                        enemyScoreChange
-                    );
-                    return;
-                default:
-                    _logger.LogInformation(
-                        $"TxResult is {txResultResponse.Data.Transaction.TransactionResult.TxStatus}"
-                    );
-                    break;
+                _logger.LogError(e.ToString());
             }
 
             await Task.Delay(1000);

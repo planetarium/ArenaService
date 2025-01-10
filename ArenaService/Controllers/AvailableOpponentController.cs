@@ -36,7 +36,7 @@ public class AvailableOpponentController : ControllerBase
     [HttpGet]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(AvailableOpponentsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<AvailableOpponentsResponse>>
