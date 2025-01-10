@@ -16,6 +16,7 @@ public static class BattleLogExtensions
             TxId = battleLog.TxId,
             TxStatus = battleLog.TxStatus.ToString(),
             IsVictory = battleLog.IsVictory,
+            ParticipantScore = battleLog.Attacker.Score,
             ParticipantScoreChange = battleLog.ParticipantScoreChange,
             OpponentScoreChange = battleLog.OpponentScoreChange,
             BattleBlockIndex = battleLog.BattleBlockIndex,

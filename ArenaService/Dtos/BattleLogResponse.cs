@@ -14,6 +14,7 @@ public class BattleLogResponse
     public string? TxId { get; set; }
     public string? TxStatus { get; set; }
     public bool? IsVictory { get; set; }
+    public int? ParticipantScore { get; set; }
     public int? ParticipantScoreChange { get; set; }
     public int? OpponentScoreChange { get; set; }
     public long? BattleBlockIndex { get; set; }
