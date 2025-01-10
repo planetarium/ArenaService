@@ -39,6 +39,8 @@ public class BattleTaskProcessor
 
         for (int i = 0; i < 30; i++)
         {
+            await Task.Delay(2000);
+
             try
             {
                 var txResultResponse = await _client.GetTransactionResult.ExecuteAsync(txId);
@@ -46,7 +48,6 @@ public class BattleTaskProcessor
                 if (txResultResponse.Data is null)
                 {
                     _logger.LogInformation($"TxResult is null");
-                    await Task.Delay(1000);
                     continue;
                 }
                 await _battleLogRepo.UpdateTxStatusAsync(
@@ -115,8 +116,6 @@ public class BattleTaskProcessor
             {
                 _logger.LogError(e.ToString());
             }
-
-            await Task.Delay(1000);
         }
     }
 }
