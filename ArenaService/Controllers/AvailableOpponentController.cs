@@ -4,6 +4,7 @@ using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Models;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;
@@ -19,17 +20,20 @@ public class AvailableOpponentController : ControllerBase
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly IParticipantRepository _participantRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
+    private readonly ParticipateService _participateService;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
         IParticipantRepository participantRepo,
         ISeasonCacheRepository seasonCacheRepo,
+        ParticipateService participateService,
         IBackgroundJobClient jobClient
     )
     {
         _availableOpponentRepo = availableOpponentRepo;
         _participantRepo = participantRepo;
         _seasonCacheRepo = seasonCacheRepo;
+        _participateService = participateService;
         _jobClient = jobClient;
     }
 
@@ -56,6 +60,7 @@ public class AvailableOpponentController : ControllerBase
         {
             return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
+        await _participateService.ParticipateAsync(currentSeason.Value.Id, avatarAddress);
 
         var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(
             avatarAddress,
@@ -105,6 +110,8 @@ public class AvailableOpponentController : ControllerBase
         {
             return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
+
+        await _participateService.ParticipateAsync(currentSeason.Value.Id, avatarAddress);
 
         _jobClient.Enqueue<CalcAvailableOpponentsProcessor>(processor =>
             processor.ProcessAsync(avatarAddress, currentSeason.Value.Id, currentRound.Value.Id)

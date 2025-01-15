@@ -3,6 +3,7 @@ namespace ArenaService.Controllers;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;
@@ -17,16 +18,19 @@ public class BattleController : ControllerBase
     private readonly IBackgroundJobClient _jobClient;
     private readonly IBattleLogRepository _battleLogRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
+    private readonly ParticipateService _participateService;
 
     public BattleController(
         IBattleLogRepository battleLogRepo,
         ISeasonCacheRepository seasonCacheRepo,
+        ParticipateService participateService,
         IBackgroundJobClient jobClient
     )
     {
         _battleLogRepo = battleLogRepo;
         _jobClient = jobClient;
         _seasonCacheRepo = seasonCacheRepo;
+        _participateService = participateService;
     }
 
     [HttpGet("token")]
@@ -52,6 +56,8 @@ public class BattleController : ControllerBase
         {
             return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
+
+        await _participateService.ParticipateAsync(currentSeason.Value.Id, avatarAddress);
 
         var defenderAvatarAddress = new Address(opponentAvatarAddress);
 

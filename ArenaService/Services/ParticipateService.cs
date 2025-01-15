@@ -1,60 +1,39 @@
 namespace ArenaService.Services;
 
 using System.Threading.Tasks;
-using ArenaService.Dtos;
+using ArenaService.Models;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
 
-public class RegistrationService
+public class ParticipateService
 {
     private readonly IParticipantRepository _participantRepo;
-    private readonly ISeasonRepository _seasonRepo;
     private readonly IUserRepository _userRepo;
     private readonly IRankingRepository _rankingRepo;
 
-    public RegistrationService(
+    public ParticipateService(
         IParticipantRepository participantRepo,
-        ISeasonRepository seasonRepo,
         IUserRepository userRepo,
         IRankingRepository rankingRepo
     )
     {
         _participantRepo = participantRepo;
-        _seasonRepo = seasonRepo;
         _userRepo = userRepo;
         _rankingRepo = rankingRepo;
     }
 
-    public async Task<bool> EnsureUserRegisteredAsync(
-        int seasonId,
-        Address avatarAddress,
-        Address agentAddress,
-        ParticipateRequest participateRequest
-    )
+    public async Task<Participant> ParticipateAsync(int seasonId, Address avatarAddress)
     {
-        var season = await _seasonRepo.GetSeasonAsync(seasonId);
-        if (season is null)
-        {
-            throw new KeyNotFoundException($"Season {seasonId} not found.");
-        }
-
         var existingParticipant = await _participantRepo.GetParticipantAsync(
             seasonId,
             avatarAddress
         );
         if (existingParticipant is not null)
         {
-            return false;
+            return existingParticipant;
         }
 
-        await _userRepo.AddOrGetUserAsync(
-            agentAddress,
-            avatarAddress,
-            participateRequest.NameWithHash,
-            participateRequest.PortraitId,
-            participateRequest.Cp,
-            participateRequest.Level
-        );
+        await _userRepo.GetUserAsync(avatarAddress);
 
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 
@@ -64,6 +43,6 @@ public class RegistrationService
             participant.Score
         );
 
-        return true;
+        return participant;
     }
 }
