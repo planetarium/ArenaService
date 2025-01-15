@@ -4,6 +4,7 @@ using ArenaService.Auth;
 using ArenaService.Data;
 using ArenaService.Options;
 using ArenaService.Repositories;
+using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Authentication;
@@ -132,6 +133,9 @@ public class Startup
         );
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
+        services
+            .AddSingleton<SeasonCachingWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
 
         services.AddHangfireServer();
     }

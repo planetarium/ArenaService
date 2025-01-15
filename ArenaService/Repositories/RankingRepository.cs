@@ -5,26 +5,18 @@ namespace ArenaService.Repositories;
 
 public interface IRankingRepository
 {
-    Task UpdateScoreAsync(
-        string leaderboardKey,
-        string participantAvatarAddress,
-        int seasonId,
-        int scoreChange
-    );
+    Task UpdateScoreAsync(Address avatarAddress, int seasonId, int scoreChange);
 
-    Task<int?> GetRankAsync(string leaderboardKey, string participantAvatarAddress, int seasonId);
+    Task<int?> GetRankAsync(Address avatarAddress, int seasonId);
 
-    Task<int?> GetScoreAsync(string leaderboardKey, string participantAvatarAddress, int seasonId);
+    Task<int?> GetScoreAsync(Address avatarAddress, int seasonId);
 
     Task<
-        List<(int Rank, Address ParticipantAvatarAddress, int SeasonId, int Score)>
-    > GetRankingsWithPaginationAsync(string rankingKey, int pageNumber, int pageSize);
+        List<(int Rank, Address AvatarAddress, int SeasonId, int Score)>
+    > GetRankingsWithPaginationAsync(int seasonId, int pageNumber, int pageSize);
 
-    Task<
-        List<(Address ParticipantAvatarAddress, int SeasonId, int Score)>
-    > GetRandomParticipantsTempAsync(
-        string rankingKey,
-        string participantAvatarAddress,
+    Task<List<(Address AvatarAddress, int SeasonId, int Score)>> GetRandomParticipantsTempAsync(
+        Address avatarAddress,
         int seasonId,
         int score,
         int count
@@ -33,6 +25,7 @@ public interface IRankingRepository
 
 public class RankingRepository : IRankingRepository
 {
+    private const string RankingKeyPrefix = "ranking:season:";
     private readonly IDatabase _redis;
 
     public RankingRepository(IConnectionMultiplexer redis)
@@ -40,56 +33,43 @@ public class RankingRepository : IRankingRepository
         _redis = redis.GetDatabase();
     }
 
-    public async Task UpdateScoreAsync(
-        string leaderboardKey,
-        string participantAvatarAddress,
-        int seasonId,
-        int scoreChange
-    )
+    public async Task UpdateScoreAsync(Address avatarAddress, int seasonId, int scoreChange)
     {
         await _redis.SortedSetIncrementAsync(
-            leaderboardKey,
-            $"participant:{participantAvatarAddress}:{seasonId}",
+            $"{RankingKeyPrefix}:{seasonId}",
+            $"participant:{avatarAddress.ToHex()}:{seasonId}",
             scoreChange
         );
     }
 
-    public async Task<int?> GetRankAsync(
-        string rankingKey,
-        string participantAvatarAddress,
-        int seasonId
-    )
+    public async Task<int?> GetRankAsync(Address avatarAddress, int seasonId)
     {
         var rank = await _redis.SortedSetRankAsync(
-            rankingKey,
-            $"participant:{participantAvatarAddress}:{seasonId}",
+            $"{RankingKeyPrefix}:{seasonId}",
+            $"participant:{avatarAddress.ToHex()}:{seasonId}",
             Order.Descending
         );
         return rank.HasValue ? (int)rank.Value + 1 : null;
     }
 
-    public async Task<int?> GetScoreAsync(
-        string rankingKey,
-        string participantAvatarAddress,
-        int seasonId
-    )
+    public async Task<int?> GetScoreAsync(Address avatarAddress, int seasonId)
     {
         var score = await _redis.SortedSetScoreAsync(
-            rankingKey,
-            $"participant:{participantAvatarAddress}:{seasonId}"
+            $"{RankingKeyPrefix}:{seasonId}",
+            $"participant:{avatarAddress.ToHex()}:{seasonId}"
         );
         return score.HasValue ? (int)score.Value : null;
     }
 
     public async Task<
-        List<(int Rank, Address ParticipantAvatarAddress, int SeasonId, int Score)>
-    > GetRankingsWithPaginationAsync(string rankingKey, int pageNumber, int pageSize)
+        List<(int Rank, Address AvatarAddress, int SeasonId, int Score)>
+    > GetRankingsWithPaginationAsync(int seasonId, int pageNumber, int pageSize)
     {
         int start = (pageNumber - 1) * pageSize;
         int end = start + pageSize - 1;
 
         var rankedParticipants = await _redis.SortedSetRangeByRankWithScoresAsync(
-            rankingKey,
+            $"{RankingKeyPrefix}:{seasonId}",
             start,
             end,
             Order.Descending
@@ -99,11 +79,11 @@ public class RankingRepository : IRankingRepository
             .Select(
                 (entry, index) =>
                 {
-                    var participantAvatarAddress = entry.Element.ToString().Split(':')[1];
+                    var avatarAddress = entry.Element.ToString().Split(':')[1];
                     var seasonId = int.Parse(entry.Element.ToString().Split(':')[2]);
                     return (
                         Rank: start + index + 1,
-                        ParticipantAvatarAddress: new Address(participantAvatarAddress),
+                        AvatarAddress: new Address(avatarAddress),
                         SeasonId: seasonId,
                         Score: (int)entry.Score
                     );
@@ -113,20 +93,14 @@ public class RankingRepository : IRankingRepository
     }
 
     public async Task<
-        List<(Address ParticipantAvatarAddress, int SeasonId, int Score)>
-    > GetRandomParticipantsTempAsync(
-        string rankingKey,
-        string participantAvatarAddress,
-        int seasonId,
-        int score,
-        int count
-    )
+        List<(Address AvatarAddress, int SeasonId, int Score)>
+    > GetRandomParticipantsTempAsync(Address avatarAddress, int seasonId, int score, int count)
     {
         double minScore = score - 100;
         double maxScore = score + 100;
 
         var participants = await _redis.SortedSetRangeByScoreWithScoresAsync(
-            rankingKey,
+            $"{RankingKeyPrefix}:{seasonId}",
             minScore,
             maxScore,
             Exclude.None,
@@ -140,7 +114,7 @@ public class RankingRepository : IRankingRepository
                 var address = parts[1];
                 var participantSeasonId = int.Parse(parts[2]);
 
-                return address != participantAvatarAddress && participantSeasonId == seasonId;
+                return address != avatarAddress.ToHex() && participantSeasonId == seasonId;
             })
             .Select(entry =>
             {

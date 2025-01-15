@@ -36,4 +36,13 @@ public class SeasonController : ControllerBase
 
         return TypedResults.Ok(season?.ToResponse());
     }
+
+    [HttpGet]
+    [ProducesResponseType(typeof(List<SeasonResponse>), StatusCodes.Status200OK)]
+    public async Task<Ok<List<SeasonResponse>>> GetSeasonByBlock()
+    {
+        var seasons = await _seasonRepo.GetAllSeasonsAsync();
+
+        return TypedResults.Ok(seasons.Select(s => s.ToResponse()).ToList());
+    }
 }

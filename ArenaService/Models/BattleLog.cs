@@ -1,16 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ArenaService.Constants;
 
 namespace ArenaService.Models;
-
-public enum TxStatus
-{
-    INVALID,
-    STAGING,
-    SUCCESS,
-    FAILURE,
-    INCLUDED,
-}
 
 [Table("battle_logs")]
 public class BattleLog

@@ -30,9 +30,9 @@ public class CalcAvailableOpponentsProcessor
         _seasonRepo = seasonRepo;
     }
 
-    public async Task ProcessAsync(Address participantAvatarAddress, int seasonId)
+    public async Task ProcessAsync(Address avatarAddress, int seasonId, int roundId)
     {
-        _logger.LogInformation($"Calc ao: {participantAvatarAddress}, {seasonId}");
+        _logger.LogInformation($"Calc ao: {avatarAddress}, {seasonId}");
 
         var tipResponse = await _client.GetTipIndex.ExecuteAsync();
 
@@ -62,25 +62,19 @@ public class CalcAvailableOpponentsProcessor
             return;
         }
 
-        var rankingKey = $"ranking:season:{seasonId}";
-        var myScore = await _rankingRepository.GetScoreAsync(
-            rankingKey,
-            participantAvatarAddress.ToHex(),
-            seasonId
-        );
+        var myScore = await _rankingRepository.GetScoreAsync(avatarAddress, seasonId);
         var opponents = await _rankingRepository.GetRandomParticipantsTempAsync(
-            rankingKey,
-            participantAvatarAddress.ToHex(),
+            avatarAddress,
             seasonId,
             myScore.Value,
             5
         );
 
         await _availableOpponentRepository.AddAvailableOpponents(
-            participantAvatarAddress,
+            avatarAddress,
             seasonId,
             currentRound.Id,
-            opponents.Select(o => o.ParticipantAvatarAddress).ToList()
+            opponents.Select(o => o.AvatarAddress).ToList()
         );
     }
 }

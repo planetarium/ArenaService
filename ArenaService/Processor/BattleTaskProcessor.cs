@@ -16,18 +16,21 @@ public class BattleTaskProcessor
     private readonly ILogger<BattleTaskProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly IBattleLogRepository _battleLogRepo;
+    private readonly IRankingRepository _rankingRepo;
     private readonly IParticipantRepository _participantRepo;
 
     public BattleTaskProcessor(
         ILogger<BattleTaskProcessor> logger,
         IHeadlessClient client,
         IBattleLogRepository battleLogRepo,
+        IRankingRepository rankingRepo,
         IParticipantRepository participantRepo
     )
     {
         _logger = logger;
         _client = client;
         _battleLogRepo = battleLogRepo;
+        _rankingRepo = rankingRepo;
         _participantRepo = participantRepo;
     }
 
@@ -94,14 +97,26 @@ public class BattleTaskProcessor
                             enemyScoreChange,
                             1
                         );
+                        var attackerAddress = new Address(battleLog.Attacker.AvatarAddress);
+                        var defenderAddress = new Address(battleLog.Defender.AvatarAddress);
                         await _participantRepo.UpdateScoreAsync(
                             battleLog.SeasonId,
-                            new Address(battleLog.Attacker.AvatarAddress),
+                            attackerAddress,
                             myScoreChange
                         );
                         await _participantRepo.UpdateScoreAsync(
                             battleLog.SeasonId,
-                            new Address(battleLog.Defender.AvatarAddress),
+                            defenderAddress,
+                            enemyScoreChange
+                        );
+                        await _rankingRepo.UpdateScoreAsync(
+                            attackerAddress,
+                            battleLog.SeasonId,
+                            myScoreChange
+                        );
+                        await _rankingRepo.UpdateScoreAsync(
+                            defenderAddress,
+                            battleLog.SeasonId,
                             enemyScoreChange
                         );
                         return;

@@ -1,5 +1,6 @@
 namespace ArenaService.Extensions;
 
+using ArenaService.Constants;
 using ArenaService.Dtos;
 using ArenaService.Models;
 
@@ -14,6 +15,11 @@ public static class BattleLogExtensions
             AttackerAvatarAddress = battleLog.AttackerAvatarAddress,
             DefenderAvatarAddress = battleLog.DefenderAvatarAddress,
             TxId = battleLog.TxId,
+            BattleStatus = battleLog.TxStatus is null
+                ? BattleStatus.PENDING
+                : battleLog.IsVictory is null
+                    ? BattleStatus.TRACKING
+                    : BattleStatus.COMPLETED,
             TxStatus = battleLog.TxStatus.ToString(),
             IsVictory = battleLog.IsVictory,
             ParticipantScore = battleLog.Attacker.Score,
