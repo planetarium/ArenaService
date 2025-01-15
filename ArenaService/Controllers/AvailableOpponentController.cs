@@ -11,25 +11,25 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
-[Route("seasons/{seasonId}/available-opponents")]
+[Route("available-opponents")]
 [ApiController]
 public class AvailableOpponentController : ControllerBase
 {
     private readonly IBackgroundJobClient _jobClient;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly IParticipantRepository _participantRepo;
-    private readonly ISeasonRepository _seasonRepo;
+    private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
         IParticipantRepository participantRepo,
-        ISeasonRepository seasonRepo,
+        ISeasonCacheRepository seasonCacheRepo,
         IBackgroundJobClient jobClient
     )
     {
         _availableOpponentRepo = availableOpponentRepo;
         _participantRepo = participantRepo;
-        _seasonRepo = seasonRepo;
+        _seasonCacheRepo = seasonCacheRepo;
         _jobClient = jobClient;
     }
 
@@ -37,40 +37,35 @@ public class AvailableOpponentController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(AvailableOpponentsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<
-        Results<UnauthorizedHttpResult, NotFound<string>, Ok<AvailableOpponentsResponse>>
-    > GetAvailableOpponents(int seasonId, long blockIndex)
+        Results<
+            UnauthorizedHttpResult,
+            NotFound<string>,
+            StatusCodeHttpResult,
+            Ok<AvailableOpponentsResponse>
+        >
+    > GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        var season = await _seasonRepo.GetSeasonAsync(seasonId);
+        var currentSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var currentRound = await _seasonCacheRepo.GetRoundAsync();
 
-        if (season == null)
+        if (currentSeason is null || currentRound is null)
         {
-            return TypedResults.NotFound("No season found.");
-        }
-
-        var currentRound = season.Rounds.FirstOrDefault(ai =>
-            ai.StartBlock <= blockIndex && ai.EndBlock >= blockIndex
-        );
-
-        if (currentRound == null)
-        {
-            return TypedResults.NotFound(
-                $"No active arena interval found for block index {blockIndex}."
-            );
+            return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
         }
 
         var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(
             avatarAddress,
-            seasonId,
-            currentRound.Id
+            currentSeason.Value.Id,
+            currentRound.Value.Id
         );
 
         if (availableOpponents == null)
         {
-            return TypedResults.NotFound($"Available opponents not found.");
+            return TypedResults.NotFound("No available opponents found for the current round.");
         }
 
         var opponents = new List<Participant>();
@@ -96,13 +91,23 @@ public class AvailableOpponentController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public Results<UnauthorizedHttpResult, NotFound<string>, Ok> RequestResetOpponents(int seasonId)
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<
+        Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
+    > RequestResetOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
+        var currentSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var currentRound = await _seasonCacheRepo.GetRoundAsync();
+
+        if (currentSeason is null || currentRound is null)
+        {
+            return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
+
         _jobClient.Enqueue<CalcAvailableOpponentsProcessor>(processor =>
-            processor.ProcessAsync(avatarAddress, seasonId)
+            processor.ProcessAsync(avatarAddress, currentSeason.Value.Id, currentRound.Value.Id)
         );
 
         return TypedResults.Ok();

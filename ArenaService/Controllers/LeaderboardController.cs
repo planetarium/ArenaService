@@ -23,16 +23,6 @@ public class LeaderboardController : ControllerBase
         _rankingRepository = rankingRepository;
     }
 
-    // [HttpGet]
-    // public async Task<Results<NotFound<string>, Ok<AvailableOpponentsResponse>>> GetLeaderboard(
-    //     int seasonId,
-    //     int offset,
-    //     int limit
-    // )
-    // {
-    //     var leaderboard = await _leaderboardRepository.GetLeaderboard(seasonId, offset, limit);
-    // }
-
     [HttpGet("participants/{avatarAddress}")]
     [ProducesResponseType(typeof(LeaderboardEntryResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -52,16 +42,12 @@ public class LeaderboardController : ControllerBase
             return TypedResults.NotFound("Not participant user.");
         }
 
-        var rankingKey = $"ranking:season:{seasonId}";
-
         var rank = await _rankingRepository.GetRankAsync(
-            rankingKey,
-            participant.AvatarAddress,
+            new Address(participant.AvatarAddress),
             seasonId
         );
         var score = await _rankingRepository.GetScoreAsync(
-            rankingKey,
-            participant.AvatarAddress,
+            new Address(participant.AvatarAddress),
             seasonId
         );
 

@@ -1,5 +1,6 @@
 namespace ArenaService.Extensions;
 
+using ArenaService.Constants;
 using ArenaService.Models;
 
 public static class TxStatusExtensions

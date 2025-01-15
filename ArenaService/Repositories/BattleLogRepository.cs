@@ -1,5 +1,6 @@
 namespace ArenaService.Repositories;
 
+using ArenaService.Constants;
 using ArenaService.Data;
 using ArenaService.Models;
 using Libplanet.Crypto;
