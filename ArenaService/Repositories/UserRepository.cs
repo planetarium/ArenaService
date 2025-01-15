@@ -23,6 +23,8 @@ public interface IUserRepository
         long cp,
         int level
     );
+
+    Task<User?> GetUserAsync(Address avatarAddress);
 }
 
 public class UserRepository : IUserRepository
@@ -60,6 +62,12 @@ public class UserRepository : IUserRepository
         );
 
         return newUser;
+    }
+
+    public async Task<User?> GetUserAsync(Address avatarAddress)
+    {
+        var user = await _context.Users.FindAsync(avatarAddress.ToHex());
+        return user;
     }
 
     public async Task<User> AddUserAsync(

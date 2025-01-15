@@ -4,6 +4,7 @@ using ArenaService.Auth;
 using ArenaService.Data;
 using ArenaService.Options;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -112,6 +113,8 @@ public class Startup
         services.AddScoped<IBattleLogRepository, BattleLogRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
+
+        services.AddScoped<ParticipateService>();
 
         services.AddCors(options =>
         {

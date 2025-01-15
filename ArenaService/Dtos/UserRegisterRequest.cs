@@ -1,6 +1,6 @@
 namespace ArenaService.Dtos;
 
-public class ParticipateRequest
+public class UserRegisterRequest
 {
     public required string NameWithHash { get; set; }
     public required int PortraitId { get; set; }
