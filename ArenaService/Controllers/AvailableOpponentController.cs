@@ -11,6 +11,7 @@ using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 [Route("available-opponents")]
 [ApiController]
@@ -39,9 +40,14 @@ public class AvailableOpponentController : ControllerBase
 
     [HttpGet]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(AvailableOpponentsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(
+        StatusCodes.Status200OK,
+        "AvailableOpponents",
+        typeof(AvailableOpponentsResponse)
+    )]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
     > GetAvailableOpponents()

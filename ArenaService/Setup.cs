@@ -1,5 +1,6 @@
 namespace ArenaService;
 
+using System.Text.Json.Serialization;
 using ArenaService.Auth;
 using ArenaService.Data;
 using ArenaService.Options;
@@ -60,7 +61,11 @@ public class Startup
                 }
             );
 
-        services.AddControllers();
+        services
+            .AddControllers()
+            .AddJsonOptions(options =>
+                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
+            );
 
         services
             .AddAuthentication("ES256K")
@@ -104,6 +109,8 @@ public class Startup
             );
 
             options.OperationFilter<AuthorizeCheckOperationFilter>();
+
+            options.EnableAnnotations();
         });
 
         services.AddScoped<IUserRepository, UserRepository>();

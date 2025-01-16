@@ -2,7 +2,7 @@ namespace ArenaService.Constants;
 
 public enum ArenaType
 {
-    OffSeason,
-    Season,
-    Championship,
+    OFF_SEASON,
+    SEASON,
+    CHAMPIONSHIP,
 }
