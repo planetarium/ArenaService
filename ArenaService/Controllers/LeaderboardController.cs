@@ -69,6 +69,7 @@ public class LeaderboardController : ControllerBase
                 SeasonId = participantResponse.SeasonId,
                 Score = participantResponse.Score,
                 Rank = rank.Value,
+                ClanImageURL = "",
             }
         );
     }

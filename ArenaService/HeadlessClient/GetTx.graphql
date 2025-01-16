@@ -1,0 +1,10 @@
+query GetTx($txId: TxId!) {
+  transaction {
+    getTx(txId: $txId) {
+      actions {
+        json
+      }
+      serializedPayload
+    }
+  }
+}

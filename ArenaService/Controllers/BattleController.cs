@@ -7,6 +7,7 @@ using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;
+using Libplanet.Types.Tx;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +36,7 @@ public class BattleController : ControllerBase
 
     [HttpGet("token")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<
@@ -73,14 +74,14 @@ public class BattleController : ControllerBase
         );
     }
 
-    [HttpPost("request")]
+    [HttpPost("{battleLogId}/request")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Ok>> RequestBattle(
-        [FromBody] string txId,
-        [FromBody] int battleLogId
+        int battleLogId,
+        [FromBody] string txId
     )
     {
         var battleLog = await _battleLogRepo.GetBattleLogAsync(battleLogId);
@@ -90,8 +91,8 @@ public class BattleController : ControllerBase
             return TypedResults.NotFound($"Battle log with ID {battleLogId} not found.");
         }
 
-        _jobClient.Enqueue<BattleTaskProcessor>(processor =>
-            processor.ProcessAsync(txId, battleLogId)
+        _jobClient.Enqueue<BattleProcessor>(processor =>
+            processor.ProcessAsync(TxId.FromHex(txId), battleLogId)
         );
 
         return TypedResults.Ok();

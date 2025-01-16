@@ -15,12 +15,12 @@ public static class BattleLogExtensions
             AttackerAvatarAddress = battleLog.AttackerAvatarAddress,
             DefenderAvatarAddress = battleLog.DefenderAvatarAddress,
             TxId = battleLog.TxId,
-            BattleStatus = battleLog.TxStatus is null
-                ? BattleStatus.PENDING
+            BattleTxTrackingStatus = battleLog.TxStatus is null
+                ? BattleTxTrackingStatus.PENDING
                 : battleLog.IsVictory is null
-                    ? BattleStatus.TRACKING
-                    : BattleStatus.COMPLETED,
-            TxStatus = battleLog.TxStatus.ToString(),
+                    ? BattleTxTrackingStatus.TRACKING
+                    : BattleTxTrackingStatus.COMPLETED,
+            TxStatus = battleLog.TxStatus,
             IsVictory = battleLog.IsVictory,
             ParticipantScore = battleLog.Attacker.Score,
             ParticipantScoreChange = battleLog.ParticipantScoreChange,

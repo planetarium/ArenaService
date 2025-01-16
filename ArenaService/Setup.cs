@@ -108,13 +108,16 @@ public class Startup
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
-        services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
         services.AddScoped<IBattleLogRepository, BattleLogRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
 
-        services.AddScoped<ParticipateService>();
+        services.AddScoped<IRankingRepository, RankingRepository>();
+        services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
+
+        services.AddScoped<ITxTrackingService, TxTrackingService>();
+        services.AddScoped<IParticipateService, ParticipateService>();
 
         services.AddCors(options =>
         {
@@ -136,9 +139,9 @@ public class Startup
         );
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
-        services
-            .AddSingleton<SeasonCachingWorker>()
-            .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
+        // services
+        //     .AddSingleton<SeasonCachingWorker>()
+        //     .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
 
         services.AddHangfireServer();
     }

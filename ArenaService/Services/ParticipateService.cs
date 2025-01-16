@@ -5,7 +5,12 @@ using ArenaService.Models;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
 
-public class ParticipateService
+public interface IParticipateService
+{
+    Task<Participant> ParticipateAsync(int seasonId, Address avatarAddress);
+}
+
+public class ParticipateService : IParticipateService
 {
     private readonly IParticipantRepository _participantRepo;
     private readonly IUserRepository _userRepo;

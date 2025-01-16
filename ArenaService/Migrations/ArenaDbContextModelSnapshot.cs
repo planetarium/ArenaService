@@ -23,44 +23,94 @@ namespace ArenaService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
+            modelBuilder.Entity("ArenaService.Models.AvailableOpponents", b =>
                 {
-                    b.Property<string>("ParticipantAvatarAddress")
-                        .HasColumnType("text")
-                        .HasColumnName("participant_avatar_address");
+                    b.Property<string>("AvatarAddress")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("avatar_address");
 
-                    b.Property<int>("IntervalId")
+                    b.Property<int>("RoundId")
                         .HasColumnType("integer")
-                        .HasColumnName("interval_id");
+                        .HasColumnName("round_id");
 
-                    b.Property<string>("CostPaid")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("cost_paid");
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
 
                     b.Property<List<string>>("OpponentAvatarAddresses")
                         .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("opponent_avatar_addresses");
 
-                    b.Property<int>("SeasonId")
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("AvatarAddress", "RoundId")
+                        .HasName("pk_available_opponents");
+
+                    b.HasIndex("RoundId")
+                        .HasDatabaseName("ix_available_opponents_round_id");
+
+                    b.ToTable("available_opponents", (string)null);
+                });
+
+            modelBuilder.Entity("ArenaService.Models.AvailableOpponentsRequest", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
-                        .HasColumnName("season_id");
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("AvatarAddress")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("avatar_address");
+
+                    b.Property<int>("CostPaid")
+                        .HasColumnType("integer")
+                        .HasColumnName("cost_paid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
+
+                    b.Property<List<string>>("RequestedOpponentAddresses")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("requested_avatar_addresses");
+
+                    b.Property<int>("RoundId")
+                        .HasColumnType("integer")
+                        .HasColumnName("round_id");
+
+                    b.Property<string>("TxId")
+                        .HasColumnType("text")
+                        .HasColumnName("tx_id");
+
+                    b.Property<int?>("TxStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("tx_status");
 
                     b.Property<int>("UpdateSource")
                         .HasColumnType("integer")
                         .HasColumnName("update_source");
 
-                    b.HasKey("ParticipantAvatarAddress", "IntervalId")
-                        .HasName("pk_available_opponents");
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
 
-                    b.HasIndex("IntervalId")
-                        .HasDatabaseName("ix_available_opponents_interval_id");
+                    b.HasKey("Id")
+                        .HasName("pk_available_opponents_requests");
 
-                    b.HasIndex("ParticipantAvatarAddress", "SeasonId")
-                        .HasDatabaseName("ix_available_opponents_participant_avatar_address_season_id");
+                    b.HasIndex("RoundId")
+                        .HasDatabaseName("ix_available_opponents_requests_round_id");
 
-                    b.ToTable("available_opponents", (string)null);
+                    b.ToTable("available_opponents_requests", (string)null);
                 });
 
             modelBuilder.Entity("ArenaService.Models.BattleLog", b =>
@@ -74,16 +124,22 @@ namespace ArenaService.Migrations
 
                     b.Property<string>("AttackerAvatarAddress")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("attacker_avatar_address");
 
                     b.Property<long?>("BattleBlockIndex")
                         .HasColumnType("bigint")
                         .HasColumnName("battle_block_index");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
+
                     b.Property<string>("DefenderAvatarAddress")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("defender_avatar_address");
 
                     b.Property<bool?>("IsVictory")
@@ -115,6 +171,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("tx_status");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
+
                     b.HasKey("Id")
                         .HasName("pk_battle_logs");
 
@@ -130,12 +190,17 @@ namespace ArenaService.Migrations
             modelBuilder.Entity("ArenaService.Models.Participant", b =>
                 {
                     b.Property<string>("AvatarAddress")
-                        .HasColumnType("text")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("avatar_address");
 
                     b.Property<int>("SeasonId")
                         .HasColumnType("integer")
                         .HasColumnName("season_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
 
                     b.Property<int>("InitializedScore")
                         .HasColumnType("integer")
@@ -144,6 +209,10 @@ namespace ArenaService.Migrations
                     b.Property<int>("Score")
                         .HasColumnType("integer")
                         .HasColumnName("score");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
 
                     b.HasKey("AvatarAddress", "SeasonId")
                         .HasName("pk_participants");
@@ -166,6 +235,10 @@ namespace ArenaService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
+
                     b.Property<long>("EndBlock")
                         .HasColumnType("bigint")
                         .HasColumnName("end_block");
@@ -177,6 +250,10 @@ namespace ArenaService.Migrations
                     b.Property<long>("StartBlock")
                         .HasColumnType("bigint")
                         .HasColumnName("start_block");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
 
                     b.HasKey("Id")
                         .HasName("pk_rounds");
@@ -196,6 +273,10 @@ namespace ArenaService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
+
                     b.Property<long>("EndBlock")
                         .HasColumnType("bigint")
                         .HasColumnName("end_block");
@@ -208,6 +289,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("start_block");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
+
                     b.HasKey("Id")
                         .HasName("pk_seasons");
 
@@ -217,17 +302,23 @@ namespace ArenaService.Migrations
             modelBuilder.Entity("ArenaService.Models.User", b =>
                 {
                     b.Property<string>("AvatarAddress")
-                        .HasColumnType("text")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("avatar_address");
 
                     b.Property<string>("AgentAddress")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("agent_address");
 
                     b.Property<long>("Cp")
                         .HasColumnType("bigint")
                         .HasColumnName("cp");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("created_at");
 
                     b.Property<int>("Level")
                         .HasColumnType("integer")
@@ -242,29 +333,36 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("portrait_id");
 
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp")
+                        .HasColumnName("updated_at");
+
                     b.HasKey("AvatarAddress")
                         .HasName("pk_users");
 
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
+            modelBuilder.Entity("ArenaService.Models.AvailableOpponents", b =>
                 {
                     b.HasOne("ArenaService.Models.Round", "Round")
                         .WithMany()
-                        .HasForeignKey("IntervalId")
+                        .HasForeignKey("RoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_available_opponents_rounds_interval_id");
+                        .HasConstraintName("fk_available_opponents_rounds_round_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                    b.Navigation("Round");
+                });
+
+            modelBuilder.Entity("ArenaService.Models.AvailableOpponentsRequest", b =>
+                {
+                    b.HasOne("ArenaService.Models.Round", "Round")
                         .WithMany()
-                        .HasForeignKey("ParticipantAvatarAddress", "SeasonId")
+                        .HasForeignKey("RoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
-                        .HasConstraintName("fk_available_opponents_participants_participant_avatar_address");
-
-                    b.Navigation("Participant");
+                        .HasConstraintName("fk_available_opponents_requests_rounds_round_id");
 
                     b.Navigation("Round");
                 });

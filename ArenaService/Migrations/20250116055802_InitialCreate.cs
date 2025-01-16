@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -20,7 +21,9 @@ namespace ArenaService.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     start_block = table.Column<long>(type: "bigint", nullable: false),
                     end_block = table.Column<long>(type: "bigint", nullable: false),
-                    interval = table.Column<int>(type: "integer", nullable: false)
+                    interval = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -31,12 +34,14 @@ namespace ArenaService.Migrations
                 name: "users",
                 columns: table => new
                 {
-                    avatar_address = table.Column<string>(type: "text", nullable: false),
-                    agent_address = table.Column<string>(type: "text", nullable: false),
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    agent_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     name_with_hash = table.Column<string>(type: "text", nullable: false),
                     portrait_id = table.Column<int>(type: "integer", nullable: false),
                     cp = table.Column<long>(type: "bigint", nullable: false),
-                    level = table.Column<int>(type: "integer", nullable: false)
+                    level = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -51,7 +56,9 @@ namespace ArenaService.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     season_id = table.Column<int>(type: "integer", nullable: false),
                     start_block = table.Column<long>(type: "bigint", nullable: false),
-                    end_block = table.Column<long>(type: "bigint", nullable: false)
+                    end_block = table.Column<long>(type: "bigint", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -68,10 +75,12 @@ namespace ArenaService.Migrations
                 name: "participants",
                 columns: table => new
                 {
-                    avatar_address = table.Column<string>(type: "text", nullable: false),
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     season_id = table.Column<int>(type: "integer", nullable: false),
                     initialized_score = table.Column<int>(type: "integer", nullable: false),
-                    score = table.Column<int>(type: "integer", nullable: false)
+                    score = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -94,25 +103,45 @@ namespace ArenaService.Migrations
                 name: "available_opponents",
                 columns: table => new
                 {
-                    participant_avatar_address = table.Column<string>(type: "text", nullable: false),
-                    interval_id = table.Column<int>(type: "integer", nullable: false),
-                    season_id = table.Column<int>(type: "integer", nullable: false),
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    round_id = table.Column<int>(type: "integer", nullable: false),
                     opponent_avatar_addresses = table.Column<List<string>>(type: "text[]", nullable: false),
-                    update_source = table.Column<int>(type: "integer", nullable: false),
-                    cost_paid = table.Column<string>(type: "text", nullable: false)
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("pk_available_opponents", x => new { x.participant_avatar_address, x.interval_id });
+                    table.PrimaryKey("pk_available_opponents", x => new { x.avatar_address, x.round_id });
                     table.ForeignKey(
-                        name: "fk_available_opponents_participants_participant_avatar_address",
-                        columns: x => new { x.participant_avatar_address, x.season_id },
-                        principalTable: "participants",
-                        principalColumns: new[] { "avatar_address", "season_id" },
+                        name: "fk_available_opponents_rounds_round_id",
+                        column: x => x.round_id,
+                        principalTable: "rounds",
+                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "available_opponents_requests",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    round_id = table.Column<int>(type: "integer", nullable: false),
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    update_source = table.Column<int>(type: "integer", nullable: false),
+                    cost_paid = table.Column<int>(type: "integer", nullable: false),
+                    tx_id = table.Column<string>(type: "text", nullable: true),
+                    tx_status = table.Column<int>(type: "integer", nullable: true),
+                    requested_avatar_addresses = table.Column<List<string>>(type: "text[]", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_available_opponents_requests", x => x.id);
                     table.ForeignKey(
-                        name: "fk_available_opponents_rounds_interval_id",
-                        column: x => x.interval_id,
+                        name: "fk_available_opponents_requests_rounds_round_id",
+                        column: x => x.round_id,
                         principalTable: "rounds",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
@@ -125,15 +154,17 @@ namespace ArenaService.Migrations
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     season_id = table.Column<int>(type: "integer", nullable: false),
-                    attacker_avatar_address = table.Column<string>(type: "text", nullable: false),
-                    defender_avatar_address = table.Column<string>(type: "text", nullable: false),
+                    attacker_avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    defender_avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     token = table.Column<string>(type: "text", nullable: false),
                     tx_id = table.Column<string>(type: "text", nullable: true),
                     tx_status = table.Column<int>(type: "integer", nullable: true),
                     is_victory = table.Column<bool>(type: "boolean", nullable: true),
                     participant_score_change = table.Column<int>(type: "integer", nullable: true),
                     opponent_score_change = table.Column<int>(type: "integer", nullable: true),
-                    battle_block_index = table.Column<long>(type: "bigint", nullable: true)
+                    battle_block_index = table.Column<long>(type: "bigint", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamp", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamp", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -153,14 +184,14 @@ namespace ArenaService.Migrations
                 });
 
             migrationBuilder.CreateIndex(
-                name: "ix_available_opponents_interval_id",
+                name: "ix_available_opponents_round_id",
                 table: "available_opponents",
-                column: "interval_id");
+                column: "round_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_available_opponents_participant_avatar_address_season_id",
-                table: "available_opponents",
-                columns: new[] { "participant_avatar_address", "season_id" });
+                name: "ix_available_opponents_requests_round_id",
+                table: "available_opponents_requests",
+                column: "round_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_battle_logs_attacker_avatar_address_season_id",
@@ -193,6 +224,9 @@ namespace ArenaService.Migrations
         {
             migrationBuilder.DropTable(
                 name: "available_opponents");
+
+            migrationBuilder.DropTable(
+                name: "available_opponents_requests");
 
             migrationBuilder.DropTable(
                 name: "battle_logs");

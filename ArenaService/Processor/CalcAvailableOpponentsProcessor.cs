@@ -1,6 +1,9 @@
 using ArenaService.Client;
+using ArenaService.Constants;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using Libplanet.Crypto;
+using Libplanet.Types.Tx;
 
 namespace ArenaService.Worker;
 
@@ -12,6 +15,7 @@ public class CalcAvailableOpponentsProcessor
     private readonly IRoundRepository _roundRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepository;
     private readonly IRankingRepository _rankingRepository;
+    private readonly ITxTrackingService _txTrackingService;
 
     public CalcAvailableOpponentsProcessor(
         ILogger<CalcAvailableOpponentsProcessor> logger,
@@ -19,6 +23,7 @@ public class CalcAvailableOpponentsProcessor
         ISeasonRepository seasonRepo,
         IRoundRepository roundRepo,
         IAvailableOpponentRepository availableOpponentRepository,
+        ITxTrackingService txTrackingService,
         IRankingRepository rankingRepository
     )
     {
@@ -27,39 +32,45 @@ public class CalcAvailableOpponentsProcessor
         _roundRepo = roundRepo;
         _availableOpponentRepository = availableOpponentRepository;
         _rankingRepository = rankingRepository;
+        _txTrackingService = txTrackingService;
         _seasonRepo = seasonRepo;
     }
 
-    public async Task ProcessAsync(Address avatarAddress, int seasonId, int roundId)
+    public async Task ProcessAsync(Address avatarAddress, int seasonId, int roundId, TxId? txId)
     {
-        _logger.LogInformation($"Calc ao: {avatarAddress}, {seasonId}");
+        _logger.LogInformation($"Calc ao: {avatarAddress}, {seasonId}, {roundId}");
 
-        var tipResponse = await _client.GetTipIndex.ExecuteAsync();
+        var availableOpponentsRequests =
+            await _availableOpponentRepository.GetAvailableOpponentsRequests(
+                avatarAddress,
+                roundId
+            );
+        var refreshCount = availableOpponentsRequests.Count;
 
-        if (tipResponse.Data is null)
+        var policy = OpponentRefreshCosts.GetPolicy(refreshCount);
+
+        if (policy.Source != UpdateSource.FREE)
         {
-            _logger.LogInformation($"tipResponse is null");
-            return;
-        }
+            if (txId is null)
+            {
+                throw new ArgumentNullException("Subsequent refresh costs required");
+            }
 
-        var blockIndex = tipResponse.Data.NodeStatus.Tip.Index;
-
-        var season = await _seasonRepo.GetSeasonAsync(seasonId);
-
-        if (season == null)
-        {
-            _logger.LogInformation($"season is null");
-            return;
-        }
-
-        var currentRound = season.Rounds.FirstOrDefault(ai =>
-            ai.StartBlock <= blockIndex && ai.EndBlock >= blockIndex
-        );
-
-        if (currentRound == null)
-        {
-            _logger.LogInformation($"currentRound is null");
-            return;
+            await _txTrackingService.TrackTransactionAsync(
+                txId.Value,
+                async status =>
+                {
+                    Console.WriteLine($"Status updated: {status}");
+                },
+                async successResponse =>
+                {
+                    Console.WriteLine($"Transaction succeeded! Response: {successResponse}");
+                },
+                async transactionId =>
+                {
+                    Console.WriteLine($"Transaction timed out for ID: {transactionId}");
+                }
+            );
         }
 
         var myScore = await _rankingRepository.GetScoreAsync(avatarAddress, seasonId);
@@ -72,8 +83,7 @@ public class CalcAvailableOpponentsProcessor
 
         await _availableOpponentRepository.AddAvailableOpponents(
             avatarAddress,
-            seasonId,
-            currentRound.Id,
+            roundId,
             opponents.Select(o => o.AvatarAddress).ToList()
         );
     }

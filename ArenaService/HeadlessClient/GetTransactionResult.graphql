@@ -3,6 +3,7 @@ query GetTransactionResult($txId: TxId!) {
     transactionResult(txId: $txId) {
       txStatus
       blockIndex
+      outputState
     }
   }
 }

@@ -51,7 +51,7 @@ public class AvailableOpponentControllerTests
             .Setup(repo => repo.GetAvailableOpponents(1))
             .ReturnsAsync(
                 [
-                    new AvailableOpponent
+                    new AvailableOpponents
                     {
                         Id = 1,
                         ParticipantId = 1,
@@ -65,7 +65,7 @@ public class AvailableOpponentControllerTests
                         },
                         RefillBlockIndex = 1
                     },
-                    new AvailableOpponent
+                    new AvailableOpponents
                     {
                         Id = 2,
                         ParticipantId = 1,

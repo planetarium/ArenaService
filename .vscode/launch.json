@@ -10,34 +10,8 @@
             "cwd": "${workspaceFolder}/ArenaService",
             "stopAtEntry": false,
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Local"
             }
-        },
-        {
-            "name": "Debug ArenaService.Worker",
-            "type": "coreclr",
-            "request": "launch",
-            "program": "${workspaceFolder}/ArenaService.Worker/bin/Debug/net8.0/ArenaService.Worker.dll",
-            "cwd": "${workspaceFolder}/ArenaService.Worker",
-            "stopAtEntry": false,
-            "console": "internalConsole",
-            "preLaunchTask": "build-worker",
-            "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
-            }
-        },
-        {
-          "type": "node",
-          "request": "launch",
-          "name": "Debug Worker",
-          "runtimeExecutable": "pnpm",
-          "runtimeArgs": ["start"],
-          "skipFiles": ["<node_internals>/**"],
-          "cwd": "${workspaceFolder}",
-          "envFile": "${workspaceFolder}/Worker/.env",
-          "sourceMaps": true,
-          "outFiles": ["${workspaceFolder}/Worker/dist/**/*.js"],
-          "console": "integratedTerminal"
-        },
+        }
     ]
 } 

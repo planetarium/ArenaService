@@ -12,9 +12,9 @@ public class BattleLogResponse
 
     public required string DefenderAvatarAddress { get; set; }
 
-    public BattleStatus BattleStatus { get; set; }
+    public BattleTxTrackingStatus BattleTxTrackingStatus { get; set; }
     public string? TxId { get; set; }
-    public string? TxStatus { get; set; }
+    public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }
     public int? ParticipantScore { get; set; }
     public int? ParticipantScoreChange { get; set; }

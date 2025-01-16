@@ -1,6 +1,6 @@
 namespace ArenaService.Constants;
 
-public enum BattleStatus
+public enum BattleTxTrackingStatus
 {
     PENDING,
     TRACKING,

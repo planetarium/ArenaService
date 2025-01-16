@@ -43,12 +43,7 @@ public class AvailableOpponentController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<
-        Results<
-            UnauthorizedHttpResult,
-            NotFound<string>,
-            StatusCodeHttpResult,
-            Ok<AvailableOpponentsResponse>
-        >
+        Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
     > GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -64,7 +59,6 @@ public class AvailableOpponentController : ControllerBase
 
         var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(
             avatarAddress,
-            currentSeason.Value.Id,
             currentRound.Value.Id
         );
 
@@ -78,7 +72,7 @@ public class AvailableOpponentController : ControllerBase
         foreach (var oaa in availableOpponents.OpponentAvatarAddresses)
         {
             var participant = await _participantRepo.GetParticipantAsync(
-                availableOpponents.SeasonId,
+                currentSeason.Value.Id,
                 new Address(oaa)
             );
             if (participant != null)
@@ -87,19 +81,17 @@ public class AvailableOpponentController : ControllerBase
             }
         }
 
-        return TypedResults.Ok(
-            new AvailableOpponentsResponse { AvailableOpponents = opponents.ToResponse() }
-        );
+        return TypedResults.Ok();
     }
 
-    [HttpPost]
+    [HttpPost("refresh")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
-    > RequestResetOpponents()
+    > RequestRefresh(string txId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -114,7 +106,45 @@ public class AvailableOpponentController : ControllerBase
         await _participateService.ParticipateAsync(currentSeason.Value.Id, avatarAddress);
 
         _jobClient.Enqueue<CalcAvailableOpponentsProcessor>(processor =>
-            processor.ProcessAsync(avatarAddress, currentSeason.Value.Id, currentRound.Value.Id)
+            processor.ProcessAsync(
+                avatarAddress,
+                currentSeason.Value.Id,
+                currentRound.Value.Id,
+                null
+            )
+        );
+
+        return TypedResults.Ok();
+    }
+
+    [HttpPost("free-refresh")]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [ProducesResponseType(typeof(AvailableOpponentsResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    public async Task<
+        Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
+    > RequestFreeRefresh()
+    {
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
+
+        var currentSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var currentRound = await _seasonCacheRepo.GetRoundAsync();
+
+        if (currentSeason is null || currentRound is null)
+        {
+            return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
+        }
+
+        await _participateService.ParticipateAsync(currentSeason.Value.Id, avatarAddress);
+
+        _jobClient.Enqueue<CalcAvailableOpponentsProcessor>(processor =>
+            processor.ProcessAsync(
+                avatarAddress,
+                currentSeason.Value.Id,
+                currentRound.Value.Id,
+                null
+            )
         );
 
         return TypedResults.Ok();

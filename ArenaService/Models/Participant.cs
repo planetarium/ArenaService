@@ -9,6 +9,7 @@ namespace ArenaService.Models;
 public class Participant
 {
     [Required]
+    [StringLength(40, MinimumLength = 40)]
     public required string AvatarAddress { get; set; }
     public User User { get; set; } = null!;
 
@@ -18,4 +19,12 @@ public class Participant
 
     public int InitializedScore { get; set; } = 1000;
     public int Score { get; set; } = 1000;
+
+    [Required]
+    [Column(TypeName = "timestamp")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+    [Required]
+    [Column(TypeName = "timestamp")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

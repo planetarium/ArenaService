@@ -3,31 +3,26 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace ArenaService.Models;
 
-public enum UpdateSource
-{
-    FREE,
-    UserPaid
-}
-
 [Table("available_opponents")]
-public class AvailableOpponent
+public class AvailableOpponents
 {
     [Required]
-    public int SeasonId { get; set; }
+    [StringLength(40, MinimumLength = 40)]
+    public required string AvatarAddress { get; set; }
 
     [Required]
-    public required string ParticipantAvatarAddress { get; set; }
-    public Participant Participant { get; set; } = null!;
-
-    [Required]
-    public int IntervalId { get; set; }
+    public int RoundId { get; set; }
     public Round Round { get; set; } = null!;
 
     [Required]
     [Column("opponent_avatar_addresses", TypeName = "text[]")]
     public List<string> OpponentAvatarAddresses { get; set; } = new List<string>();
 
-    public UpdateSource UpdateSource { get; set; }
+    [Required]
+    [Column(TypeName = "timestamp")]
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
-    public string CostPaid { get; set; }
+    [Required]
+    [Column(TypeName = "timestamp")]
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -4,33 +4,32 @@ using ArenaService.Constants;
 
 namespace ArenaService.Models;
 
-[Table("battle_logs")]
-public class BattleLog
+[Table("available_opponents_requests")]
+public class AvailableOpponentsRequest
 {
     public int Id { get; set; }
 
     [Required]
-    public int SeasonId { get; set; }
+    public int RoundId { get; set; }
+    public Round Round { get; set; } = null!;
 
     [Required]
     [StringLength(40, MinimumLength = 40)]
-    public required string AttackerAvatarAddress { get; set; }
-    public Participant Attacker { get; set; } = null!;
+    public required string AvatarAddress { get; set; }
 
     [Required]
-    [StringLength(40, MinimumLength = 40)]
-    public required string DefenderAvatarAddress { get; set; }
-    public Participant Defender { get; set; } = null!;
+    public UpdateSource UpdateSource { get; set; }
 
     [Required]
-    public required string Token { get; set; }
+    public int CostPaid { get; set; } = 0;
 
     public string? TxId { get; set; }
+
     public TxStatus? TxStatus { get; set; }
-    public bool? IsVictory { get; set; }
-    public int? ParticipantScoreChange { get; set; }
-    public int? OpponentScoreChange { get; set; }
-    public long? BattleBlockIndex { get; set; }
+
+    [Required]
+    [Column("requested_avatar_addresses", TypeName = "text[]")]
+    public List<string> RequestedOpponentAddresses { get; set; } = new List<string>();
 
     [Required]
     [Column(TypeName = "timestamp")]

@@ -1,22 +1,22 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using ArenaService.Constants;
 
 namespace ArenaService.Models;
 
-[Table("rounds")]
-public class Round
+[Table("ticket_price")]
+public class TicketPrice
 {
     public int Id { get; set; }
 
     [Required]
-    public int SeasonId { get; set; }
-    public Season Season { get; set; } = null!;
+    public long Price { get; }
 
     [Required]
-    public long StartBlock { get; set; }
+    public int MaxTicketPurchaseCount { get; }
 
     [Required]
-    public long EndBlock { get; set; }
+    public int MaxPurchaseCountEachRound { get; }
 
     [Required]
     [Column(TypeName = "timestamp")]

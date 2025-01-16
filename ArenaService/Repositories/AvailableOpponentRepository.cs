@@ -7,16 +7,15 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IAvailableOpponentRepository
 {
-    Task<AvailableOpponent?> GetAvailableOpponents(
-        Address participantAvatarAddress,
-        int seasonId,
-        int roundId
-    );
-    Task<AvailableOpponent> AddAvailableOpponents(
-        Address participantAvatarAddress,
-        int seasonId,
+    Task<AvailableOpponents?> GetAvailableOpponents(Address avatarAddress, int roundId);
+    Task<AvailableOpponents> AddAvailableOpponents(
+        Address avatarAddress,
         int roundId,
         List<Address> opponentAvatarAddresses
+    );
+    Task<List<AvailableOpponentsRequest>> GetAvailableOpponentsRequests(
+        Address avatarAddress,
+        int roundId
     );
 }
 
@@ -29,44 +28,48 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         _context = context;
     }
 
-    public async Task<AvailableOpponent?> GetAvailableOpponents(
-        Address participantAvatarAddress,
-        int seasonId,
-        int roundId
-    )
+    public async Task<AvailableOpponents?> GetAvailableOpponents(Address avatarAddress, int roundId)
     {
         var availableOpponents = await _context
             .AvailableOpponents.Where(ao =>
-                ao.SeasonId == seasonId
-                && ao.ParticipantAvatarAddress == participantAvatarAddress.ToHex()
-                && ao.IntervalId == roundId
+                ao.AvatarAddress == avatarAddress.ToHex() && ao.RoundId == roundId
             )
             .FirstOrDefaultAsync();
 
         return availableOpponents;
     }
 
-    public async Task<AvailableOpponent> AddAvailableOpponents(
-        Address participantAvatarAddress,
-        int seasonId,
+    public async Task<AvailableOpponents> AddAvailableOpponents(
+        Address avatarAddress,
         int roundId,
         List<Address> opponentAvatarAddresses
     )
     {
         var ao = await _context.AvailableOpponents.AddAsync(
-            new AvailableOpponent
+            new AvailableOpponents
             {
-                SeasonId = seasonId,
-                ParticipantAvatarAddress = participantAvatarAddress.ToHex(),
-                IntervalId = roundId,
+                AvatarAddress = avatarAddress.ToHex(),
+                RoundId = roundId,
                 OpponentAvatarAddresses = opponentAvatarAddresses
                     .Select(oaa => oaa.ToHex())
                     .ToList(),
-                UpdateSource = UpdateSource.FREE,
-                CostPaid = "0",
             }
         );
         _context.SaveChanges();
         return ao.Entity;
+    }
+
+    public async Task<List<AvailableOpponentsRequest>> GetAvailableOpponentsRequests(
+        Address avatarAddress,
+        int roundId
+    )
+    {
+        var availableOpponentsRequests = await _context
+            .AvailableOpponentsRequests.Where(ao =>
+                ao.AvatarAddress == avatarAddress.ToHex() && ao.RoundId == roundId
+            )
+            .ToListAsync();
+
+        return availableOpponentsRequests;
     }
 }

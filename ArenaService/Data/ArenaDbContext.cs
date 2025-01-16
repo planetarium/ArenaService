@@ -12,7 +12,8 @@ public class ArenaDbContext : DbContext
     public required DbSet<Season> Seasons { get; set; }
     public required DbSet<Participant> Participants { get; set; }
     public required DbSet<BattleLog> BattleLogs { get; set; }
-    public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
+    public required DbSet<AvailableOpponents> AvailableOpponents { get; set; }
+    public required DbSet<AvailableOpponentsRequest> AvailableOpponentsRequests { get; set; }
     public required DbSet<Round> Rounds { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -43,27 +44,27 @@ public class ArenaDbContext : DbContext
             .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
-            .Entity<AvailableOpponent>()
-            .HasKey(ao => new { ao.ParticipantAvatarAddress, ao.IntervalId });
+            .Entity<AvailableOpponents>()
+            .HasKey(ao => new { ao.AvatarAddress, ao.RoundId });
 
         modelBuilder
-            .Entity<AvailableOpponent>()
-            .HasOne(ao => ao.Participant)
-            .WithMany()
-            .HasForeignKey(ao => new { ao.ParticipantAvatarAddress, ao.SeasonId })
-            .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
-
-        modelBuilder
-            .Entity<AvailableOpponent>()
+            .Entity<AvailableOpponents>()
             .HasOne(ao => ao.Round)
             .WithMany()
-            .HasForeignKey(ao => ao.IntervalId)
-            .HasPrincipalKey(ai => ai.Id);
+            .HasForeignKey(ao => ao.RoundId)
+            .HasPrincipalKey(r => r.Id);
+
+        modelBuilder
+            .Entity<AvailableOpponentsRequest>()
+            .HasOne(ao => ao.Round)
+            .WithMany()
+            .HasForeignKey(ao => ao.RoundId)
+            .HasPrincipalKey(r => r.Id);
 
         modelBuilder
             .Entity<Round>()
             .HasOne(ai => ai.Season)
             .WithMany(s => s.Rounds)
-            .HasForeignKey(ai => ai.SeasonId);
+            .HasForeignKey(r => r.SeasonId);
     }
 }
