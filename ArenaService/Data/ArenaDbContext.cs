@@ -1,4 +1,5 @@
 using ArenaService.Models;
+using ArenaService.Views;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Data;
@@ -10,11 +11,15 @@ public class ArenaDbContext : DbContext
 
     public required DbSet<User> Users { get; set; }
     public required DbSet<Season> Seasons { get; set; }
+    public required DbSet<Round> Rounds { get; set; }
+    public required DbSet<RefreshRequest> RefreshRequests { get; set; }
+    public required DbSet<RefreshPricePolicy> RefreshPricePolicies { get; set; }
+    public required DbSet<RefreshPriceDetail> RefreshPriceDetails { get; set; }
     public required DbSet<Participant> Participants { get; set; }
     public required DbSet<BattleLog> BattleLogs { get; set; }
-    public required DbSet<AvailableOpponents> AvailableOpponents { get; set; }
-    public required DbSet<AvailableOpponentsRequest> AvailableOpponentsRequests { get; set; }
-    public required DbSet<Round> Rounds { get; set; }
+    public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
+    public required DbSet<AvailableOpponentsRefreshRequest> AvailableOpponentsRefreshRequests { get; set; }
+    public required DbSet<RefreshPriceMaterializedView> RefreshPriceView { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -23,48 +28,38 @@ public class ArenaDbContext : DbContext
         modelBuilder.Entity<Participant>().HasKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
-            .Entity<Participant>()
-            .HasOne(p => p.User)
-            .WithMany()
-            .HasForeignKey(p => p.AvatarAddress)
-            .HasPrincipalKey(u => u.AvatarAddress);
-
-        modelBuilder
-            .Entity<BattleLog>()
-            .HasOne(b => b.Defender)
-            .WithMany()
-            .HasForeignKey(b => new { b.DefenderAvatarAddress, b.SeasonId })
-            .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
+            .Entity<Round>()
+            .HasOne(r => r.Season)
+            .WithMany(s => s.Rounds)
+            .HasForeignKey(r => r.SeasonId);
 
         modelBuilder
             .Entity<BattleLog>()
             .HasOne(b => b.Attacker)
             .WithMany()
-            .HasForeignKey(b => new { b.AttackerAvatarAddress, b.SeasonId })
-            .HasPrincipalKey(p => new { p.AvatarAddress, p.SeasonId });
+            .HasForeignKey(b => new { b.AttackerAvatarAddress, b.SeasonId });
 
         modelBuilder
-            .Entity<AvailableOpponents>()
-            .HasKey(ao => new { ao.AvatarAddress, ao.RoundId });
-
-        modelBuilder
-            .Entity<AvailableOpponents>()
-            .HasOne(ao => ao.Round)
+            .Entity<BattleLog>()
+            .HasOne(b => b.Defender)
             .WithMany()
-            .HasForeignKey(ao => ao.RoundId)
-            .HasPrincipalKey(r => r.Id);
+            .HasForeignKey(b => new { b.DefenderAvatarAddress, b.SeasonId });
 
         modelBuilder
-            .Entity<AvailableOpponentsRequest>()
-            .HasOne(ao => ao.Round)
+            .Entity<AvailableOpponent>()
+            .HasOne(b => b.MyParticipant)
             .WithMany()
-            .HasForeignKey(ao => ao.RoundId)
-            .HasPrincipalKey(r => r.Id);
+            .HasForeignKey(b => new { b.AvatarAddress, b.SeasonId });
 
         modelBuilder
-            .Entity<Round>()
-            .HasOne(ai => ai.Season)
-            .WithMany(s => s.Rounds)
-            .HasForeignKey(r => r.SeasonId);
+            .Entity<AvailableOpponent>()
+            .HasOne(b => b.Opponent)
+            .WithMany()
+            .HasForeignKey(b => new { b.OpponentAvatarAddress, b.SeasonId });
+
+        modelBuilder
+            .Entity<RefreshPriceMaterializedView>()
+            .ToView(RefreshPriceMaterializedView.ViewName)
+            .HasNoKey();
     }
 }

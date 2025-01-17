@@ -6,6 +6,7 @@ using ArenaService.Data;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Views;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -123,8 +124,11 @@ public class Startup
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 
+        services.AddScoped<IRefreshPriceRepository, RefreshPriceRepository>();
+
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
+        services.AddScoped<ISpecifyOpponentsService, SpecifyOpponentsService>();
 
         services.AddCors(options =>
         {
@@ -146,14 +150,19 @@ public class Startup
         );
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
-        // services
-        //     .AddSingleton<SeasonCachingWorker>()
-        //     .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
+        services
+            .AddSingleton<SeasonCachingWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
 
         services.AddHangfireServer();
+        services.AddHealthChecks();
     }
 
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure(
+        IApplicationBuilder app,
+        IWebHostEnvironment env,
+        IServiceProvider serviceProvider
+    )
     {
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
@@ -175,8 +184,20 @@ public class Startup
         {
             endpoints.MapControllers();
             endpoints.MapSwagger();
-            // endpoints.MapHealthChecks("/ping");
+            endpoints.MapHealthChecks("/ping");
         });
+
+        PerformInitialSetup(serviceProvider);
+    }
+
+    private void PerformInitialSetup(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ArenaDbContext>();
+
+        dbContext.Database.Migrate();
+        RefreshPriceMaterializedView.InitializeMaterializedViewAsync(dbContext).Wait();
     }
 }
 

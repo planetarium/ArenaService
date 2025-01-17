@@ -6,10 +6,13 @@ namespace ArenaService.Models;
 [Table("rounds")]
 public class Round
 {
+    [Key]
     public int Id { get; set; }
 
     [Required]
     public int SeasonId { get; set; }
+
+    [ForeignKey(nameof(SeasonId))]
     public Season Season { get; set; } = null!;
 
     [Required]
@@ -19,10 +22,10 @@ public class Round
     public long EndBlock { get; set; }
 
     [Required]
-    [Column(TypeName = "timestamp")]
+    [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [Required]
-    [Column(TypeName = "timestamp")]
+    [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

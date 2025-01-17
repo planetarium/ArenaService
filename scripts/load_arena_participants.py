@@ -36,17 +36,17 @@ def insert_participants(season_id, participants):
                 for participant in participants:
                     cursor.execute(
                         sql.SQL("""
-                            INSERT INTO users (agent_address, avatar_address, name_with_hash, portrait_id, cp, level)
-                            VALUES (%s, %s, %s, %s, %s, %s)
+                            INSERT INTO users (agent_address, avatar_address, name_with_hash, portrait_id, cp, level, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
                         """),
-                        (participant["avatarAddr"][2:], participant["avatarAddr"][2:], participant["nameWithHash"], participant["portraitId"], participant["cp"], participant["level"])
+                        (participant["avatarAddr"][2:], participant["avatarAddr"][2:], participant["nameWithHash"], participant["portraitId"], participant["cp"], participant["level"], "now()", "now()")
                     )
                     cursor.execute(
                         sql.SQL("""
-                            INSERT INTO participants (avatar_address, season_id, initialized_score, score)
-                            VALUES (%s, %s, %s, %s)
+                            INSERT INTO participants (avatar_address, season_id, initialized_score, score, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s)
                         """),
-                        (participant["avatarAddr"][2:], season_id, 1000, 1000)
+                        (participant["avatarAddr"][2:], season_id, 1000, 1000, "now()", "now()")
                     )
                     conn.commit()
                 print(f"{len(participants)} participants successfully inserted for season {season_id}.")

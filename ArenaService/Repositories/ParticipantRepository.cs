@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 public interface IParticipantRepository
 {
     Task<Participant> AddParticipantAsync(int seasonId, Address avatarAddress);
-    Task<Participant?> GetParticipantAsync(int seasonId, Address avatarAddress);
+    Task<Participant> GetParticipantAsync(int seasonId, Address avatarAddress);
     Task<Participant> UpdateScoreAsync(int seasonId, Address avatarAddress, int scoreChange);
 }
 
@@ -30,13 +30,11 @@ public class ParticipantRepository : IParticipantRepository
         return participant.Entity;
     }
 
-    public async Task<Participant?> GetParticipantAsync(int seasonId, Address avatarAddress)
+    public async Task<Participant> GetParticipantAsync(int seasonId, Address avatarAddress)
     {
         return await _context
             .Participants.Include(p => p.User)
-            .FirstOrDefaultAsync(p =>
-                p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex()
-            );
+            .FirstAsync(p => p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex());
     }
 
     public async Task<Participant> UpdateScoreAsync(

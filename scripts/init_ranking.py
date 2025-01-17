@@ -15,18 +15,18 @@ def parse_redis_config(redis_config):
         return host, int(port), int(db)
     except ValueError:
         raise ValueError("REDIS_HOST format should be 'host:port:db'.")
-        
+
 def initialize_redis_participants(redis_client, season_id, participants):
     ranking_key = f"ranking:season:{season_id}"
 
     for participant in participants:
         avatar_address = participant["avatarAddr"][2:]
         initial_score = 1000
+        member_key = f"participant:{avatar_address}:{season_id}"
 
-        # Add participant to the sorted set in Redis with an initial score
-        redis_client.zadd(
-            ranking_key, {f"participant:{avatar_address}:{season_id}": initial_score}
-        )
+        print(f"Adding to Redis: Key={ranking_key}, Member={member_key}, Score={initial_score}")
+
+        redis_client.zadd(ranking_key, {str(member_key): float(initial_score)})
 
     print(f"{len(participants)} participants initialized in Redis for season {season_id}.")
 

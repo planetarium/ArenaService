@@ -15,17 +15,14 @@ public interface IRankingRepository
         List<(int Rank, Address AvatarAddress, int SeasonId, int Score)>
     > GetRankingsWithPaginationAsync(int seasonId, int pageNumber, int pageSize);
 
-    Task<List<(Address AvatarAddress, int SeasonId, int Score)>> GetRandomParticipantsTempAsync(
-        Address avatarAddress,
-        int seasonId,
-        int score,
-        int count
-    );
+    Task<
+        List<(Address AvatarAddress, int SeasonId, int Score, int Rank)>
+    > GetRandomParticipantsTempAsync(Address avatarAddress, int seasonId, int score, int count);
 }
 
 public class RankingRepository : IRankingRepository
 {
-    private const string RankingKeyPrefix = "ranking:season:";
+    private const string RankingKeyPrefix = "ranking:season";
     private readonly IDatabase _redis;
 
     public RankingRepository(IConnectionMultiplexer redis)
@@ -93,7 +90,7 @@ public class RankingRepository : IRankingRepository
     }
 
     public async Task<
-        List<(Address AvatarAddress, int SeasonId, int Score)>
+        List<(Address AvatarAddress, int SeasonId, int Score, int Rank)>
     > GetRandomParticipantsTempAsync(Address avatarAddress, int seasonId, int score, int count)
     {
         double minScore = score - 100;
@@ -123,11 +120,7 @@ public class RankingRepository : IRankingRepository
                 var participantSeasonId = int.Parse(parts[2]);
                 var participantScore = (int)entry.Score;
 
-                return (
-                    ParticipantAvatarAddress: address,
-                    SeasonId: participantSeasonId,
-                    Score: participantScore
-                );
+                return (address, participantSeasonId, participantScore);
             })
             .ToList();
 
@@ -137,6 +130,26 @@ public class RankingRepository : IRankingRepository
             .Take(count)
             .ToList();
 
-        return randomParticipants;
+        var result = new List<(Address AvatarAddress, int SeasonId, int Score, int Rank)>();
+
+        foreach (var participant in randomParticipants)
+        {
+            var rank = await _redis.SortedSetRankAsync(
+                $"{RankingKeyPrefix}:{seasonId}",
+                $"participant:{participant.address.ToHex()}:{participant.participantSeasonId}",
+                Order.Descending
+            );
+
+            result.Add(
+                (
+                    AvatarAddress: participant.address,
+                    SeasonId: participant.participantSeasonId,
+                    Score: participant.participantScore,
+                    Rank: rank.HasValue ? (int)rank.Value + 1 : -1
+                )
+            );
+        }
+
+        return result;
     }
 }
