@@ -7,6 +7,7 @@ namespace ArenaService.Models;
 [Table("battle_logs")]
 public class BattleLog
 {
+    [Key]
     public int Id { get; set; }
 
     [Required]
@@ -15,11 +16,15 @@ public class BattleLog
     [Required]
     [StringLength(40, MinimumLength = 40)]
     public required string AttackerAvatarAddress { get; set; }
+
+    // [ForeignKey(nameof(AttackerAvatarAddress), nameof(SeasonId))] - Use Fluent API
     public Participant Attacker { get; set; } = null!;
 
     [Required]
     [StringLength(40, MinimumLength = 40)]
     public required string DefenderAvatarAddress { get; set; }
+
+    // [ForeignKey(nameof(DefenderAvatarAddress), nameof(SeasonId))] - Use Fluent API
     public Participant Defender { get; set; } = null!;
 
     [Required]
@@ -33,10 +38,10 @@ public class BattleLog
     public long? BattleBlockIndex { get; set; }
 
     [Required]
-    [Column(TypeName = "timestamp")]
+    [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [Required]
-    [Column(TypeName = "timestamp")]
+    [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 }

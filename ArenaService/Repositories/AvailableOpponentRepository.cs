@@ -1,21 +1,25 @@
 namespace ArenaService.Repositories;
 
+using ArenaService.Constants;
 using ArenaService.Data;
 using ArenaService.Models;
 using Libplanet.Crypto;
+using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 
 public interface IAvailableOpponentRepository
 {
-    Task<AvailableOpponents?> GetAvailableOpponents(Address avatarAddress, int roundId);
-    Task<AvailableOpponents> AddAvailableOpponents(
+    Task<List<AvailableOpponent>> GetAvailableOpponents(
         Address avatarAddress,
         int roundId,
-        List<Address> opponentAvatarAddresses
+        int refreshRequestId
     );
-    Task<List<AvailableOpponentsRequest>> GetAvailableOpponentsRequests(
+    Task AddAvailableOpponents(
+        int seasonId,
+        int roundId,
         Address avatarAddress,
-        int roundId
+        int requestId,
+        List<(Address, int)> opponentAvatarAddresses
     );
 }
 
@@ -28,48 +32,51 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         _context = context;
     }
 
-    public async Task<AvailableOpponents?> GetAvailableOpponents(Address avatarAddress, int roundId)
+    public async Task<List<AvailableOpponent>> GetAvailableOpponents(
+        Address avatarAddress,
+        int roundId,
+        int refreshRequestId
+    )
     {
         var availableOpponents = await _context
             .AvailableOpponents.Where(ao =>
-                ao.AvatarAddress == avatarAddress.ToHex() && ao.RoundId == roundId
+                ao.AvatarAddress == avatarAddress.ToHex()
+                && ao.RoundId == roundId
+                && ao.RefreshRequestId == refreshRequestId
             )
-            .FirstOrDefaultAsync();
+            .ToListAsync();
 
         return availableOpponents;
     }
 
-    public async Task<AvailableOpponents> AddAvailableOpponents(
-        Address avatarAddress,
+    public async Task AddAvailableOpponents(
+        int seasonId,
         int roundId,
-        List<Address> opponentAvatarAddresses
+        Address avatarAddress,
+        int requestId,
+        List<(Address, int)> opponents
     )
     {
-        var ao = await _context.AvailableOpponents.AddAsync(
-            new AvailableOpponents
+        var newOpponents = new List<AvailableOpponent>();
+
+        foreach (var opponent in opponents)
+        {
+            var newOpponent = new AvailableOpponent
             {
                 AvatarAddress = avatarAddress.ToHex(),
+                SeasonId = seasonId,
                 RoundId = roundId,
-                OpponentAvatarAddresses = opponentAvatarAddresses
-                    .Select(oaa => oaa.ToHex())
-                    .ToList(),
-            }
-        );
-        _context.SaveChanges();
-        return ao.Entity;
-    }
+                GroupId = opponent.Item2,
+                RefreshRequestId = requestId,
+                OpponentAvatarAddress = opponent.Item1.ToHex(),
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
 
-    public async Task<List<AvailableOpponentsRequest>> GetAvailableOpponentsRequests(
-        Address avatarAddress,
-        int roundId
-    )
-    {
-        var availableOpponentsRequests = await _context
-            .AvailableOpponentsRequests.Where(ao =>
-                ao.AvatarAddress == avatarAddress.ToHex() && ao.RoundId == roundId
-            )
-            .ToListAsync();
+            newOpponents.Add(newOpponent);
+        }
 
-        return availableOpponentsRequests;
+        await _context.AvailableOpponents.AddRangeAsync(newOpponents);
+        await _context.SaveChangesAsync();
     }
 }

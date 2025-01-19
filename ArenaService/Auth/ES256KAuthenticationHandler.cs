@@ -1,13 +1,12 @@
 namespace ArenaService.Auth;
 
-using System.Collections.Immutable;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
-using System.Text.Json;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationSchemeOptions>
 {
@@ -67,7 +66,7 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
 
     private string GetTokenFromHeader(string authorizationHeader)
     {
-        return authorizationHeader.StartsWith("Bearer ")
+        return authorizationHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase)
             ? authorizationHeader.Substring("Bearer ".Length).Trim()
             : string.Empty;
     }
@@ -101,16 +100,13 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
             signature = Convert.FromBase64String(parts[2]);
 
             var payload = Encoding.UTF8.GetString(payloadBytes);
-            var payloadJson = JsonSerializer.Deserialize<JsonElement>(payload);
-
-            publicKey = payloadJson.GetProperty("sub").GetString();
-            avtAdr = payloadJson.GetProperty("avt_adr").GetString();
-            role = payloadJson.GetProperty("role").GetString();
+            var payloadJson = JsonConvert.DeserializeObject<Dictionary<string, string>>(payload);
 
             if (
-                string.IsNullOrEmpty(publicKey)
-                || string.IsNullOrEmpty(avtAdr)
-                || string.IsNullOrEmpty(role)
+                payloadJson == null
+                || !payloadJson.TryGetValue("sub", out publicKey)
+                || !payloadJson.TryGetValue("avt_adr", out avtAdr)
+                || !payloadJson.TryGetValue("role", out role)
             )
             {
                 return false;
@@ -121,8 +117,9 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
 
             return true;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogWarning(ex, "Failed to parse token parts.");
             return false;
         }
     }
@@ -135,8 +132,9 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
 
             return pubKey.Verify(payloadBytes, signature);
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogWarning(ex, "Failed to validate signature.");
             return false;
         }
     }
@@ -146,6 +144,7 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
         var allowedAdminKey = Environment.GetEnvironmentVariable("ALLOWED_ADMIN_PUBLIC_KEY");
         if (string.IsNullOrEmpty(allowedAdminKey))
         {
+            Logger.LogWarning("ALLOWED_ADMIN_PUBLIC_KEY environment variable is not set.");
             return false;
         }
 
@@ -154,8 +153,9 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
             var adminKey = PublicKey.FromHex(allowedAdminKey);
             return adminKey.ToHex(true) == publicKey;
         }
-        catch
+        catch (Exception ex)
         {
+            Logger.LogWarning(ex, "Failed to validate admin key.");
             return false;
         }
     }

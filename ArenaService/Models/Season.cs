@@ -7,6 +7,7 @@ namespace ArenaService.Models;
 [Table("seasons")]
 public class Season
 {
+    [Key]
     public int Id { get; set; }
 
     [Required]
@@ -25,24 +26,18 @@ public class Season
     public int RequiredMedalCount { get; }
 
     [Required]
-    public long EntranceFee { get; }
+    public int PricePolicyId { get; set; }
+
+    [ForeignKey(nameof(PricePolicyId))]
+    public RefreshPricePolicy PricePolicy { get; set; } = null!;
 
     [Required]
-    [Column("ticket_price_list", TypeName = "float[]")]
-    public float[] TicketPriceList { get; set; }
-
-    [Required]
-    [Column("refresh_list", TypeName = "float[]")]
-    public float[] RefreshPrice { get; }
-
-    [Required]
-    [Column(TypeName = "timestamp")]
+    [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     [Required]
-    [Column(TypeName = "timestamp")]
+    [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public ICollection<Participant> Participants { get; set; } = null!;
     public ICollection<Round> Rounds { get; set; } = null!;
 }

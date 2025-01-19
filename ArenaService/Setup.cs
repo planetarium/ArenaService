@@ -1,11 +1,11 @@
 namespace ArenaService;
 
-using System.Text.Json.Serialization;
 using ArenaService.Auth;
 using ArenaService.Data;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Views;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Converters;
 using StackExchange.Redis;
 
 public class Startup
@@ -28,6 +29,9 @@ public class Startup
     {
         services.Configure<RedisOptions>(Configuration.GetSection(RedisOptions.SectionName));
         services.Configure<HeadlessOptions>(Configuration.GetSection(HeadlessOptions.SectionName));
+        services.Configure<OpsConfigOptions>(
+            Configuration.GetSection(OpsConfigOptions.SectionName)
+        );
 
         services
             .AddHeadlessClient()
@@ -63,8 +67,8 @@ public class Startup
 
         services
             .AddControllers()
-            .AddJsonOptions(options =>
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
+            .AddNewtonsoftJson(options =>
+                options.SerializerSettings.Converters.Add(new StringEnumConverter())
             );
 
         services
@@ -112,19 +116,24 @@ public class Startup
 
             options.EnableAnnotations();
         });
+        services.AddSwaggerGenNewtonsoftSupport();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
         services.AddScoped<IBattleLogRepository, BattleLogRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
+        services.AddScoped<IRefreshRequestRepository, RefreshRequestRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
 
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 
+        services.AddScoped<IRefreshPriceRepository, RefreshPriceRepository>();
+
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
+        services.AddScoped<ISpecifyOpponentsService, SpecifyOpponentsService>();
 
         services.AddCors(options =>
         {
@@ -146,14 +155,19 @@ public class Startup
         );
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
-        // services
-        //     .AddSingleton<SeasonCachingWorker>()
-        //     .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
+        services
+            .AddSingleton<SeasonCachingWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
 
         services.AddHangfireServer();
+        services.AddHealthChecks();
     }
 
-    public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
+    public void Configure(
+        IApplicationBuilder app,
+        IWebHostEnvironment env,
+        IServiceProvider serviceProvider
+    )
     {
         app.UseDeveloperExceptionPage();
         app.UseSwagger();
@@ -175,8 +189,20 @@ public class Startup
         {
             endpoints.MapControllers();
             endpoints.MapSwagger();
-            // endpoints.MapHealthChecks("/ping");
+            endpoints.MapHealthChecks("/ping");
         });
+
+        PerformInitialSetup(serviceProvider);
+    }
+
+    private void PerformInitialSetup(IServiceProvider serviceProvider)
+    {
+        using var scope = serviceProvider.CreateScope();
+
+        var dbContext = scope.ServiceProvider.GetRequiredService<ArenaDbContext>();
+
+        dbContext.Database.Migrate();
+        RefreshPriceMaterializedView.InitializeMaterializedViewAsync(dbContext).Wait();
     }
 }
 

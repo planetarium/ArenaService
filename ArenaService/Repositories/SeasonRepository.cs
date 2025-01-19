@@ -21,7 +21,10 @@ public class SeasonRepository : ISeasonRepository
 
     public async Task<List<Season>> GetAllSeasonsAsync()
     {
-        return await _context.Seasons.OrderByDescending(s => s.StartBlock).ToListAsync();
+        return await _context
+            .Seasons.Include(s => s.Rounds)
+            .OrderByDescending(s => s.StartBlock)
+            .ToListAsync();
     }
 
     public async Task<Season?> GetSeasonAsync(int id)
