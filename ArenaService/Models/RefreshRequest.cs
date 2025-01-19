@@ -32,13 +32,18 @@ public class RefreshRequest
     [ForeignKey(nameof(RefreshPriceDetailId))]
     public RefreshPriceDetail RefreshPriceDetail { get; set; } = null!;
 
+    [Required]
+    public bool IsCostPaid { get; set; }
+
+    [Required]
+    public RefreshStatus RefreshStatus { get; set; }
+
     public string? TxId { get; set; }
 
     public TxStatus? TxStatus { get; set; }
 
-    [Required]
     [Column("specified_avatar_addresses", TypeName = "text[]")]
-    public List<string> SpecifiedOpponentAvatarAddresses { get; set; } = new List<string>();
+    public List<string>? SpecifiedOpponentAvatarAddresses { get; set; } = null;
 
     [Required]
     [Column(TypeName = "timestamptz")]
@@ -48,6 +53,5 @@ public class RefreshRequest
     [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public List<AvailableOpponentsRefreshRequest> AvailableOpponentsRefreshRequests { get; set; } =
-        new();
+    public ICollection<AvailableOpponent> AvailableOpponents { get; set; } = null!;
 }

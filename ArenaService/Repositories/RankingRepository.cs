@@ -7,7 +7,7 @@ public interface IRankingRepository
 {
     Task UpdateScoreAsync(Address avatarAddress, int seasonId, int scoreChange);
 
-    Task<int?> GetRankAsync(Address avatarAddress, int seasonId);
+    Task<int> GetRankAsync(Address avatarAddress, int seasonId);
 
     Task<int?> GetScoreAsync(Address avatarAddress, int seasonId);
 
@@ -39,14 +39,14 @@ public class RankingRepository : IRankingRepository
         );
     }
 
-    public async Task<int?> GetRankAsync(Address avatarAddress, int seasonId)
+    public async Task<int> GetRankAsync(Address avatarAddress, int seasonId)
     {
         var rank = await _redis.SortedSetRankAsync(
             $"{RankingKeyPrefix}:{seasonId}",
             $"participant:{avatarAddress.ToHex()}:{seasonId}",
             Order.Descending
         );
-        return rank.HasValue ? (int)rank.Value + 1 : null;
+        return rank.HasValue ? (int)rank.Value + 1 : throw new Exception();
     }
 
     public async Task<int?> GetScoreAsync(Address avatarAddress, int seasonId)

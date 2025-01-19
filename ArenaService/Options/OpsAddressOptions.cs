@@ -1,10 +1,8 @@
-using Libplanet.Crypto;
-
 namespace ArenaService.Options;
 
-public class OpsAddressOptions
+public class OpsConfigOptions
 {
-    public const string SectionName = "OpsAddress";
+    public const string SectionName = "OpsConfig";
 
-    public required Address address { get; init; }
+    public required string RecipientAddress { get; init; }
 }

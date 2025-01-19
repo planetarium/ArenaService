@@ -21,6 +21,11 @@ public class Participant
     [ForeignKey(nameof(SeasonId))]
     public Season Season { get; set; } = null!;
 
+    public int? LastRefreshRequestId { get; set; } = null;
+
+    [ForeignKey(nameof(LastRefreshRequestId))]
+    public RefreshRequest RefreshRequest { get; set; } = null!;
+
     public int InitializedScore { get; set; } = 1000;
     public int Score { get; set; } = 1000;
 

@@ -18,7 +18,6 @@ public class ArenaDbContext : DbContext
     public required DbSet<Participant> Participants { get; set; }
     public required DbSet<BattleLog> BattleLogs { get; set; }
     public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
-    public required DbSet<AvailableOpponentsRefreshRequest> AvailableOpponentsRefreshRequests { get; set; }
     public required DbSet<RefreshPriceMaterializedView> RefreshPriceView { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -47,15 +46,40 @@ public class ArenaDbContext : DbContext
 
         modelBuilder
             .Entity<AvailableOpponent>()
-            .HasOne(b => b.MyParticipant)
+            .HasOne(ao => ao.MyParticipant)
             .WithMany()
-            .HasForeignKey(b => new { b.AvatarAddress, b.SeasonId });
+            .HasForeignKey(ao => new { ao.AvatarAddress, ao.SeasonId });
 
         modelBuilder
             .Entity<AvailableOpponent>()
-            .HasOne(b => b.Opponent)
+            .HasOne(ao => ao.Opponent)
             .WithMany()
-            .HasForeignKey(b => new { b.OpponentAvatarAddress, b.SeasonId });
+            .HasForeignKey(ao => new { ao.OpponentAvatarAddress, ao.SeasonId });
+
+        modelBuilder
+            .Entity<AvailableOpponent>()
+            .HasOne(ao => ao.RefreshRequest)
+            .WithMany()
+            .HasForeignKey(ao => ao.RefreshRequestId);
+
+        modelBuilder
+            .Entity<RefreshRequest>()
+            .HasMany(r => r.AvailableOpponents)
+            .WithOne(ao => ao.RefreshRequest)
+            .HasForeignKey(ao => ao.RefreshRequestId)
+            .HasPrincipalKey(r => r.Id);
+
+        modelBuilder
+            .Entity<RefreshPriceDetail>()
+            .HasOne(rpd => rpd.Policy)
+            .WithMany(rpp => rpp.RefreshPrices)
+            .HasForeignKey(rpd => rpd.PolicyId);
+
+        modelBuilder
+            .Entity<RefreshPricePolicy>()
+            .HasMany(rpp => rpp.RefreshPrices)
+            .WithOne(rpd => rpd.Policy)
+            .HasForeignKey(rpd => rpd.PolicyId);
 
         modelBuilder
             .Entity<RefreshPriceMaterializedView>()

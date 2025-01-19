@@ -91,34 +91,6 @@ namespace ArenaService.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "participants",
-                columns: table => new
-                {
-                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    season_id = table.Column<int>(type: "integer", nullable: false),
-                    initialized_score = table.Column<int>(type: "integer", nullable: false),
-                    score = table.Column<int>(type: "integer", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_participants", x => new { x.avatar_address, x.season_id });
-                    table.ForeignKey(
-                        name: "fk_participants_seasons_season_id",
-                        column: x => x.season_id,
-                        principalTable: "seasons",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "fk_participants_users_avatar_address",
-                        column: x => x.avatar_address,
-                        principalTable: "users",
-                        principalColumn: "avatar_address",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "rounds",
                 columns: table => new
                 {
@@ -138,6 +110,81 @@ namespace ArenaService.Migrations
                         column: x => x.season_id,
                         principalTable: "seasons",
                         principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "refresh_requests",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    season_id = table.Column<int>(type: "integer", nullable: false),
+                    round_id = table.Column<int>(type: "integer", nullable: false),
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    refresh_price_detail_id = table.Column<int>(type: "integer", nullable: false),
+                    is_cost_paid = table.Column<bool>(type: "boolean", nullable: false),
+                    refresh_status = table.Column<int>(type: "integer", nullable: false),
+                    tx_id = table.Column<string>(type: "text", nullable: true),
+                    tx_status = table.Column<int>(type: "integer", nullable: true),
+                    specified_avatar_addresses = table.Column<List<string>>(type: "text[]", nullable: true),
+                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_refresh_requests", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_refresh_requests_refresh_price_details_refresh_price_detail",
+                        column: x => x.refresh_price_detail_id,
+                        principalTable: "refresh_price_details",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_refresh_requests_rounds_round_id",
+                        column: x => x.round_id,
+                        principalTable: "rounds",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_refresh_requests_seasons_season_id",
+                        column: x => x.season_id,
+                        principalTable: "seasons",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "participants",
+                columns: table => new
+                {
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    season_id = table.Column<int>(type: "integer", nullable: false),
+                    last_refresh_request_id = table.Column<int>(type: "integer", nullable: true),
+                    initialized_score = table.Column<int>(type: "integer", nullable: false),
+                    score = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_participants", x => new { x.avatar_address, x.season_id });
+                    table.ForeignKey(
+                        name: "fk_participants_refresh_requests_last_refresh_request_id",
+                        column: x => x.last_refresh_request_id,
+                        principalTable: "refresh_requests",
+                        principalColumn: "id");
+                    table.ForeignKey(
+                        name: "fk_participants_seasons_season_id",
+                        column: x => x.season_id,
+                        principalTable: "seasons",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_participants_users_avatar_address",
+                        column: x => x.avatar_address,
+                        principalTable: "users",
+                        principalColumn: "avatar_address",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -174,45 +221,6 @@ namespace ArenaService.Migrations
                         columns: x => new { x.defender_avatar_address, x.season_id },
                         principalTable: "participants",
                         principalColumns: new[] { "avatar_address", "season_id" },
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "refresh_requests",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    season_id = table.Column<int>(type: "integer", nullable: false),
-                    round_id = table.Column<int>(type: "integer", nullable: false),
-                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
-                    refresh_price_detail_id = table.Column<int>(type: "integer", nullable: false),
-                    tx_id = table.Column<string>(type: "text", nullable: true),
-                    tx_status = table.Column<int>(type: "integer", nullable: true),
-                    specified_avatar_addresses = table.Column<List<string>>(type: "text[]", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_refresh_requests", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_refresh_requests_refresh_price_details_refresh_price_detail",
-                        column: x => x.refresh_price_detail_id,
-                        principalTable: "refresh_price_details",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "fk_refresh_requests_rounds_round_id",
-                        column: x => x.round_id,
-                        principalTable: "rounds",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "fk_refresh_requests_seasons_season_id",
-                        column: x => x.season_id,
-                        principalTable: "seasons",
-                        principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -272,33 +280,6 @@ namespace ArenaService.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
-            migrationBuilder.CreateTable(
-                name: "available_opponents_refresh_request",
-                columns: table => new
-                {
-                    id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    available_opponent_id = table.Column<int>(type: "integer", nullable: false),
-                    refresh_request_id = table.Column<int>(type: "integer", nullable: false),
-                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("pk_available_opponents_refresh_request", x => x.id);
-                    table.ForeignKey(
-                        name: "fk_available_opponents_refresh_request_available_opponents_ava",
-                        column: x => x.available_opponent_id,
-                        principalTable: "available_opponents",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "fk_available_opponents_refresh_request_refresh_requests_refres",
-                        column: x => x.refresh_request_id,
-                        principalTable: "refresh_requests",
-                        principalColumn: "id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
             migrationBuilder.CreateIndex(
                 name: "ix_available_opponents_avatar_address_season_id",
                 table: "available_opponents",
@@ -330,16 +311,6 @@ namespace ArenaService.Migrations
                 column: "season_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_available_opponents_refresh_request_available_opponent_id",
-                table: "available_opponents_refresh_request",
-                column: "available_opponent_id");
-
-            migrationBuilder.CreateIndex(
-                name: "ix_available_opponents_refresh_request_refresh_request_id",
-                table: "available_opponents_refresh_request",
-                column: "refresh_request_id");
-
-            migrationBuilder.CreateIndex(
                 name: "ix_battle_logs_attacker_avatar_address_season_id",
                 table: "battle_logs",
                 columns: new[] { "attacker_avatar_address", "season_id" });
@@ -348,6 +319,11 @@ namespace ArenaService.Migrations
                 name: "ix_battle_logs_defender_avatar_address_season_id",
                 table: "battle_logs",
                 columns: new[] { "defender_avatar_address", "season_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_participants_last_refresh_request_id",
+                table: "participants",
+                column: "last_refresh_request_id");
 
             migrationBuilder.CreateIndex(
                 name: "ix_participants_season_id",
@@ -395,28 +371,25 @@ namespace ArenaService.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "available_opponents_refresh_request");
-
-            migrationBuilder.DropTable(
                 name: "available_opponents");
 
             migrationBuilder.DropTable(
                 name: "battle_logs");
 
             migrationBuilder.DropTable(
+                name: "participants");
+
+            migrationBuilder.DropTable(
                 name: "refresh_requests");
 
             migrationBuilder.DropTable(
-                name: "participants");
+                name: "users");
 
             migrationBuilder.DropTable(
                 name: "refresh_price_details");
 
             migrationBuilder.DropTable(
                 name: "rounds");
-
-            migrationBuilder.DropTable(
-                name: "users");
 
             migrationBuilder.DropTable(
                 name: "seasons");

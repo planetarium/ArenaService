@@ -3,5 +3,6 @@ namespace ArenaService.Constants;
 public enum RefreshTxTrackingStatus
 {
     TRACKING,
-    COMPLETED,
+    SUCCESS,
+    FAILED,
 }

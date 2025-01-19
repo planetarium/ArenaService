@@ -96,39 +96,6 @@ namespace ArenaService.Migrations
                     b.ToTable("available_opponents", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponentsRefreshRequest", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("AvailableOpponentId")
-                        .HasColumnType("integer")
-                        .HasColumnName("available_opponent_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("RefreshRequestId")
-                        .HasColumnType("integer")
-                        .HasColumnName("refresh_request_id");
-
-                    b.HasKey("Id")
-                        .HasName("pk_available_opponents_refresh_request");
-
-                    b.HasIndex("AvailableOpponentId")
-                        .HasDatabaseName("ix_available_opponents_refresh_request_available_opponent_id");
-
-                    b.HasIndex("RefreshRequestId")
-                        .HasDatabaseName("ix_available_opponents_refresh_request_refresh_request_id");
-
-                    b.ToTable("available_opponents_refresh_request", (string)null);
-                });
-
             modelBuilder.Entity("ArenaService.Models.BattleLog", b =>
                 {
                     b.Property<int>("Id")
@@ -222,6 +189,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("initialized_score");
 
+                    b.Property<int?>("LastRefreshRequestId")
+                        .HasColumnType("integer")
+                        .HasColumnName("last_refresh_request_id");
+
                     b.Property<int>("Score")
                         .HasColumnType("integer")
                         .HasColumnName("score");
@@ -232,6 +203,9 @@ namespace ArenaService.Migrations
 
                     b.HasKey("AvatarAddress", "SeasonId")
                         .HasName("pk_participants");
+
+                    b.HasIndex("LastRefreshRequestId")
+                        .HasDatabaseName("ix_participants_last_refresh_request_id");
 
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_participants_season_id");
@@ -308,9 +282,17 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<bool>("IsCostPaid")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_cost_paid");
+
                     b.Property<int>("RefreshPriceDetailId")
                         .HasColumnType("integer")
                         .HasColumnName("refresh_price_detail_id");
+
+                    b.Property<int>("RefreshStatus")
+                        .HasColumnType("integer")
+                        .HasColumnName("refresh_status");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")
@@ -321,7 +303,6 @@ namespace ArenaService.Migrations
                         .HasColumnName("season_id");
 
                     b.Property<List<string>>("SpecifiedOpponentAvatarAddresses")
-                        .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("specified_avatar_addresses");
 
@@ -519,7 +500,7 @@ namespace ArenaService.Migrations
                         .HasConstraintName("fk_available_opponents_battle_logs_battle_log_id");
 
                     b.HasOne("ArenaService.Models.RefreshRequest", "RefreshRequest")
-                        .WithMany()
+                        .WithMany("AvailableOpponents")
                         .HasForeignKey("RefreshRequestId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
@@ -566,27 +547,6 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponentsRefreshRequest", b =>
-                {
-                    b.HasOne("ArenaService.Models.AvailableOpponent", "AvailableOpponent")
-                        .WithMany()
-                        .HasForeignKey("AvailableOpponentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_available_opponents_refresh_request_available_opponents_ava");
-
-                    b.HasOne("ArenaService.Models.RefreshRequest", "RefreshRequest")
-                        .WithMany("AvailableOpponentsRefreshRequests")
-                        .HasForeignKey("RefreshRequestId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_available_opponents_refresh_request_refresh_requests_refres");
-
-                    b.Navigation("AvailableOpponent");
-
-                    b.Navigation("RefreshRequest");
-                });
-
             modelBuilder.Entity("ArenaService.Models.BattleLog", b =>
                 {
                     b.HasOne("ArenaService.Models.Participant", "Attacker")
@@ -617,12 +577,19 @@ namespace ArenaService.Migrations
                         .IsRequired()
                         .HasConstraintName("fk_participants_users_avatar_address");
 
+                    b.HasOne("ArenaService.Models.RefreshRequest", "RefreshRequest")
+                        .WithMany()
+                        .HasForeignKey("LastRefreshRequestId")
+                        .HasConstraintName("fk_participants_refresh_requests_last_refresh_request_id");
+
                     b.HasOne("ArenaService.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_participants_seasons_season_id");
+
+                    b.Navigation("RefreshRequest");
 
                     b.Navigation("Season");
 
@@ -702,7 +669,7 @@ namespace ArenaService.Migrations
 
             modelBuilder.Entity("ArenaService.Models.RefreshRequest", b =>
                 {
-                    b.Navigation("AvailableOpponentsRefreshRequests");
+                    b.Navigation("AvailableOpponents");
                 });
 
             modelBuilder.Entity("ArenaService.Models.Season", b =>

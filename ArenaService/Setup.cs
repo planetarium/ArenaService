@@ -1,6 +1,5 @@
 namespace ArenaService;
 
-using System.Text.Json.Serialization;
 using ArenaService.Auth;
 using ArenaService.Data;
 using ArenaService.Options;
@@ -14,6 +13,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
+using Newtonsoft.Json.Converters;
 using StackExchange.Redis;
 
 public class Startup
@@ -29,6 +29,9 @@ public class Startup
     {
         services.Configure<RedisOptions>(Configuration.GetSection(RedisOptions.SectionName));
         services.Configure<HeadlessOptions>(Configuration.GetSection(HeadlessOptions.SectionName));
+        services.Configure<OpsConfigOptions>(
+            Configuration.GetSection(OpsConfigOptions.SectionName)
+        );
 
         services
             .AddHeadlessClient()
@@ -64,8 +67,8 @@ public class Startup
 
         services
             .AddControllers()
-            .AddJsonOptions(options =>
-                options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter())
+            .AddNewtonsoftJson(options =>
+                options.SerializerSettings.Converters.Add(new StringEnumConverter())
             );
 
         services
@@ -113,12 +116,14 @@ public class Startup
 
             options.EnableAnnotations();
         });
+        services.AddSwaggerGenNewtonsoftSupport();
 
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
         services.AddScoped<IBattleLogRepository, BattleLogRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
+        services.AddScoped<IRefreshRequestRepository, RefreshRequestRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
 
         services.AddScoped<IRankingRepository, RankingRepository>();

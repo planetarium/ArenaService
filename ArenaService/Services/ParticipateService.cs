@@ -4,10 +4,15 @@ using System.Threading.Tasks;
 using ArenaService.Models;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
+using Microsoft.EntityFrameworkCore;
 
 public interface IParticipateService
 {
-    Task<Participant> ParticipateAsync(int seasonId, Address avatarAddress);
+    Task<Participant> ParticipateAsync(
+        int seasonId,
+        Address avatarAddress,
+        Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
+    );
 }
 
 public class ParticipateService : IParticipateService
@@ -27,11 +32,16 @@ public class ParticipateService : IParticipateService
         _rankingRepo = rankingRepo;
     }
 
-    public async Task<Participant> ParticipateAsync(int seasonId, Address avatarAddress)
+    public async Task<Participant> ParticipateAsync(
+        int seasonId,
+        Address avatarAddress,
+        Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
+    )
     {
         var existingParticipant = await _participantRepo.GetParticipantAsync(
             seasonId,
-            avatarAddress
+            avatarAddress,
+            includeQuery
         );
         if (existingParticipant is not null)
         {
