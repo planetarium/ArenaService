@@ -13,7 +13,7 @@ public class ArenaInfoResponse
     public int Level { get; set; }
     public int SeasonId { get; set; }
 
-    public required string ClanImageURL { get; set; }
+    public ClanResponse ClanInfo { get; set; }
 
     public int Score { get; set; }
     public int CurrentRoundScoreChange { get; set; }

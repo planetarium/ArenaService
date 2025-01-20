@@ -46,7 +46,7 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet("classify-by-championship/{blockIndex}")]
-    [ProducesResponseType(typeof(List<SeasonResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SeasonsResponse), StatusCodes.Status200OK)]
     public async Task<Ok<List<SeasonResponse>>> GetSeasons(long blockIndex)
     {
         var seasons = await _seasonRepo.GetAllSeasonsAsync();
@@ -55,7 +55,7 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet()]
-    [ProducesResponseType(typeof(List<SeasonResponse>), StatusCodes.Status200OK)]
+    [ProducesResponseType(typeof(SeasonsResponse), StatusCodes.Status200OK)]
     public async Task<Ok<List<SeasonResponse>>> GetSeasons(
         [FromQuery] int pageNumber = 1,
         [FromQuery] int pageSize = 10

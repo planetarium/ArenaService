@@ -2,6 +2,7 @@ namespace ArenaService.Dtos;
 
 public class AvailableOpponentResponse
 {
+    public required string AvailableOpponentId { get; set; }
     public required string AvatarAddress { get; set; }
 
     public required string NameWithHash { get; set; }

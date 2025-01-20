@@ -95,8 +95,6 @@ public class ParticipantRepository : IParticipantRepository
             throw new KeyNotFoundException($"Participants {seasonId}, {avatarAddress} not found.");
         }
 
-        participant.LastRefreshRequestId = refreshRequestId;
-
         _context.Participants.Update(participant);
         await _context.SaveChangesAsync();
 

@@ -5,7 +5,6 @@ using ArenaService.Data;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
-using ArenaService.Views;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -121,15 +120,12 @@ public class Startup
         services.AddScoped<IUserRepository, UserRepository>();
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<IParticipantRepository, ParticipantRepository>();
-        services.AddScoped<IBattleLogRepository, BattleLogRepository>();
+        services.AddScoped<IBattleRepository, BattleRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
-        services.AddScoped<IRefreshRequestRepository, RefreshRequestRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
 
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
-
-        services.AddScoped<IRefreshPriceRepository, RefreshPriceRepository>();
 
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
@@ -202,7 +198,6 @@ public class Startup
         var dbContext = scope.ServiceProvider.GetRequiredService<ArenaDbContext>();
 
         dbContext.Database.Migrate();
-        RefreshPriceMaterializedView.InitializeMaterializedViewAsync(dbContext).Wait();
     }
 }
 

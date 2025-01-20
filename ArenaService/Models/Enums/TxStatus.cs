@@ -1,4 +1,4 @@
-namespace ArenaService.Constants;
+namespace ArenaService.Models.Enums;
 
 public enum TxStatus
 {

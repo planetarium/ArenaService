@@ -1,11 +1,19 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ArenaService.Constants;
+using ArenaService.Models.Enums;
+using Microsoft.EntityFrameworkCore;
 
-namespace ArenaService.Models;
+namespace ArenaService.Models.Ticket;
 
-[Table("refresh_requests")]
-public class RefreshRequest
+[Table("ticket_statuses")]
+[Index(
+    nameof(SeasonId),
+    nameof(RoundId),
+    nameof(AvatarAddress),
+    nameof(TicketType),
+    IsUnique = true
+)]
+public class TicketStatus
 {
     [Key]
     public int Id { get; set; }
@@ -26,24 +34,19 @@ public class RefreshRequest
     [StringLength(40, MinimumLength = 40)]
     public required string AvatarAddress { get; set; }
 
-    [Required]
-    public int RefreshPriceDetailId { get; set; }
-
-    [ForeignKey(nameof(RefreshPriceDetailId))]
-    public RefreshPriceDetail RefreshPriceDetail { get; set; } = null!;
+    public required Participant Participant { get; set; } = null!;
 
     [Required]
-    public bool IsCostPaid { get; set; }
+    public TicketType TicketType { get; set; }
 
     [Required]
-    public RefreshStatus RefreshStatus { get; set; }
+    public int RemainingCount { get; set; }
 
-    public string? TxId { get; set; }
+    [Required]
+    public int UsedCount { get; set; } = 0;
 
-    public TxStatus? TxStatus { get; set; }
-
-    [Column("specified_avatar_addresses", TypeName = "text[]")]
-    public List<string>? SpecifiedOpponentAvatarAddresses { get; set; } = null;
+    [Required]
+    public int PurchaseCount { get; set; } = 0;
 
     [Required]
     [Column(TypeName = "timestamptz")]
@@ -52,6 +55,4 @@ public class RefreshRequest
     [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-
-    public ICollection<AvailableOpponent> AvailableOpponents { get; set; } = null!;
 }

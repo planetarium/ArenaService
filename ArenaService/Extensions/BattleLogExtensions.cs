@@ -4,28 +4,22 @@ using ArenaService.Constants;
 using ArenaService.Dtos;
 using ArenaService.Models;
 
-public static class BattleLogExtensions
+public static class BattleExtensions
 {
-    public static BattleLogResponse ToResponse(this BattleLog battleLog)
+    public static BattleResponse ToResponse(this Battle battleLog)
     {
-        return new BattleLogResponse
+        return new BattleResponse
         {
             Id = battleLog.Id,
-            SeasonId = battleLog.SeasonId,
-            AttackerAvatarAddress = battleLog.AttackerAvatarAddress,
-            DefenderAvatarAddress = battleLog.DefenderAvatarAddress,
+            SeasonId = battleLog.AvailableOpponent.SeasonId,
+            AttackerAvatarAddress = battleLog.AvailableOpponent.AvatarAddress,
+            DefenderAvatarAddress = battleLog.AvailableOpponent.OpponentAvatarAddress,
             TxId = battleLog.TxId,
-            BattleTxTrackingStatus = battleLog.TxStatus is null
-                ? BattleTxTrackingStatus.PENDING
-                : battleLog.IsVictory is null
-                    ? BattleTxTrackingStatus.TRACKING
-                    : BattleTxTrackingStatus.COMPLETED,
             TxStatus = battleLog.TxStatus,
             IsVictory = battleLog.IsVictory,
-            ParticipantScore = battleLog.Attacker.Score,
-            ParticipantScoreChange = battleLog.ParticipantScoreChange,
+            ParticipantScore = battleLog.AvailableOpponent.Me.Score,
+            ParticipantScoreChange = battleLog.MyScoreChange,
             OpponentScoreChange = battleLog.OpponentScoreChange,
-            BattleBlockIndex = battleLog.BattleBlockIndex,
         };
     }
 }
