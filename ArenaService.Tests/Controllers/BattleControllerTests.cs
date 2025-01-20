@@ -15,7 +15,7 @@
 //     private readonly BattleController _controller;
 //     private Mock<IAvailableOpponentRepository> _availableOpponentRepoMock;
 //     private Mock<IParticipantRepository> _participantRepoMock;
-//     private Mock<IBattleLogRepository> _battleLogRepoMock;
+//     private Mock<IBattleRepository> _battleLogRepoMock;
 
 //     public BattleControllerTests()
 //     {
@@ -23,7 +23,7 @@
 //         _availableOpponentRepoMock = availableOpponentRepoMock;
 //         var participantRepoMock = new Mock<IParticipantRepository>();
 //         _participantRepoMock = participantRepoMock;
-//         var battleLogRepoMock = new Mock<IBattleLogRepository>();
+//         var battleLogRepoMock = new Mock<IBattleRepository>();
 //         _battleLogRepoMock = battleLogRepoMock;
 //         _controller = new BattleController(
 //             _availableOpponentRepoMock.Object,
@@ -86,9 +86,9 @@
 //             );
 
 //         _battleLogRepoMock
-//             .Setup(repo => repo.AddBattleLogAsync(1, 1, 1, "token"))
+//             .Setup(repo => repo.AddBattleAsync(1, 1, 1, "token"))
 //             .ReturnsAsync(
-//                 new BattleLog
+//                 new Battle
 //                 {
 //                     Id = 1,
 //                     ParticipantId = 1,

@@ -67,7 +67,7 @@ public class SeasonControllerTests
                 TicketRefillInterval = 600,
                 IsActivated = true,
                 Participants = new List<Participant>(),
-                BattleLogs = new List<BattleLog>(),
+                Battles = new List<Battle>(),
                 Leaderboard = new List<LeaderboardEntry>()
             },
             new Season
@@ -78,7 +78,7 @@ public class SeasonControllerTests
                 TicketRefillInterval = 600,
                 IsActivated = true,
                 Participants = new List<Participant>(),
-                BattleLogs = new List<BattleLog>(),
+                Battles = new List<Battle>(),
                 Leaderboard = new List<LeaderboardEntry>()
             }
         };
@@ -108,7 +108,7 @@ public class SeasonControllerTests
                 TicketRefillInterval = 600,
                 IsActivated = true,
                 Participants = new List<Participant>(),
-                BattleLogs = new List<BattleLog>(),
+                Battles = new List<Battle>(),
                 Leaderboard = new List<LeaderboardEntry>()
             },
             new Season
@@ -119,7 +119,7 @@ public class SeasonControllerTests
                 TicketRefillInterval = 600,
                 IsActivated = true,
                 Participants = new List<Participant>(),
-                BattleLogs = new List<BattleLog>(),
+                Battles = new List<Battle>(),
                 Leaderboard = new List<LeaderboardEntry>()
             }
         };

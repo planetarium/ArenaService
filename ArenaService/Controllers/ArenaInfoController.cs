@@ -1,6 +1,7 @@
 namespace ArenaService.Controllers;
 
 using ArenaService.Dtos;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -12,6 +13,7 @@ public class ArenaInfoController : ControllerBase
     public ArenaInfoController() { }
 
     [HttpGet]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "ArenaInfoResponse", typeof(ArenaInfoResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]

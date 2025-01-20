@@ -1,5 +1,5 @@
 using ArenaService.Models;
-using ArenaService.Views;
+using ArenaService.Models.Ticket;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Data;
@@ -12,19 +12,23 @@ public class ArenaDbContext : DbContext
     public required DbSet<User> Users { get; set; }
     public required DbSet<Season> Seasons { get; set; }
     public required DbSet<Round> Rounds { get; set; }
-    public required DbSet<RefreshRequest> RefreshRequests { get; set; }
-    public required DbSet<RefreshPricePolicy> RefreshPricePolicies { get; set; }
-    public required DbSet<RefreshPriceDetail> RefreshPriceDetails { get; set; }
     public required DbSet<Participant> Participants { get; set; }
-    public required DbSet<BattleLog> BattleLogs { get; set; }
+    public required DbSet<TicketPolicy> TicketPolicies { get; set; }
+    public required DbSet<TicketPurchaseLog> TicketPurchaseLogs { get; set; }
+    public required DbSet<TicketStatus> TicketStatuses { get; set; }
+    public required DbSet<TicketUsageLog> TicketUsageLogs { get; set; }
+    public required DbSet<Battle> Battles { get; set; }
     public required DbSet<AvailableOpponent> AvailableOpponents { get; set; }
-    public required DbSet<RefreshPriceMaterializedView> RefreshPriceView { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
 
-        modelBuilder.Entity<Participant>().HasKey(p => new { p.AvatarAddress, p.SeasonId });
+        modelBuilder
+            .Entity<TicketPolicy>()
+            .HasOne(tp => tp.Season)
+            .WithMany(s => s.TicketPolicies)
+            .HasForeignKey(tp => tp.SeasonId);
 
         modelBuilder
             .Entity<Round>()
@@ -32,22 +36,30 @@ public class ArenaDbContext : DbContext
             .WithMany(s => s.Rounds)
             .HasForeignKey(r => r.SeasonId);
 
-        modelBuilder
-            .Entity<BattleLog>()
-            .HasOne(b => b.Attacker)
-            .WithMany()
-            .HasForeignKey(b => new { b.AttackerAvatarAddress, b.SeasonId });
+        modelBuilder.Entity<Participant>().HasKey(p => new { p.AvatarAddress, p.SeasonId });
 
         modelBuilder
-            .Entity<BattleLog>()
-            .HasOne(b => b.Defender)
+            .Entity<Participant>()
+            .HasOne(p => p.Season)
             .WithMany()
-            .HasForeignKey(b => new { b.DefenderAvatarAddress, b.SeasonId });
+            .HasForeignKey(p => p.SeasonId);
+
+        modelBuilder
+            .Entity<TicketStatus>()
+            .HasOne(ts => ts.Round)
+            .WithMany()
+            .HasForeignKey(ts => ts.RoundId);
+
+        modelBuilder
+            .Entity<TicketStatus>()
+            .HasOne(ts => ts.Participant)
+            .WithMany()
+            .HasForeignKey(b => new { b.AvatarAddress, b.SeasonId });
 
         modelBuilder
             .Entity<AvailableOpponent>()
-            .HasOne(ao => ao.MyParticipant)
-            .WithMany()
+            .HasOne(ao => ao.Me)
+            .WithMany(p => p.AvailableOpponents)
             .HasForeignKey(ao => new { ao.AvatarAddress, ao.SeasonId });
 
         modelBuilder
@@ -58,32 +70,9 @@ public class ArenaDbContext : DbContext
 
         modelBuilder
             .Entity<AvailableOpponent>()
-            .HasOne(ao => ao.RefreshRequest)
+            .HasOne(ao => ao.Opponent)
             .WithMany()
-            .HasForeignKey(ao => ao.RefreshRequestId);
+            .HasForeignKey(ao => new { ao.OpponentAvatarAddress, ao.SeasonId });
 
-        modelBuilder
-            .Entity<RefreshRequest>()
-            .HasMany(r => r.AvailableOpponents)
-            .WithOne(ao => ao.RefreshRequest)
-            .HasForeignKey(ao => ao.RefreshRequestId)
-            .HasPrincipalKey(r => r.Id);
-
-        modelBuilder
-            .Entity<RefreshPriceDetail>()
-            .HasOne(rpd => rpd.Policy)
-            .WithMany(rpp => rpp.RefreshPrices)
-            .HasForeignKey(rpd => rpd.PolicyId);
-
-        modelBuilder
-            .Entity<RefreshPricePolicy>()
-            .HasMany(rpp => rpp.RefreshPrices)
-            .WithOne(rpd => rpd.Policy)
-            .HasForeignKey(rpd => rpd.PolicyId);
-
-        modelBuilder
-            .Entity<RefreshPriceMaterializedView>()
-            .ToView(RefreshPriceMaterializedView.ViewName)
-            .HasNoKey();
     }
 }

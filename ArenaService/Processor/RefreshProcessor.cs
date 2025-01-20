@@ -8,7 +8,6 @@ using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
 using ArenaService.Utils;
-using ArenaService.Views;
 using Bencodex;
 using Bencodex.Types;
 using Libplanet.Crypto;
@@ -26,7 +25,6 @@ public class RefreshProcessor
     private readonly IHeadlessClient _client;
     private readonly IParticipantRepository _participantRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
-    private readonly IRefreshRequestRepository _refreshRequestRepo;
     private readonly ISpecifyOpponentsService _specifyOpponentsService;
     private readonly ITxTrackingService _txTrackingService;
 
@@ -34,7 +32,6 @@ public class RefreshProcessor
         ILogger<RefreshProcessor> logger,
         IHeadlessClient client,
         IParticipantRepository participantRepo,
-        IRefreshRequestRepository refreshRequestRepo,
         ISpecifyOpponentsService specifyOpponentsService,
         IAvailableOpponentRepository availableOpponentRepo,
         ITxTrackingService txTrackingService,
@@ -43,7 +40,6 @@ public class RefreshProcessor
     {
         _logger = logger;
         _client = client;
-        _refreshRequestRepo = refreshRequestRepo;
         _participantRepo = participantRepo;
         _specifyOpponentsService = specifyOpponentsService;
         _availableOpponentRepo = availableOpponentRepo;
@@ -55,15 +51,6 @@ public class RefreshProcessor
     {
         _logger.LogInformation($"Calc ao: {refreshRequestId}, {txId}");
 
-        var refreshRequest = await _refreshRequestRepo.GetRefreshRequestByIdAsync(
-            refreshRequestId,
-            query => query.Include(p => p.RefreshPriceDetail)
-        );
-
-        if (refreshRequest == null)
-        {
-            return $"Not found {refreshRequestId}";
-        }
 
         string processResult = "before track";
 
@@ -71,39 +58,39 @@ public class RefreshProcessor
             txId,
             async status =>
             {
-                await _refreshRequestRepo.UpdateRefreshRequestAsync(
-                    refreshRequest,
-                    rr =>
-                    {
-                        rr.TxStatus = status.ToModelTxStatus();
-                    }
-                );
+                // await _refreshRequestRepo.UpdateRefreshRequestAsync(
+                //     refreshRequest,
+                //     rr =>
+                //     {
+                //         rr.TxStatus = status.ToModelTxStatus();
+                //     }
+                // );
             },
             async successResponse =>
             {
                 _logger.LogInformation($"Tx succeeded!");
 
-                if (await ValidateCostPaid(txId, refreshRequest.RefreshPriceDetail.Price))
-                {
-                    if (await ValidateUsedTxId(txId))
-                    {
-                        await UpdateRefreshRequest(refreshRequest);
-                        processResult = "success";
-                    }
+                // if (await ValidateCostPaid(txId, refreshRequest.RefreshPriceDetail.Price))
+                // {
+                //     if (await ValidateUsedTxId(txId))
+                //     {
+                //         await UpdateRefreshRequest(refreshRequest);
+                //         processResult = "success";
+                //     }
 
-                    processResult = $"{txId} is used tx";
-                }
-                else
-                {
-                    await _refreshRequestRepo.UpdateRefreshRequestAsync(
-                        refreshRequest,
-                        rr =>
-                        {
-                            rr.RefreshStatus = RefreshStatus.COST_VALIDATION_FAILED;
-                        }
-                    );
-                    processResult = "cost validation failed";
-                }
+                //     processResult = $"{txId} is used tx";
+                // }
+                // else
+                // {
+                //     await _refreshRequestRepo.UpdateRefreshRequestAsync(
+                //         refreshRequest,
+                //         rr =>
+                //         {
+                //             rr.RefreshStatus = RefreshStatus.COST_VALIDATION_FAILED;
+                //         }
+                //     );
+                //     processResult = "cost validation failed";
+                // }
             },
             txId =>
             {
@@ -198,11 +185,11 @@ public class RefreshProcessor
         return false;
     }
 
-    private async Task<bool> ValidateUsedTxId(TxId txId)
-    {
-        var refreshRequest = await _refreshRequestRepo.GetRefreshRequestByTxIdAsync(txId);
-        return refreshRequest is null;
-    }
+    // private async Task<bool> ValidateUsedTxId(TxId txId)
+    // {
+    //     var refreshRequest = await _refreshRequestRepo.GetRefreshRequestByTxIdAsync(txId);
+    //     return refreshRequest is null;
+    // }
 
     private static (IValue? typeId, IValue? values) DeconstructActionPlainValue(
         IValue actionPlainValue
@@ -222,35 +209,35 @@ public class RefreshProcessor
         return (actionType, actionPlainValueInternal);
     }
 
-    private async Task UpdateRefreshRequest(RefreshRequest refreshRequest)
+    private async Task UpdateRefreshRequest()
     {
-        var opponents = await _specifyOpponentsService.SpecifyOpponentsAsync(
-            new Address(refreshRequest.AvatarAddress),
-            refreshRequest.SeasonId,
-            refreshRequest.RoundId
-        );
-        await _refreshRequestRepo.UpdateRefreshRequestAsync(
-            refreshRequest,
-            rr =>
-            {
-                rr.SpecifiedOpponentAvatarAddresses = opponents
-                    .Select(o => o.AvatarAddress.ToHex())
-                    .ToList();
-                rr.IsCostPaid = true;
-                rr.RefreshStatus = RefreshStatus.SUCCESS;
-            }
-        );
-        await _availableOpponentRepo.AddAvailableOpponents(
-            refreshRequest.SeasonId,
-            refreshRequest.RoundId,
-            new Address(refreshRequest.AvatarAddress),
-            refreshRequest.Id,
-            opponents.Select(o => (o.AvatarAddress, o.GroupId)).ToList()
-        );
-        await _participantRepo.UpdateLastRefreshRequestId(
-            refreshRequest.SeasonId,
-            new Address(refreshRequest.AvatarAddress),
-            refreshRequest.Id
-        );
+        // var opponents = await _specifyOpponentsService.SpecifyOpponentsAsync(
+        //     new Address(refreshRequest.AvatarAddress),
+        //     refreshRequest.SeasonId,
+        //     refreshRequest.RoundId
+        // );
+        // await _refreshRequestRepo.UpdateRefreshRequestAsync(
+        //     refreshRequest,
+        //     rr =>
+        //     {
+        //         rr.SpecifiedOpponentAvatarAddresses = opponents
+        //             .Select(o => o.AvatarAddress.ToHex())
+        //             .ToList();
+        //         rr.IsCostPaid = true;
+        //         rr.RefreshStatus = RefreshStatus.SUCCESS;
+        //     }
+        // );
+        // await _availableOpponentRepo.AddAvailableOpponents(
+        //     refreshRequest.SeasonId,
+        //     refreshRequest.RoundId,
+        //     new Address(refreshRequest.AvatarAddress),
+        //     refreshRequest.Id,
+        //     opponents.Select(o => (o.AvatarAddress, o.GroupId)).ToList()
+        // );
+        // await _participantRepo.UpdateLastRefreshRequestId(
+        //     refreshRequest.SeasonId,
+        //     new Address(refreshRequest.AvatarAddress),
+        //     refreshRequest.Id
+        // );
     }
 }

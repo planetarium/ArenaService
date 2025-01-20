@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Constants;
+using ArenaService.Models.Ticket;
 
 namespace ArenaService.Models;
 
@@ -26,12 +27,6 @@ public class Season
     public int RequiredMedalCount { get; }
 
     [Required]
-    public int PricePolicyId { get; set; }
-
-    [ForeignKey(nameof(PricePolicyId))]
-    public RefreshPricePolicy PricePolicy { get; set; } = null!;
-
-    [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
@@ -40,4 +35,5 @@ public class Season
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Round> Rounds { get; set; } = null!;
+    public ICollection<TicketPolicy> TicketPolicies { get; set; } = null!;
 }

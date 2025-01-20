@@ -10,7 +10,7 @@ public class SeasonResponse
     public long StartBlockIndex { get; set; }
     public long EndBlockIndex { get; set; }
     public int Interval { get; set; }
-    public long RequiredMedalCount { get; set; }
+    public int RequiredMedalCount { get; set; }
 
     [SwaggerSchema("현재 시즌에서 티켓을 구매할 때 지불해야할 NCG Cost 리스트")]
     public float[] TicketPrices { get; set; }

@@ -1,6 +1,7 @@
 using ArenaService.Client;
 using ArenaService.Extensions;
 using ArenaService.Models;
+using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
 using ArenaService.Utils;
@@ -8,18 +9,18 @@ using Bencodex;
 using Bencodex.Types;
 using Libplanet.Crypto;
 using Libplanet.Types.Tx;
-using Nekoyume;
-using Nekoyume.Action;
-using Nekoyume.Action.Arena;
+using Microsoft.Extensions.Options;
 
 namespace ArenaService.Worker;
 
 public class BattleProcessor
 {
+    private readonly Address BattleAccountAddress = new ("0000000000000000000000000000000000000027");
     private static readonly Codec Codec = new();
+    private readonly string _arenaProviderName;
     private readonly ILogger<BattleProcessor> _logger;
     private readonly IHeadlessClient _client;
-    private readonly IBattleLogRepository _battleLogRepo;
+    private readonly IBattleRepository _battleLogRepo;
     private readonly IRankingRepository _rankingRepo;
     private readonly IParticipantRepository _participantRepo;
     private readonly ITxTrackingService _txTrackingService;
@@ -27,10 +28,11 @@ public class BattleProcessor
     public BattleProcessor(
         ILogger<BattleProcessor> logger,
         IHeadlessClient client,
-        IBattleLogRepository battleLogRepo,
+        IBattleRepository battleLogRepo,
         IRankingRepository rankingRepo,
         ITxTrackingService txTrackingService,
-        IParticipantRepository participantRepo
+        IParticipantRepository participantRepo,
+        IOptions<OpsConfigOptions> options
     )
     {
         _logger = logger;
@@ -39,11 +41,12 @@ public class BattleProcessor
         _rankingRepo = rankingRepo;
         _txTrackingService = txTrackingService;
         _participantRepo = participantRepo;
+        _arenaProviderName = options.Value.ArenaProviderName;
     }
 
     public async Task ProcessAsync(TxId txId, int battleLogId)
     {
-        var battleLog = await _battleLogRepo.GetBattleLogAsync(battleLogId);
+        var battleLog = await _battleLogRepo.GetBattleAsync(battleLogId);
         if (battleLog is null)
         {
             _logger.LogError($"Battle log with ID {battleLogId} not found.");
@@ -71,10 +74,10 @@ public class BattleProcessor
         );
     }
 
-    private async Task<bool> GetBattleResultState(BattleLog battleLog, TxId txId)
+    private async Task<bool> GetBattleResultState(Battle battleLog, TxId txId)
     {
-        var accountAddress = Addresses.Battle.Derive(ArenaProvider.PLANETARIUM.ToString());
-        var stateAddress = new Address(battleLog.Attacker.AvatarAddress).Derive(txId.ToString());
+        var accountAddress = BattleAccountAddress.Derive(_arenaProviderName);
+        var stateAddress = new Address(battleLog.AvailableOpponent.AvatarAddress).Derive(txId.ToString());
 
         var state = await RetryUtility.RetryAsync(
             async () =>
@@ -105,7 +108,7 @@ public class BattleProcessor
         return isVictory;
     }
 
-    private async Task UpdateData(BattleLog battleLog, bool isVictory)
+    private async Task UpdateData(Battle battleLog, bool isVictory)
     {
         var myScoreChange = isVictory ? 10 : -10;
         var enemyScoreChange = isVictory ? -10 : 10;
@@ -117,16 +120,16 @@ public class BattleProcessor
             enemyScoreChange,
             1
         );
-        var attackerAddress = new Address(battleLog.Attacker.AvatarAddress);
-        var defenderAddress = new Address(battleLog.Defender.AvatarAddress);
+        // var attackerAddress = new Address(battleLog.Attacker.AvatarAddress);
+        // var defenderAddress = new Address(battleLog.Defender.AvatarAddress);
 
-        await _participantRepo.UpdateScoreAsync(battleLog.SeasonId, attackerAddress, myScoreChange);
-        await _participantRepo.UpdateScoreAsync(
-            battleLog.SeasonId,
-            defenderAddress,
-            enemyScoreChange
-        );
-        await _rankingRepo.UpdateScoreAsync(attackerAddress, battleLog.SeasonId, myScoreChange);
-        await _rankingRepo.UpdateScoreAsync(defenderAddress, battleLog.SeasonId, enemyScoreChange);
+        // await _participantRepo.UpdateScoreAsync(battleLog.SeasonId, attackerAddress, myScoreChange);
+        // await _participantRepo.UpdateScoreAsync(
+        //     battleLog.SeasonId,
+        //     defenderAddress,
+        //     enemyScoreChange
+        // );
+        // await _rankingRepo.UpdateScoreAsync(attackerAddress, battleLog.SeasonId, myScoreChange);
+        // await _rankingRepo.UpdateScoreAsync(defenderAddress, battleLog.SeasonId, enemyScoreChange);
     }
 }

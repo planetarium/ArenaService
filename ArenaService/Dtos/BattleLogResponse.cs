@@ -1,9 +1,10 @@
 using ArenaService.Constants;
 using ArenaService.Models;
+using ArenaService.Models.Enums;
 
 namespace ArenaService.Dtos;
 
-public class BattleLogResponse
+public class BattleResponse
 {
     public int Id { get; set; }
     public int SeasonId { get; set; }
@@ -12,7 +13,7 @@ public class BattleLogResponse
 
     public required string DefenderAvatarAddress { get; set; }
 
-    public BattleTxTrackingStatus BattleTxTrackingStatus { get; set; }
+    public BattleStatus BattleStatus { get; set; }
     public string? TxId { get; set; }
     public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }

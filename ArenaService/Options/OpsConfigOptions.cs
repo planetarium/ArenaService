@@ -5,4 +5,5 @@ public class OpsConfigOptions
     public const string SectionName = "OpsConfig";
 
     public required string RecipientAddress { get; init; }
+    public required string ArenaProviderName { get; init; }
 }

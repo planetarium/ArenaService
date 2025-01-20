@@ -42,7 +42,6 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
             .AvailableOpponents.Where(ao =>
                 ao.AvatarAddress == avatarAddress.ToHex()
                 && ao.RoundId == roundId
-                && ao.RefreshRequestId == refreshRequestId
             )
             .ToListAsync();
 
@@ -67,7 +66,6 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
                 SeasonId = seasonId,
                 RoundId = roundId,
                 GroupId = opponent.Item2,
-                RefreshRequestId = requestId,
                 OpponentAvatarAddress = opponent.Item1.ToHex(),
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow

@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Models;
 
@@ -14,8 +13,7 @@ public class AvailableOpponent
     [StringLength(40, MinimumLength = 40)]
     public required string AvatarAddress { get; set; }
 
-    // [ForeignKey(nameof(AvatarAddress), nameof(SeasonId))] - Use Fluent API
-    public Participant MyParticipant { get; set; } = null!;
+    public Participant Me { get; set; } = null!;
 
     [Required]
     public int SeasonId { get; set; }
@@ -33,22 +31,15 @@ public class AvailableOpponent
     [StringLength(40, MinimumLength = 40)]
     public required string OpponentAvatarAddress { get; set; }
 
-    // [ForeignKey(nameof(OpponentAvatarAddress), nameof(SeasonId))] - Use Fluent API
     public Participant Opponent { get; set; } = null!;
-
-    [Required]
-    public int RefreshRequestId { get; set; }
-
-    [ForeignKey(nameof(RefreshRequestId))]
-    public RefreshRequest RefreshRequest { get; set; } = null!;
 
     [Required]
     public int GroupId { get; set; }
 
-    public int? BattleLogId { get; set; } = null;
+    public int? SuccessBattleId { get; set; } = null;
 
-    [ForeignKey(nameof(BattleLogId))]
-    public BattleLog BattleLog { get; set; } = null!;
+    [ForeignKey(nameof(SuccessBattleId))]
+    public Battle SuccessBattle { get; set; } = null!;
 
     [Required]
     [Column(TypeName = "timestamptz")]
@@ -57,4 +48,7 @@ public class AvailableOpponent
     [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<Battle> Battles { get; set; } = null!;
+
 }
