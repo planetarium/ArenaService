@@ -12,78 +12,78 @@ using Swashbuckle.AspNetCore.Annotations;
 [ApiController]
 public class TicketController : ControllerBase
 {
+    public TicketController() { }
 
-    public TicketController(
-    )
-    {
-    }
-
-
-    [HttpGet()]
+    [HttpGet("battle")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
-    [SwaggerResponse(
-        StatusCodes.Status200OK,
-        "TicketStatus",
-        typeof(TicketStatusResponse)
-    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "TicketStatus", typeof(TicketStatusResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<
-            NotFound<string>,
-            StatusCodeHttpResult,
-            Ok
-        >
-    > GetTicketStatus(
-        [FromQuery] TicketType ticketType
-    )
+    public async Task<Results<NotFound<string>, StatusCodeHttpResult, Ok>> GetBattleTicketStatus()
     {
         return TypedResults.Ok();
     }
 
-    [HttpPost("purchase")]
+    [HttpGet("refresh")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
-    [SwaggerResponse(
-        StatusCodes.Status200OK,
-        "Purchase Log Id",
-        typeof(int)
-    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "TicketStatus", typeof(TicketStatusResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<
-            NotFound<string>,
-            StatusCodeHttpResult,
-            Ok
-        >
-    > PurchaseTicket(
+    public async Task<Results<NotFound<string>, StatusCodeHttpResult, Ok>> GetRefreshTicketStatus()
+    {
+        return TypedResults.Ok();
+    }
+
+    [HttpPost("battle/purchase")]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(int))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
+    public async Task<Results<NotFound<string>, StatusCodeHttpResult, Ok>> PurchaseBattleTicket(
         [FromBody] PurchaseTicketRequest request
     )
     {
         return TypedResults.Ok();
     }
 
-    [HttpGet("purchase-logs/{logId}")]
+    [HttpPost("refresh/purchase")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
-    [SwaggerResponse(
-        StatusCodes.Status200OK,
-        "Purchase Log Id",
-        typeof(TicketPurchaseLogResponse)
-    )]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(int))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
+    public async Task<Results<NotFound<string>, StatusCodeHttpResult, Ok>> PurchaseRefreshTicket(
+        [FromBody] PurchaseTicketRequest request
+    )
+    {
+        return TypedResults.Ok();
+    }
+
+    [HttpGet("battle/purchase-logs/{logId}")]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(TicketPurchaseLogResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<
-        Results<
-            NotFound<string>,
-            StatusCodeHttpResult,
-            Ok
-        >
-    > GetPurchaseTicketLog(
-        int logId
-    )
+        Results<NotFound<string>, StatusCodeHttpResult, Ok>
+    > GetPurchaseBattleTicketLog(int logId)
+    {
+        return TypedResults.Ok();
+    }
+
+    [HttpGet("refresh/purchase-logs/{logId}")]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(TicketPurchaseLogResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
+    public async Task<
+        Results<NotFound<string>, StatusCodeHttpResult, Ok>
+    > GetPurchaseRefreshTicketLog(int logId)
     {
         return TypedResults.Ok();
     }
