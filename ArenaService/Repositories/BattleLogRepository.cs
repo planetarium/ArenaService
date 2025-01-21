@@ -15,16 +15,16 @@ public interface IBattleRepository
         Address defenderAvatarAddress,
         string token
     );
-    Task<Battle> UpdateTxIdAsync(int battleLogId, string txId);
-    Task<Battle> UpdateTxStatusAsync(int battleLogId, TxStatus txStatus);
+    Task<Battle> UpdateTxIdAsync(int battleId, string txId);
+    Task<Battle> UpdateTxStatusAsync(int battleId, TxStatus txStatus);
     Task<Battle> UpdateBattleResultAsync(
-        int battleLogId,
+        int battleId,
         bool isVictory,
         int participantScoreChange,
         int OpponentScoreChange,
         long blockIndex
     );
-    Task<Battle?> GetBattleAsync(int battleLogId);
+    Task<Battle?> GetBattleAsync(int battleId);
 }
 
 public class BattleRepository : IBattleRepository
@@ -43,76 +43,76 @@ public class BattleRepository : IBattleRepository
         string token
     )
     {
-        var battleLog = await _context.Battles.AddAsync(
+        var battle = await _context.Battles.AddAsync(
             new Battle
             {
                 Token = token
             }
         );
         _context.SaveChanges();
-        return battleLog.Entity;
+        return battle.Entity;
     }
 
-    public async Task<Battle> UpdateTxStatusAsync(int battleLogId, TxStatus txStatus)
+    public async Task<Battle> UpdateTxStatusAsync(int battleId, TxStatus txStatus)
     {
-        var battleLog = await _context.Battles.FindAsync(battleLogId);
-        if (battleLog == null)
+        var battle = await _context.Battles.FindAsync(battleId);
+        if (battle == null)
         {
-            throw new KeyNotFoundException($"Battle with ID {battleLogId} not found.");
+            throw new KeyNotFoundException($"Battle with ID {battleId} not found.");
         }
 
-        battleLog.TxStatus = txStatus;
+        battle.TxStatus = txStatus;
 
-        _context.Battles.Update(battleLog);
+        _context.Battles.Update(battle);
         await _context.SaveChangesAsync();
 
-        return battleLog;
+        return battle;
     }
 
-    public async Task<Battle> UpdateTxIdAsync(int battleLogId, string txId)
+    public async Task<Battle> UpdateTxIdAsync(int battleId, string txId)
     {
-        var battleLog = await _context.Battles.FindAsync(battleLogId);
-        if (battleLog == null)
+        var battle = await _context.Battles.FindAsync(battleId);
+        if (battle == null)
         {
-            throw new KeyNotFoundException($"Battle with ID {battleLogId} not found.");
+            throw new KeyNotFoundException($"Battle with ID {battleId} not found.");
         }
 
-        battleLog.TxId = txId;
+        battle.TxId = txId;
 
-        _context.Battles.Update(battleLog);
+        _context.Battles.Update(battle);
         await _context.SaveChangesAsync();
 
-        return battleLog;
+        return battle;
     }
 
     public async Task<Battle> UpdateBattleResultAsync(
-        int battleLogId,
+        int battleId,
         bool isVictory,
         int participantScoreChange,
         int opponentScoreChange,
         long blockIndex
     )
     {
-        var battleLog = await _context.Battles.FindAsync(battleLogId);
-        if (battleLog == null)
+        var battle = await _context.Battles.FindAsync(battleId);
+        if (battle == null)
         {
-            throw new KeyNotFoundException($"Battle with ID {battleLogId} not found.");
+            throw new KeyNotFoundException($"Battle with ID {battleId} not found.");
         }
 
-        battleLog.IsVictory = isVictory;
-        battleLog.OpponentScoreChange = opponentScoreChange;
+        battle.IsVictory = isVictory;
+        battle.OpponentScoreChange = opponentScoreChange;
 
-        _context.Battles.Update(battleLog);
+        _context.Battles.Update(battle);
         await _context.SaveChangesAsync();
 
-        return battleLog;
+        return battle;
     }
 
-    public async Task<Battle?> GetBattleAsync(int battleLogId)
+    public async Task<Battle?> GetBattleAsync(int battleId)
     {
-        var battleLog = await _context
+        var battle = await _context
             .Battles
-            .FirstOrDefaultAsync(b => b.Id == battleLogId);
-        return battleLog;
+            .FirstOrDefaultAsync(b => b.Id == battleId);
+        return battle;
     }
 }

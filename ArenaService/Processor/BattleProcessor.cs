@@ -20,7 +20,7 @@ public class BattleProcessor
     private readonly string _arenaProviderName;
     private readonly ILogger<BattleProcessor> _logger;
     private readonly IHeadlessClient _client;
-    private readonly IBattleRepository _battleLogRepo;
+    private readonly IBattleRepository _battleRepo;
     private readonly IRankingRepository _rankingRepo;
     private readonly IParticipantRepository _participantRepo;
     private readonly ITxTrackingService _txTrackingService;
@@ -28,7 +28,7 @@ public class BattleProcessor
     public BattleProcessor(
         ILogger<BattleProcessor> logger,
         IHeadlessClient client,
-        IBattleRepository battleLogRepo,
+        IBattleRepository battleRepo,
         IRankingRepository rankingRepo,
         ITxTrackingService txTrackingService,
         IParticipantRepository participantRepo,
@@ -37,34 +37,34 @@ public class BattleProcessor
     {
         _logger = logger;
         _client = client;
-        _battleLogRepo = battleLogRepo;
+        _battleRepo = battleRepo;
         _rankingRepo = rankingRepo;
         _txTrackingService = txTrackingService;
         _participantRepo = participantRepo;
         _arenaProviderName = options.Value.ArenaProviderName;
     }
 
-    public async Task ProcessAsync(TxId txId, int battleLogId)
+    public async Task ProcessAsync(TxId txId, int battleId)
     {
-        var battleLog = await _battleLogRepo.GetBattleAsync(battleLogId);
-        if (battleLog is null)
+        var battle = await _battleRepo.GetBattleAsync(battleId);
+        if (battle is null)
         {
-            _logger.LogError($"Battle log with ID {battleLogId} not found.");
+            _logger.LogError($"Battle log with ID {battleId} not found.");
             return;
         }
 
-        await _battleLogRepo.UpdateTxIdAsync(battleLogId, txId.ToString());
+        await _battleRepo.UpdateTxIdAsync(battleId, txId.ToString());
 
         await _txTrackingService.TrackTransactionAsync(
             txId,
             async status =>
             {
-                await _battleLogRepo.UpdateTxStatusAsync(battleLogId, status.ToModelTxStatus());
+                await _battleRepo.UpdateTxStatusAsync(battleId, status.ToModelTxStatus());
             },
             async successResponse =>
             {
-                var isVictory = await GetBattleResultState(battleLog, txId);
-                await UpdateData(battleLog, isVictory);
+                var isVictory = await GetBattleResultState(battle, txId);
+                await UpdateData(battle, isVictory);
                 _logger.LogInformation($"Tx succeeded!");
             },
             txId =>
@@ -74,10 +74,10 @@ public class BattleProcessor
         );
     }
 
-    private async Task<bool> GetBattleResultState(Battle battleLog, TxId txId)
+    private async Task<bool> GetBattleResultState(Battle battle, TxId txId)
     {
         var accountAddress = BattleAccountAddress.Derive(_arenaProviderName);
-        var stateAddress = new Address(battleLog.AvailableOpponent.AvatarAddress).Derive(txId.ToString());
+        var stateAddress = new Address(battle.AvailableOpponent.AvatarAddress).Derive(txId.ToString());
 
         var state = await RetryUtility.RetryAsync(
             async () =>
@@ -108,28 +108,28 @@ public class BattleProcessor
         return isVictory;
     }
 
-    private async Task UpdateData(Battle battleLog, bool isVictory)
+    private async Task UpdateData(Battle battle, bool isVictory)
     {
         var myScoreChange = isVictory ? 10 : -10;
         var enemyScoreChange = isVictory ? -10 : 10;
 
-        await _battleLogRepo.UpdateBattleResultAsync(
-            battleLog.Id,
+        await _battleRepo.UpdateBattleResultAsync(
+            battle.Id,
             isVictory,
             myScoreChange,
             enemyScoreChange,
             1
         );
-        // var attackerAddress = new Address(battleLog.Attacker.AvatarAddress);
-        // var defenderAddress = new Address(battleLog.Defender.AvatarAddress);
+        // var attackerAddress = new Address(battle.Attacker.AvatarAddress);
+        // var defenderAddress = new Address(battle.Defender.AvatarAddress);
 
-        // await _participantRepo.UpdateScoreAsync(battleLog.SeasonId, attackerAddress, myScoreChange);
+        // await _participantRepo.UpdateScoreAsync(battle.SeasonId, attackerAddress, myScoreChange);
         // await _participantRepo.UpdateScoreAsync(
-        //     battleLog.SeasonId,
+        //     battle.SeasonId,
         //     defenderAddress,
         //     enemyScoreChange
         // );
-        // await _rankingRepo.UpdateScoreAsync(attackerAddress, battleLog.SeasonId, myScoreChange);
-        // await _rankingRepo.UpdateScoreAsync(defenderAddress, battleLog.SeasonId, enemyScoreChange);
+        // await _rankingRepo.UpdateScoreAsync(attackerAddress, battle.SeasonId, myScoreChange);
+        // await _rankingRepo.UpdateScoreAsync(defenderAddress, battle.SeasonId, enemyScoreChange);
     }
 }

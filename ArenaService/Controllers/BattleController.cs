@@ -17,18 +17,18 @@ using Microsoft.AspNetCore.Mvc;
 public class BattleController : ControllerBase
 {
     private readonly IBackgroundJobClient _jobClient;
-    private readonly IBattleRepository _battleLogRepo;
+    private readonly IBattleRepository _battleRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly ParticipateService _participateService;
 
     public BattleController(
-        IBattleRepository battleLogRepo,
+        IBattleRepository battleRepo,
         ISeasonCacheRepository seasonCacheRepo,
         ParticipateService participateService,
         IBackgroundJobClient jobClient
     )
     {
-        _battleLogRepo = battleLogRepo;
+        _battleRepo = battleRepo;
         _jobClient = jobClient;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
@@ -62,7 +62,7 @@ public class BattleController : ControllerBase
 
         var defenderAvatarAddress = new Address(opponentAvatarAddress);
 
-        var battleLog = await _battleLogRepo.AddBattleAsync(
+        var battle = await _battleRepo.AddBattleAsync(
             currentSeason.Value.Id,
             avatarAddress,
             defenderAvatarAddress,
@@ -70,50 +70,50 @@ public class BattleController : ControllerBase
         );
 
         return TypedResults.Ok(
-            new BattleTokenResponse { Token = battleLog.Token, BattleId = battleLog.Id }
+            new BattleTokenResponse { Token = battle.Token, BattleId = battle.Id }
         );
     }
 
-    [HttpPost("{battleLogId}/request")]
+    [HttpPost("{battleId}/request")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Ok>> RequestBattle(
-        int battleLogId,
+        int battleId,
         [FromBody] BattleRequest request
     )
     {
-        var battleLog = await _battleLogRepo.GetBattleAsync(battleLogId);
+        var battle = await _battleRepo.GetBattleAsync(battleId);
 
-        if (battleLog is null)
+        if (battle is null)
         {
-            return TypedResults.NotFound($"Battle log with ID {battleLogId} not found.");
+            return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
         }
 
         _jobClient.Enqueue<BattleProcessor>(processor =>
-            processor.ProcessAsync(TxId.FromHex(request.TxId), battleLogId)
+            processor.ProcessAsync(TxId.FromHex(request.TxId), battleId)
         );
 
         return TypedResults.Ok();
     }
 
-    [HttpGet("{battleLogId}")]
+    [HttpGet("{battleId}")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(BattleResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<BattleResponse>>
-    > GetBattle(int battleLogId)
+    > GetBattle(int battleId)
     {
-        var battleLog = await _battleLogRepo.GetBattleAsync(battleLogId);
+        var battle = await _battleRepo.GetBattleAsync(battleId);
 
-        if (battleLog is null)
+        if (battle is null)
         {
-            return TypedResults.NotFound($"Battle log with ID {battleLogId} not found.");
+            return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
         }
 
-        return TypedResults.Ok(battleLog.ToResponse());
+        return TypedResults.Ok(battle.ToResponse());
     }
 }
