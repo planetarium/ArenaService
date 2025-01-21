@@ -15,7 +15,7 @@ namespace ArenaService.Worker;
 
 public class BattleProcessor
 {
-    private readonly Address BattleAccountAddress = new ("0000000000000000000000000000000000000027");
+    private readonly Address BattleAccountAddress = new("0000000000000000000000000000000000000027");
     private static readonly Codec Codec = new();
     private readonly string _arenaProviderName;
     private readonly ILogger<BattleProcessor> _logger;
@@ -53,7 +53,7 @@ public class BattleProcessor
             return;
         }
 
-        await _battleRepo.UpdateTxIdAsync(battleId, txId.ToString());
+        await _battleRepo.UpdateTxIdAsync(battleId, txId);
 
         await _txTrackingService.TrackTransactionAsync(
             txId,
@@ -77,7 +77,7 @@ public class BattleProcessor
     private async Task<bool> GetBattleResultState(Battle battle, TxId txId)
     {
         var accountAddress = BattleAccountAddress.Derive(_arenaProviderName);
-        var stateAddress = new Address(battle.AvailableOpponent.AvatarAddress).Derive(txId.ToString());
+        var stateAddress = battle.AvailableOpponent.AvatarAddress.Derive(txId.ToString());
 
         var state = await RetryUtility.RetryAsync(
             async () =>

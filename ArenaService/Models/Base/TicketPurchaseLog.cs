@@ -1,39 +1,37 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Models.Enums;
+using Libplanet.Crypto;
+using Libplanet.Types.Tx;
 
 namespace ArenaService.Models.Ticket;
 
-[Table("ticket_purchase_logs")]
-public class TicketPurchaseLog
+public abstract class TicketPurchaseLog
 {
     [Key]
     public int Id { get; set; }
 
     [Required]
-    public int TicketStatusId { get; set; }
-
-    [ForeignKey(nameof(TicketStatusId))]
-    public TicketStatus TicketStatus { get; set; } = null!;
+    [StringLength(40, MinimumLength = 40)]
+    public Address AvatarAddress { get; set; }
 
     [Required]
-    public TicketType TicketType { get; set; }
+    public int SeasonId { get; set; }
 
     [Required]
-    public int PurchaseOrder { get; set; }
+    public int RoundId { get; set; }
 
-    [Required]
     [Column(TypeName = "decimal(18,2)")]
-    public decimal PurchasePrice { get; set; }
-
-    [Required]
-    public int PurchaseCount { get; set; }
+    public decimal? AmountPaid { get; set; }
 
     [Required]
     public PurchaseStatus PurchaseStatus { get; set; }
 
     [Required]
-    public required string TxId { get; set; }
+    public int PurchaseCount { get; set; }
+
+    [Required]
+    public TxId TxId { get; set; }
 
     public TxStatus? TxStatus { get; set; }
 

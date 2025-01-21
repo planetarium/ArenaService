@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Models;
@@ -10,7 +11,7 @@ public class Participant
 {
     [Required]
     [StringLength(40, MinimumLength = 40)]
-    public required string AvatarAddress { get; set; }
+    public Address AvatarAddress { get; set; }
 
     [ForeignKey(nameof(AvatarAddress))]
     public User User { get; set; } = null!;
@@ -33,5 +34,4 @@ public class Participant
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<AvailableOpponent> AvailableOpponents { get; set; } = null!;
-
 }

@@ -50,20 +50,15 @@ public class BattleController : ControllerBase
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        var currentSeason = await _seasonCacheRepo.GetSeasonAsync();
-        var currentRound = await _seasonCacheRepo.GetRoundAsync();
+        var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        if (currentSeason is null || currentRound is null)
-        {
-            return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
-        }
-
-        await _participateService.ParticipateAsync(currentSeason.Value.Id, avatarAddress);
+        await _participateService.ParticipateAsync(cachedSeason.Id, avatarAddress);
 
         var defenderAvatarAddress = new Address(opponentAvatarAddress);
 
         var battle = await _battleRepo.AddBattleAsync(
-            currentSeason.Value.Id,
+            cachedSeason.Id,
             avatarAddress,
             defenderAvatarAddress,
             "token"

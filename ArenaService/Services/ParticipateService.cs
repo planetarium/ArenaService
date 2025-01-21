@@ -53,7 +53,7 @@ public class ParticipateService : IParticipateService
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 
         await _rankingRepo.UpdateScoreAsync(
-            new Address(participant.AvatarAddress),
+            participant.AvatarAddress,
             seasonId,
             participant.Score
         );

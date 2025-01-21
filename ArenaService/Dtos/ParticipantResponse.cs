@@ -1,8 +1,10 @@
+using Libplanet.Crypto;
+
 namespace ArenaService.Dtos;
 
 public class ParticipantResponse
 {
-    public required string AvatarAddress { get; set; }
+    public Address AvatarAddress { get; set; }
 
     public required string NameWithHash { get; set; }
 

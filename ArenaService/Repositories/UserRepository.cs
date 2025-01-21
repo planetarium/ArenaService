@@ -82,8 +82,8 @@ public class UserRepository : IUserRepository
         var user = await _context.Users.AddAsync(
             new User
             {
-                AgentAddress = agentAddress.ToHex(),
-                AvatarAddress = avatarAddress.ToHex(),
+                AgentAddress = agentAddress,
+                AvatarAddress = avatarAddress,
                 NameWithHash = nameWithHash,
                 PortraitId = portraitId,
                 Cp = cp,

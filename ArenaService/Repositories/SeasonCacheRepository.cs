@@ -1,4 +1,5 @@
 using System.Text.Json;
+using ArenaService.Exceptions;
 using StackExchange.Redis;
 
 namespace ArenaService.Repositories;
@@ -6,8 +7,8 @@ namespace ArenaService.Repositories;
 public interface ISeasonCacheRepository
 {
     Task<long?> GetBlockIndexAsync();
-    Task<(int Id, long StartBlock, long EndBlock)?> GetSeasonAsync();
-    Task<(int Id, long StartBlock, long EndBlock)?> GetRoundAsync();
+    Task<(int Id, long StartBlock, long EndBlock)> GetSeasonAsync();
+    Task<(int Id, long StartBlock, long EndBlock)> GetRoundAsync();
     Task SetBlockIndexAsync(long blockIndex);
     Task SetSeasonAsync(int seasonId, long startBlock, long endBlock);
     Task SetRoundAsync(int roundId, long startBlock, long endBlock);
@@ -32,30 +33,30 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         return value.HasValue ? long.Parse(value) : null;
     }
 
-    public async Task<(int Id, long StartBlock, long EndBlock)?> GetSeasonAsync()
+    public async Task<(int Id, long StartBlock, long EndBlock)> GetSeasonAsync()
     {
         var value = await _redis.StringGetAsync($"{PREFIX}:{SeasonKey}");
+
         if (!value.HasValue)
         {
-            return null;
+            throw new CacheUnavailableException("Season cache is unavailable.");
         }
 
-        var seasonData = JsonSerializer.Deserialize<CachedSeason>(value);
-        return seasonData != null
-            ? (seasonData.Id, seasonData.StartBlock, seasonData.EndBlock)
-            : null;
+        var seasonData = JsonSerializer.Deserialize<CachedSeason>(value!);
+        return (seasonData!.Id, seasonData.StartBlock, seasonData.EndBlock);
     }
 
-    public async Task<(int Id, long StartBlock, long EndBlock)?> GetRoundAsync()
+    public async Task<(int Id, long StartBlock, long EndBlock)> GetRoundAsync()
     {
         var value = await _redis.StringGetAsync($"{PREFIX}:{RoundKey}");
+
         if (!value.HasValue)
         {
-            return null;
+            throw new CacheUnavailableException("Round cache is unavailable.");
         }
 
-        var roundData = JsonSerializer.Deserialize<CachedRound>(value);
-        return roundData != null ? (roundData.Id, roundData.StartBlock, roundData.EndBlock) : null;
+        var roundData = JsonSerializer.Deserialize<CachedRound>(value!);
+        return (roundData!.Id, roundData.StartBlock, roundData.EndBlock);
     }
 
     public async Task SetBlockIndexAsync(long blockIndex)

@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Models;
@@ -10,11 +11,11 @@ public class User
 {
     [Key]
     [StringLength(40, MinimumLength = 40)]
-    public required string AvatarAddress { get; set; }
+    public Address AvatarAddress { get; set; }
 
     [Required]
     [StringLength(40, MinimumLength = 40)]
-    public required string AgentAddress { get; set; }
+    public Address AgentAddress { get; set; }
 
     [Required]
     public required string NameWithHash { get; set; }

@@ -43,39 +43,42 @@ def insert_policy():
             with conn.cursor() as cursor:
                 cursor.execute(
                     sql.SQL("""
-                        INSERT INTO refresh_price_policies (name)
-                        VALUES (%s)
+                        INSERT INTO battle_ticket_policies (name, default_tickets_per_round, max_purchasable_tickets_per_round, purchase_prices, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, now(), now())
                         RETURNING id
                     """),
-                    ("test",)
+                    ("battle-ticket-normal-season-policy", 5, 4, [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2, 4.4, 4.6, 4.8, 5.0, 5.2, 5.4, 5.6, 5.8, 6.0, 6.2, 6.4, 6.6, 6.8, 7.0, 7.2, 7.4, 7.6, 7.8, 8.0, 8.2, 8.4, 8.6, 8.8])
                 )
-                policy_id = cursor.fetchone()[0]
-                for i in range(6):
-                    cursor.execute(
-                        sql.SQL("""
-                            INSERT INTO refresh_price_details (policy_id, refresh_order, price)
-                            VALUES (%s, %s, %s)
-                        """),
-                        (policy_id, i + 1, 0 if i < 2 else i - 1)
-                    )
+                battle_policy_id = cursor.fetchone()[0]
                 conn.commit()
-                print(f"Policy {policy_id} and details inserted successfully.")
-                return policy_id
+                print(f"Policy {battle_policy_id} and details inserted successfully.")
+
+                cursor.execute(
+                    sql.SQL("""
+                        INSERT INTO refresh_ticket_policies (name, default_tickets_per_round, max_purchasable_tickets_per_round, purchase_prices, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, now(), now())
+                        RETURNING id
+                    """),
+                    ("refresh-ticket-normal-season-policy", 2, 4, [0.5, 1.5, 3, 4.5])
+                )
+                refresh_policy_id = cursor.fetchone()[0]
+                conn.commit()
+                return battle_policy_id, refresh_policy_id
     except Exception as e:
         print(f"An error occurred while inserting the policy: {e}")
         return None
 
-def insert_season(start_block, end_block, round_interval, price_policy_id):
+def insert_season(start_block, end_block, round_interval, battle_policy_id, refresh_policy_id):
     try:
         with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
             with conn.cursor() as cursor:
                 cursor.execute(
                     sql.SQL("""
-                        INSERT INTO seasons (start_block, end_block, arena_type, round_interval, price_policy_id, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, now(), now())
+                        INSERT INTO seasons (start_block, end_block, arena_type, round_interval, required_medal_count, battle_ticket_policy_id, refresh_ticket_policy_id, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, now(), now())
                         RETURNING id
                     """),
-                    (start_block, end_block, 1, round_interval, price_policy_id)
+                    (start_block, end_block, 1, round_interval, 120, battle_policy_id, refresh_policy_id)
                 )
                 season_id = cursor.fetchone()[0]
                 conn.commit()
@@ -155,11 +158,11 @@ def main():
         round_interval = 100
 
         # Insert policy and season
-        price_policy_id = insert_policy()
-        if not price_policy_id:
+        battle_policy_id, refresh_policy_id = insert_policy()
+        if not refresh_policy_id or not battle_policy_id:
             return
 
-        season_id = insert_season(start_block, end_block, round_interval, price_policy_id)
+        season_id = insert_season(start_block, end_block, round_interval, battle_policy_id, refresh_policy_id)
         if not season_id:
             return
 

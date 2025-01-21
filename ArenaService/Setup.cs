@@ -2,6 +2,8 @@ namespace ArenaService;
 
 using ArenaService.Auth;
 using ArenaService.Data;
+using ArenaService.Filter;
+using ArenaService.JsonConverters;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
@@ -65,10 +67,16 @@ public class Startup
             );
 
         services
-            .AddControllers()
+            .AddControllers(options =>
+            {
+                options.Filters.Add<CacheExceptionFilter>();
+            })
             .AddNewtonsoftJson(options =>
-                options.SerializerSettings.Converters.Add(new StringEnumConverter())
-            );
+            {
+                options.SerializerSettings.Converters.Add(new StringEnumConverter());
+                options.SerializerSettings.Converters.Add(new TxIdJsonConverter());
+                options.SerializerSettings.Converters.Add(new AddressJsonConverter());
+            });
 
         services
             .AddAuthentication("ES256K")
@@ -123,6 +131,7 @@ public class Startup
         services.AddScoped<IBattleRepository, BattleRepository>();
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
+        services.AddScoped<ITicketRepository, TicketRepository>();
 
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();

@@ -1,29 +1,33 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Models.Enums;
+using Libplanet.Crypto;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Models.Ticket;
 
-[Table("ticket_usage_logs")]
-public class TicketUsageLog
+public abstract class TicketStatus
 {
     [Key]
     public int Id { get; set; }
 
     [Required]
-    public int TicketStatusId { get; set; }
+    public int SeasonId { get; set; }
 
-    [ForeignKey(nameof(TicketStatusId))]
-    public TicketStatus TicketStatus { get; set; } = null!;
-
-    [Required]
-    public TicketType TicketType { get; set; }
-
-    public string? Memo { get; set; }
+    [ForeignKey(nameof(SeasonId))]
+    public Season Season { get; set; } = null!;
 
     [Required]
-    [Column(TypeName = "timestamptz")]
-    public DateTime UsedAt { get; set; } = DateTime.UtcNow;
+    [StringLength(40, MinimumLength = 40)]
+    public Address AvatarAddress { get; set; }
+
+    public Participant Participant { get; set; } = null!;
+
+    [Required]
+    public int UsedCount { get; set; } = 0;
+
+    [Required]
+    public int PurchaseCount { get; set; } = 0;
 
     [Required]
     [Column(TypeName = "timestamptz")]

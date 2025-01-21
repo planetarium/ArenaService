@@ -58,29 +58,18 @@ public class AvailableOpponentController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
     public async Task<
-        Results<
-            UnauthorizedHttpResult,
-            NotFound<string>,
-            StatusCodeHttpResult,
-            Ok
-        >
+        Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
     > GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        var currentSeason = await _seasonCacheRepo.GetSeasonAsync();
-        var currentRound = await _seasonCacheRepo.GetRoundAsync();
+        var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        if (currentSeason is null || currentRound is null)
-        {
-            return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
-        }
         var participant = await _participateService.ParticipateAsync(
-            currentSeason.Value.Id,
+            cachedSeason.Id,
             avatarAddress,
-            query =>
-                query
-                    .Include(p => p.User)
+            query => query.Include(p => p.User)
         );
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
@@ -89,7 +78,7 @@ public class AvailableOpponentController : ControllerBase
         // {
         //     var opponentRank = await _rankingRepo.GetRankAsync(
         //         new Address(availableOpponent.Opponent.AvatarAddress),
-        //         currentSeason.Value.Id
+        //         cachedSeason.Id
         //     );
         //     availableOpponentsResponses.Add(
         //         new AvailableOpponentResponse
@@ -133,45 +122,35 @@ public class AvailableOpponentController : ControllerBase
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<
-        Results<
-            NotFound<string>,
-            StatusCodeHttpResult,
-            BadRequest<string>,
-            Ok
-        >
+        Results<NotFound<string>, StatusCodeHttpResult, BadRequest<string>, Ok>
     > RequestFreeRefresh()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        var currentSeason = await _seasonCacheRepo.GetSeasonAsync();
-        var currentRound = await _seasonCacheRepo.GetRoundAsync();
-
-        if (currentSeason is null || currentRound is null)
-        {
-            return TypedResults.StatusCode(StatusCodes.Status503ServiceUnavailable);
-        }
+        var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
         var participant = await _participateService.ParticipateAsync(
-            currentSeason.Value.Id,
+            cachedSeason.Id,
             avatarAddress,
             query => query.Include(p => p.User)
         );
 
         var opponents = await _specifyOpponentsService.SpecifyOpponentsAsync(
             avatarAddress,
-            currentSeason.Value.Id,
-            currentRound.Value.Id
+            cachedSeason.Id,
+            cachedRound.Id
         );
 
         // await _availableOpponentRepo.AddAvailableOpponents(
-        //     currentSeason.Value.Id,
-        //     currentRound.Value.Id,
+        //     cachedSeason.Id,
+        //     cachedRound.Id,
         //     avatarAddress,
         //     refreshRequest.Id,
         //     opponents.Select(o => (o.AvatarAddress, o.GroupId)).ToList()
         // );
         // await _participantRepo.UpdateLastRefreshRequestId(
-        //     currentSeason.Value.Id,
+        //     cachedSeason.Id,
         //     avatarAddress,
         //     refreshRequest.Id
         // );
@@ -181,7 +160,7 @@ public class AvailableOpponentController : ControllerBase
         // foreach (var opponent in opponents)
         // {
         //     var opponentParticipant = await _participantRepo.GetParticipantAsync(
-        //         currentSeason.Value.Id,
+        //         cachedSeason.Id,
         //         opponent.AvatarAddress,
         //         query => query.Include(p => p.User)
         //     );
