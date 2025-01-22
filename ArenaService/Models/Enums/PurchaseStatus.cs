@@ -8,5 +8,6 @@ public enum PurchaseStatus
     INSUFFICIENT_PAYMENT,
     INVALID_RECIPIENT,
     DUPLICATE_TRANSACTION,
+    TX_FAILED,
     SUCCESS
 }

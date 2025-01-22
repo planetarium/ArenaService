@@ -85,13 +85,28 @@ public class PurchaseRefreshTicketProcessor
             purchaseLog.TxId,
             async status =>
             {
-                await _ticketRepo.UpdateRefreshTicketPurchaseLog(
-                    purchaseLog,
-                    btpl =>
-                    {
-                        btpl.TxStatus = status.ToModelTxStatus();
-                    }
-                );
+                if (status == Client.TxStatus.Failure)
+                {
+                    await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                        purchaseLog,
+                        btpl =>
+                        {
+                            btpl.TxStatus = status.ToModelTxStatus();
+                            btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        }
+                    );
+                    processResult = "tx failed";
+                }
+                else
+                {
+                    await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                        purchaseLog,
+                        btpl =>
+                        {
+                            btpl.TxStatus = status.ToModelTxStatus();
+                        }
+                    );
+                }
             },
             async successResponse =>
             {
@@ -195,26 +210,14 @@ public class PurchaseRefreshTicketProcessor
         foreach (var actionResponse in txResponse!.Data!.Transaction.GetTx!.Actions)
         {
             var action = Codec.Decode(Convert.FromHexString(actionResponse!.Raw));
-            var (actionType, actionValues) = DeconstructActionPlainValue(action);
 
-            var actionTypeStr = actionType switch
+            if (TransferAssetsActionParser.TryParseActionPayload(action, out var taActionValue))
             {
-                Integer integer => integer.ToString(),
-                Text text => (string)text,
-                _ => null
-            };
-
-            if (actionTypeStr is null || actionValues is null)
+                return taActionValue;
+            }
+            else
             {
                 continue;
-            }
-
-            if (Regex.IsMatch(actionTypeStr, "^transfer_asset[0-9]*$"))
-            {
-                var taActionValues = TransferAssetsParser.ParseActionPayload(
-                    (Dictionary)actionValues
-                );
-                return taActionValues;
             }
         }
 

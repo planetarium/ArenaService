@@ -10,14 +10,15 @@ public static class BattleExtensions
         return new BattleResponse
         {
             Id = battle.Id,
-            SeasonId = battle.AvailableOpponent.SeasonId,
-            AttackerAvatarAddress = battle.AvailableOpponent.AvatarAddress,
-            DefenderAvatarAddress = battle.AvailableOpponent.OpponentAvatarAddress,
+            SeasonId = battle.SeasonId,
+            MyAvatarAddress = battle.AvatarAddress,
+            OpponentAvatarAddress = battle.AvailableOpponent.OpponentAvatarAddress,
+            BattleStatus = battle.BattleStatus,
             TxId = battle.TxId,
             TxStatus = battle.TxStatus,
             IsVictory = battle.IsVictory,
-            ParticipantScore = battle.AvailableOpponent.Me.Score,
-            ParticipantScoreChange = battle.MyScoreChange,
+            MyScore = battle.Participant.Score,
+            MyScoreChange = battle.MyScoreChange,
             OpponentScoreChange = battle.OpponentScoreChange,
         };
     }

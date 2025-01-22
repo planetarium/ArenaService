@@ -1,6 +1,10 @@
+using ArenaService.ActionValues;
 using ArenaService.Client;
+using ArenaService.Constants;
 using ArenaService.Extensions;
 using ArenaService.Models;
+using ArenaService.Models.BattleTicket;
+using ArenaService.Models.Enums;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
@@ -9,6 +13,7 @@ using Bencodex;
 using Bencodex.Types;
 using Libplanet.Crypto;
 using Libplanet.Types.Tx;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace ArenaService.Worker;
@@ -22,7 +27,9 @@ public class BattleProcessor
     private readonly IHeadlessClient _client;
     private readonly IBattleRepository _battleRepo;
     private readonly IRankingRepository _rankingRepo;
+    private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly IParticipantRepository _participantRepo;
+    private readonly ITicketRepository _ticketRepo;
     private readonly ITxTrackingService _txTrackingService;
 
     public BattleProcessor(
@@ -30,6 +37,8 @@ public class BattleProcessor
         IHeadlessClient client,
         IBattleRepository battleRepo,
         IRankingRepository rankingRepo,
+        IAvailableOpponentRepository availableOpponentRepo,
+        ITicketRepository ticketRepo,
         ITxTrackingService txTrackingService,
         IParticipantRepository participantRepo,
         IOptions<OpsConfigOptions> options
@@ -39,39 +48,240 @@ public class BattleProcessor
         _client = client;
         _battleRepo = battleRepo;
         _rankingRepo = rankingRepo;
+        _ticketRepo = ticketRepo;
         _txTrackingService = txTrackingService;
+        _availableOpponentRepo = availableOpponentRepo;
         _participantRepo = participantRepo;
         _arenaProviderName = options.Value.ArenaProviderName;
     }
 
-    public async Task ProcessAsync(TxId txId, int battleId)
+    public async Task<string> ProcessAsync(int battleId)
     {
-        var battle = await _battleRepo.GetBattleAsync(battleId);
+        var battle = await _battleRepo.GetBattleAsync(
+            battleId,
+            q =>
+                q.Include(b => b.AvailableOpponent)
+                    .ThenInclude(ao => ao.Opponent)
+                    .ThenInclude(p => p.User)
+                    .Include(b => b.Season)
+                    .ThenInclude(s => s.BattleTicketPolicy)
+                    .Include(b => b.Participant)
+        );
         if (battle is null)
         {
-            _logger.LogError($"Battle log with ID {battleId} not found.");
-            return;
+            return $"Battle log with ID {battleId} not found.";
+        }
+        if (battle.TxId is null)
+        {
+            return $"Battle log {battleId} doesn't have any tx.";
         }
 
-        await _battleRepo.UpdateTxIdAsync(battleId, txId);
+        if (!await ValidateUsedTxId(battle.TxId.Value, battleId))
+        {
+            await _battleRepo.UpdateBattle(
+                battle,
+                btpl =>
+                {
+                    btpl.BattleStatus = BattleStatus.DUPLICATE_TRANSACTION;
+                }
+            );
+            return $"{battle.TxId} is used tx";
+        }
+
+        var battleTicketStatusPerRound = await _ticketRepo.GetBattleTicketStatusPerRound(
+            battle.RoundId,
+            battle.AvatarAddress
+        );
+        var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
+            battle.RoundId,
+            battle.AvatarAddress
+        );
+
+        if (battleTicketStatusPerRound is null || battleTicketStatusPerSeason is null)
+        {
+            (battleTicketStatusPerRound, battleTicketStatusPerSeason) = await AddTicketStatuses(
+                battle
+            );
+        }
+
+        if (battleTicketStatusPerRound.RemainingCount <= 0)
+        {
+            return $"Doesn't have remaining ticket";
+        }
+
+        if (!await ValidateUsedTxId(battle.TxId.Value, battleId))
+        {
+            await _battleRepo.UpdateBattle(
+                battle,
+                btpl =>
+                {
+                    btpl.BattleStatus = BattleStatus.DUPLICATE_TRANSACTION;
+                }
+            );
+            return $"{battle.TxId} is used tx";
+        }
+
+        var processResult = "before tracking";
+
+        await _battleRepo.UpdateBattle(
+            battle,
+            b =>
+            {
+                b.BattleStatus = BattleStatus.TRACKING;
+            }
+        );
 
         await _txTrackingService.TrackTransactionAsync(
-            txId,
+            battle.TxId.Value,
             async status =>
             {
-                await _battleRepo.UpdateTxStatusAsync(battleId, status.ToModelTxStatus());
+                if (status == Client.TxStatus.Failure)
+                {
+                    await _battleRepo.UpdateBattle(
+                        battle,
+                        b =>
+                        {
+                            b.TxStatus = status.ToModelTxStatus();
+                            b.BattleStatus = BattleStatus.TX_FAILED;
+                        }
+                    );
+                    processResult = "tx failed";
+                }
+                else
+                {
+                    await _battleRepo.UpdateBattle(
+                        battle,
+                        b =>
+                        {
+                            b.TxStatus = status.ToModelTxStatus();
+                        }
+                    );
+                }
             },
             async successResponse =>
             {
-                var isVictory = await GetBattleResultState(battle, txId);
-                await UpdateData(battle, isVictory);
-                _logger.LogInformation($"Tx succeeded!");
+                var battleActionValue = await FetchAndSearchBattleAction(battle.TxId.Value);
+
+                if (battleActionValue is null)
+                {
+                    await _battleRepo.UpdateBattle(
+                        battle,
+                        b =>
+                        {
+                            b.BattleStatus = BattleStatus.NOT_FOUND_BATTLE_ACTION;
+                        }
+                    );
+                    processResult = $"Not found tx for {battle.TxId}";
+                }
+                else
+                {
+                    if (!ValidateToken(battleActionValue))
+                    {
+                        await _battleRepo.UpdateBattle(
+                            battle,
+                            b =>
+                            {
+                                b.BattleStatus = BattleStatus.INVALID_BATTLE;
+                            }
+                        );
+                        processResult = "invalid battle";
+                    }
+                    else
+                    {
+                        var isVictory = await GetBattleResultState(battle, battle.TxId.Value);
+                        await UpdateModels(
+                            battle,
+                            battleTicketStatusPerRound,
+                            battleTicketStatusPerSeason,
+                            isVictory
+                        );
+                        processResult = "success";
+                    }
+                }
             },
             txId =>
             {
                 throw new TimeoutException($"Transaction timed out for ID: {txId}");
             }
         );
+
+        return processResult;
+    }
+
+    private async Task<(BattleTicketStatusPerRound, BattleTicketStatusPerSeason)> AddTicketStatuses(
+        Battle battle
+    )
+    {
+        var battleTicketStatusPerRound = await _ticketRepo.AddBattleTicketStatusPerRound(
+            battle.SeasonId,
+            battle.RoundId,
+            battle.AvatarAddress,
+            battle.Season.BattleTicketPolicyId,
+            battle.Season.BattleTicketPolicy.DefaultTicketsPerRound,
+            0,
+            0
+        );
+        var battleTicketStatusPerSeason = await _ticketRepo.AddBattleTicketStatusPerSeason(
+            battle.SeasonId,
+            battle.AvatarAddress,
+            battle.Season.BattleTicketPolicyId,
+            0,
+            0
+        );
+
+        return (battleTicketStatusPerRound, battleTicketStatusPerSeason);
+    }
+
+    private async Task<bool> ValidateUsedTxId(TxId txId, int battleId)
+    {
+        var battle = await _battleRepo.GetBattleByTxId(txId, battleId);
+        return battle is null;
+    }
+
+    private async Task<BattleActionValue?> FetchAndSearchBattleAction(TxId txId)
+    {
+        var txResponse = await RetryUtility.RetryAsync(
+            async () =>
+            {
+                var txResponse = await _client.GetTx.ExecuteAsync(txId.ToString());
+
+                if (txResponse.Data is null || txResponse.Data!.Transaction.GetTx is null)
+                {
+                    _logger.LogInformation("Transaction result is null. Retrying...");
+                    return null;
+                }
+
+                return txResponse;
+            },
+            maxAttempts: 5,
+            delayMilliseconds: 2000,
+            successCondition: txResponse => txResponse != null,
+            onRetry: attempt =>
+            {
+                _logger.LogDebug($"Retry attempt {attempt}: txResponse is null, retrying...");
+            }
+        );
+
+        foreach (var actionResponse in txResponse!.Data!.Transaction.GetTx!.Actions)
+        {
+            var action = Codec.Decode(Convert.FromHexString(actionResponse!.Raw));
+
+            if (BattleActionParser.TryParseActionPayload(action, out var battleActionValue))
+            {
+                return battleActionValue;
+            }
+            else
+            {
+                continue;
+            }
+        }
+
+        return null;
+    }
+
+    private bool ValidateToken(BattleActionValue battleActionValue)
+    {
+        return true;
     }
 
     private async Task<bool> GetBattleResultState(Battle battle, TxId txId)
@@ -108,28 +318,77 @@ public class BattleProcessor
         return isVictory;
     }
 
-    private async Task UpdateData(Battle battle, bool isVictory)
+    private async Task UpdateModels(
+        Battle battle,
+        BattleTicketStatusPerRound battleTicketStatusPerRound,
+        BattleTicketStatusPerSeason battleTicketStatusPerSeason,
+        bool isVictory
+    )
     {
-        var myScoreChange = isVictory ? 10 : -10;
-        var enemyScoreChange = isVictory ? -10 : 10;
+        var scoreDict = OpponentGroupConstants.Groups[battle.AvailableOpponent.GroupId];
 
-        await _battleRepo.UpdateBattleResultAsync(
-            battle.Id,
-            isVictory,
-            myScoreChange,
-            enemyScoreChange,
-            1
+        var myScoreChange = isVictory ? scoreDict.WinScore : scoreDict.LoseScore;
+        var opponentScoreChange = isVictory ? -1 : 0;
+
+        await _battleRepo.UpdateBattle(
+            battle,
+            b =>
+            {
+                b.IsVictory = isVictory;
+                b.BattleStatus = BattleStatus.SUCCESS;
+                b.MyScoreChange = myScoreChange;
+                b.OpponentScoreChange = opponentScoreChange;
+            }
         );
-        // var attackerAddress = new Address(battle.Attacker.AvatarAddress);
-        // var defenderAddress = new Address(battle.Defender.AvatarAddress);
+        await _participantRepo.UpdateParticipantAsync(
+            battle.Participant,
+            p =>
+            {
+                p.Score += myScoreChange;
+            }
+        );
+        await _participantRepo.UpdateParticipantAsync(
+            battle.AvailableOpponent.Opponent,
+            p =>
+            {
+                p.Score += opponentScoreChange;
+            }
+        );
+        await _rankingRepo.UpdateScoreAsync(battle.AvatarAddress, battle.SeasonId, myScoreChange);
+        await _rankingRepo.UpdateScoreAsync(
+            battle.AvailableOpponent.AvatarAddress,
+            battle.SeasonId,
+            opponentScoreChange
+        );
 
-        // await _participantRepo.UpdateScoreAsync(battle.SeasonId, attackerAddress, myScoreChange);
-        // await _participantRepo.UpdateScoreAsync(
-        //     battle.SeasonId,
-        //     defenderAddress,
-        //     enemyScoreChange
-        // );
-        // await _rankingRepo.UpdateScoreAsync(attackerAddress, battle.SeasonId, myScoreChange);
-        // await _rankingRepo.UpdateScoreAsync(defenderAddress, battle.SeasonId, enemyScoreChange);
+        await _ticketRepo.UpdateBattleTicketStatusPerRound(
+            battleTicketStatusPerRound,
+            rts =>
+            {
+                rts.RemainingCount -= 1;
+                rts.UsedCount += 1;
+            }
+        );
+        await _ticketRepo.UpdateBattleTicketStatusPerSeason(
+            battleTicketStatusPerSeason,
+            rts =>
+            {
+                rts.UsedCount += 1;
+            }
+        );
+
+        await _ticketRepo.AddBattleTicketUsageLog(
+            battleTicketStatusPerRound.Id,
+            battleTicketStatusPerSeason.Id,
+            battle.Id
+        );
+
+        await _availableOpponentRepo.UpdateAvailableOpponent(
+            battle.AvailableOpponent,
+            ao =>
+            {
+                ao.SuccessBattleId = battle.Id;
+            }
+        );
     }
 }

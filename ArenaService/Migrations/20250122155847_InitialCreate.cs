@@ -328,6 +328,7 @@ namespace ArenaService.Migrations
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    battle_ticket_status_per_round_id = table.Column<int>(type: "integer", nullable: false),
                     battle_ticket_status_per_season_id = table.Column<int>(type: "integer", nullable: false),
                     battle_id = table.Column<int>(type: "integer", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
@@ -335,6 +336,12 @@ namespace ArenaService.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_battle_ticket_usage_logs", x => x.id);
+                    table.ForeignKey(
+                        name: "fk_battle_ticket_usage_logs_battle_ticket_statuses_per_round_b",
+                        column: x => x.battle_ticket_status_per_round_id,
+                        principalTable: "battle_ticket_statuses_per_round",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "fk_battle_ticket_usage_logs_battle_ticket_statuses_per_season_",
                         column: x => x.battle_ticket_status_per_season_id,
@@ -378,7 +385,7 @@ namespace ArenaService.Migrations
                     success_battle_id = table.Column<int>(type: "integer", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
-                    deleted_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                    deleted_at = table.Column<DateTime>(type: "timestamptz", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -415,6 +422,9 @@ namespace ArenaService.Migrations
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    season_id = table.Column<int>(type: "integer", nullable: false),
+                    round_id = table.Column<int>(type: "integer", nullable: false),
                     available_opponent_id = table.Column<int>(type: "integer", nullable: false),
                     token = table.Column<string>(type: "text", nullable: false),
                     battle_status = table.Column<int>(type: "integer", nullable: false),
@@ -433,6 +443,18 @@ namespace ArenaService.Migrations
                         name: "fk_battles_available_opponents_available_opponent_id",
                         column: x => x.available_opponent_id,
                         principalTable: "available_opponents",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_battles_participants_avatar_address_season_id",
+                        columns: x => new { x.avatar_address, x.season_id },
+                        principalTable: "participants",
+                        principalColumns: new[] { "avatar_address", "season_id" },
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_battles_seasons_season_id",
+                        column: x => x.season_id,
+                        principalTable: "seasons",
                         principalColumn: "id",
                         onDelete: ReferentialAction.Cascade);
                 });
@@ -463,9 +485,10 @@ namespace ArenaService.Migrations
                 column: "success_battle_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_battle_ticket_statuses_per_round_avatar_address_season_id",
+                name: "ix_battle_ticket_statuses_per_round_avatar_address_season_id_r",
                 table: "battle_ticket_statuses_per_round",
-                columns: new[] { "avatar_address", "season_id" });
+                columns: new[] { "avatar_address", "season_id", "round_id" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_battle_ticket_statuses_per_round_battle_ticket_policy_id",
@@ -485,7 +508,8 @@ namespace ArenaService.Migrations
             migrationBuilder.CreateIndex(
                 name: "ix_battle_ticket_statuses_per_season_avatar_address_season_id",
                 table: "battle_ticket_statuses_per_season",
-                columns: new[] { "avatar_address", "season_id" });
+                columns: new[] { "avatar_address", "season_id" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_battle_ticket_statuses_per_season_battle_ticket_policy_id",
@@ -498,6 +522,11 @@ namespace ArenaService.Migrations
                 column: "season_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_battle_ticket_usage_logs_battle_ticket_status_per_round_id",
+                table: "battle_ticket_usage_logs",
+                column: "battle_ticket_status_per_round_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_battle_ticket_usage_logs_battle_ticket_status_per_season_id",
                 table: "battle_ticket_usage_logs",
                 column: "battle_ticket_status_per_season_id");
@@ -508,14 +537,25 @@ namespace ArenaService.Migrations
                 column: "available_opponent_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_battles_avatar_address_season_id",
+                table: "battles",
+                columns: new[] { "avatar_address", "season_id" });
+
+            migrationBuilder.CreateIndex(
+                name: "ix_battles_season_id",
+                table: "battles",
+                column: "season_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_participants_season_id",
                 table: "participants",
                 column: "season_id");
 
             migrationBuilder.CreateIndex(
-                name: "ix_refresh_ticket_statuses_per_round_avatar_address_season_id",
+                name: "ix_refresh_ticket_statuses_per_round_avatar_address_season_id_",
                 table: "refresh_ticket_statuses_per_round",
-                columns: new[] { "avatar_address", "season_id" });
+                columns: new[] { "avatar_address", "season_id", "round_id" },
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "ix_refresh_ticket_statuses_per_round_refresh_ticket_policy_id",
@@ -577,9 +617,6 @@ namespace ArenaService.Migrations
                 name: "battle_ticket_purchase_logs");
 
             migrationBuilder.DropTable(
-                name: "battle_ticket_statuses_per_round");
-
-            migrationBuilder.DropTable(
                 name: "battle_ticket_usage_logs");
 
             migrationBuilder.DropTable(
@@ -587,6 +624,9 @@ namespace ArenaService.Migrations
 
             migrationBuilder.DropTable(
                 name: "refresh_ticket_usage_logs");
+
+            migrationBuilder.DropTable(
+                name: "battle_ticket_statuses_per_round");
 
             migrationBuilder.DropTable(
                 name: "battle_ticket_statuses_per_season");

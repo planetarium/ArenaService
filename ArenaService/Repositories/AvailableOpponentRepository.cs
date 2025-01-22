@@ -14,11 +14,27 @@ public interface IAvailableOpponentRepository
         int roundId,
         Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
     );
+    Task<AvailableOpponent?> GetAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
+    );
     Task<List<AvailableOpponent>> RefreshAvailableOpponents(
         int seasonId,
         int roundId,
         Address avatarAddress,
         List<(Address, int)> opponentAvatarAddresses
+    );
+    Task<AvailableOpponent> UpdateAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Action<AvailableOpponent> updateFields
+    );
+    Task<AvailableOpponent> UpdateAvailableOpponent(
+        AvailableOpponent availableOpponent,
+        Action<AvailableOpponent> updateFields
     );
 }
 
@@ -49,6 +65,27 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
                 ao.AvatarAddress == avatarAddress && ao.RoundId == roundId && ao.DeletedAt == null
             )
             .ToListAsync();
+    }
+
+    public async Task<AvailableOpponent?> GetAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
+    )
+    {
+        var query = _context.AvailableOpponents.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.SingleOrDefaultAsync(ao =>
+            ao.RoundId == roundId
+            && ao.AvatarAddress == avatarAddress
+            && ao.OpponentAvatarAddress == opponentAvatarAddress
+        );
     }
 
     public async Task<List<AvailableOpponent>> RefreshAvailableOpponents(
@@ -100,5 +137,41 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    public async Task<AvailableOpponent> UpdateAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Action<AvailableOpponent> updateFields
+    )
+    {
+        var availableOpponent = await GetAvailableOpponent(
+            avatarAddress,
+            roundId,
+            opponentAvatarAddress
+        );
+
+        if (availableOpponent is null)
+        {
+            throw new ArgumentException("AvailableOpponent not found");
+        }
+
+        return await UpdateAvailableOpponent(availableOpponent, updateFields);
+    }
+
+    public async Task<AvailableOpponent> UpdateAvailableOpponent(
+        AvailableOpponent availableOpponent,
+        Action<AvailableOpponent> updateFields
+    )
+    {
+        updateFields(availableOpponent);
+
+        availableOpponent.UpdatedAt = DateTime.UtcNow;
+
+        _context.AvailableOpponents.Update(availableOpponent);
+        await _context.SaveChangesAsync();
+
+        return availableOpponent;
     }
 }

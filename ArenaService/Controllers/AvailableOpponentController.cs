@@ -83,7 +83,11 @@ public class AvailableOpponentController : ControllerBase
         var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(
             avatarAddress,
             cachedRound.Id,
-            query => query.Include(ao => ao.Opponent).ThenInclude(p => p.User)
+            query =>
+                query
+                    .Include(ao => ao.Opponent)
+                    .ThenInclude(p => p.User)
+                    .Include(ao => ao.SuccessBattle)
         );
 
         if (!availableOpponents.Any())

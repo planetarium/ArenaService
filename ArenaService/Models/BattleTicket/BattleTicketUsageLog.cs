@@ -9,6 +9,12 @@ namespace ArenaService.Models.BattleTicket;
 public class BattleTicketUsageLog : TicketUsageLog
 {
     [Required]
+    public int BattleTicketStatusPerRoundId { get; set; }
+
+    [ForeignKey(nameof(BattleTicketStatusPerRoundId))]
+    public BattleTicketStatusPerRound BattleTicketStatusPerRound { get; set; } = null!;
+
+    [Required]
     public int BattleTicketStatusPerSeasonId { get; set; }
 
     [ForeignKey(nameof(BattleTicketStatusPerSeasonId))]
