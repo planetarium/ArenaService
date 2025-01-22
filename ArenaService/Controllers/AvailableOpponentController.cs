@@ -76,6 +76,7 @@ public class AvailableOpponentController : ControllerBase
 
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
+            cachedRound.Id,
             avatarAddress,
             query => query.Include(p => p.User)
         );
@@ -100,10 +101,20 @@ public class AvailableOpponentController : ControllerBase
         {
             var opponentRank = await _rankingRepo.GetRankAsync(
                 availableOpponent.Opponent.AvatarAddress,
-                cachedSeason.Id
+                cachedSeason.Id,
+                cachedRound.Id
+            );
+            var opponentScore = await _rankingRepo.GetRankAsync(
+                availableOpponent.Opponent.AvatarAddress,
+                cachedSeason.Id,
+                cachedRound.Id
             );
             availableOpponentsResponses.Add(
-                AvailableOpponentResponse.FromAvailableOpponent(availableOpponent, opponentRank)
+                AvailableOpponentResponse.FromAvailableOpponent(
+                    availableOpponent,
+                    opponentRank,
+                    opponentScore
+                )
             );
         }
 
@@ -140,6 +151,7 @@ public class AvailableOpponentController : ControllerBase
 
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
+            cachedRound.Id,
             avatarAddress,
             query =>
                 query
@@ -211,13 +223,13 @@ public class AvailableOpponentController : ControllerBase
             availableOpponentsResponses.Add(
                 new AvailableOpponentResponse
                 {
-                    AvatarAddress = opponentParticipant.AvatarAddress,
+                    AvatarAddress = opponentParticipant!.AvatarAddress,
                     NameWithHash = opponentParticipant.User.NameWithHash,
                     PortraitId = opponentParticipant.User.PortraitId,
                     Cp = opponentParticipant.User.Cp,
                     Level = opponentParticipant.User.Level,
                     SeasonId = opponentParticipant.SeasonId,
-                    Score = opponentParticipant.Score,
+                    Score = opponent.Score,
                     Rank = opponent.Rank,
                     IsAttacked = false,
                     ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,

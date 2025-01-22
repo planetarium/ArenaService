@@ -19,6 +19,7 @@ public class BattleController : ControllerBase
     private readonly IBackgroundJobClient _jobClient;
     private readonly ITicketRepository _ticketRepo;
     private readonly IBattleRepository _battleRepo;
+    private readonly IRankingRepository _rankingRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IParticipateService _participateService;
@@ -26,6 +27,7 @@ public class BattleController : ControllerBase
     public BattleController(
         IBattleRepository battleRepo,
         ITicketRepository ticketRepo,
+        IRankingRepository rankingRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IAvailableOpponentRepository availableOpponentRepo,
         IParticipateService participateService,
@@ -35,6 +37,7 @@ public class BattleController : ControllerBase
         _battleRepo = battleRepo;
         _ticketRepo = ticketRepo;
         _jobClient = jobClient;
+        _rankingRepo = rankingRepo;
         _availableOpponentRepo = availableOpponentRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
@@ -61,6 +64,7 @@ public class BattleController : ControllerBase
 
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
+            cachedRound.Id,
             avatarAddress,
             query =>
                 query
@@ -126,17 +130,24 @@ public class BattleController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<Results<UnauthorizedHttpResult, NotFound<string>, Ok>> RequestBattle(
-        int battleId,
-        [FromBody] BattleRequest request
-    )
+    public async Task<
+        Results<UnauthorizedHttpResult, StatusCodeHttpResult, NotFound<string>, Ok>
+    > RequestBattle(int battleId, [FromBody] BattleRequest request)
     {
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
+
         var battle = await _battleRepo.GetBattleAsync(battleId);
 
         if (battle is null)
         {
             return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
+        }
+
+        if (battle.AvatarAddress != avatarAddress)
+        {
+            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
         }
 
         await _battleRepo.UpdateBattle(
@@ -156,11 +167,14 @@ public class BattleController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(BattleResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
-        Results<UnauthorizedHttpResult, NotFound<string>, Ok<BattleResponse>>
+        Results<UnauthorizedHttpResult, StatusCodeHttpResult, NotFound<string>, Ok<BattleResponse>>
     > GetBattle(int battleId)
     {
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
+
         var battle = await _battleRepo.GetBattleAsync(
             battleId,
             q => q.Include(b => b.AvailableOpponent).Include(b => b.Participant)
@@ -171,6 +185,20 @@ public class BattleController : ControllerBase
             return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
         }
 
-        return TypedResults.Ok(battle.ToResponse());
+        if (battle.AvatarAddress != avatarAddress)
+        {
+            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+        }
+
+        var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
+        var cachedRound = await _seasonCacheRepo.GetRoundAsync();
+
+        var score = await _rankingRepo.GetScoreAsync(
+            avatarAddress,
+            cachedSeason.Id,
+            cachedRound.Id
+        );
+
+        return TypedResults.Ok(battle.ToResponse(score));
     }
 }

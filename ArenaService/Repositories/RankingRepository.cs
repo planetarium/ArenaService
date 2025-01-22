@@ -1,3 +1,4 @@
+using Humanizer;
 using Libplanet.Crypto;
 using StackExchange.Redis;
 
@@ -5,24 +6,27 @@ namespace ArenaService.Repositories;
 
 public interface IRankingRepository
 {
-    Task UpdateScoreAsync(Address avatarAddress, int seasonId, int scoreChange);
+    Task UpdateScoreAsync(Address avatarAddress, int seasonId, int roundId, int scoreChange);
 
-    Task<int> GetRankAsync(Address avatarAddress, int seasonId);
+    Task<int> GetRankAsync(Address avatarAddress, int seasonId, int roundId);
 
-    Task<int?> GetScoreAsync(Address avatarAddress, int seasonId);
+    Task<int> GetScoreAsync(Address avatarAddress, int seasonId, int roundId);
 
-    Task<
-        List<(int Rank, Address AvatarAddress, int SeasonId, int Score)>
-    > GetRankingsWithPaginationAsync(int seasonId, int pageNumber, int pageSize);
+    Task<List<(Address AvatarAddress, int Score, int Rank)>> GetRandomParticipantsAsync(
+        Address avatarAddress,
+        int seasonId,
+        int roundId,
+        int score,
+        int count
+    );
 
-    Task<
-        List<(Address AvatarAddress, int SeasonId, int Score, int Rank)>
-    > GetRandomParticipantsTempAsync(Address avatarAddress, int seasonId, int score, int count);
+    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId);
 }
 
 public class RankingRepository : IRankingRepository
 {
-    private const string RankingKeyPrefix = "ranking:season";
+    private const string RankingKeyFormat = "ranking:season:{0}:round:{1}";
+    private const string ParticipantKeyFormat = "participant:{0}";
     private readonly IDatabase _redis;
 
     public RankingRepository(IConnectionMultiplexer redis)
@@ -30,74 +34,69 @@ public class RankingRepository : IRankingRepository
         _redis = redis.GetDatabase();
     }
 
-    public async Task UpdateScoreAsync(Address avatarAddress, int seasonId, int scoreChange)
+    public async Task UpdateScoreAsync(
+        Address avatarAddress,
+        int seasonId,
+        int roundId,
+        int scoreChange
+    )
     {
-        await _redis.SortedSetIncrementAsync(
-            $"{RankingKeyPrefix}:{seasonId}",
-            $"participant:{avatarAddress.ToHex()}:{seasonId}",
-            scoreChange
-        );
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+
+        await _redis.SortedSetIncrementAsync(rankingKey, participantKey, scoreChange);
     }
 
-    public async Task<int> GetRankAsync(Address avatarAddress, int seasonId)
+    public async Task<int> GetRankAsync(Address avatarAddress, int seasonId, int roundId)
     {
-        var rank = await _redis.SortedSetRankAsync(
-            $"{RankingKeyPrefix}:{seasonId}",
-            $"participant:{avatarAddress.ToHex()}:{seasonId}",
-            Order.Descending
-        );
-        return rank.HasValue ? (int)rank.Value + 1 : throw new Exception();
-    }
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
 
-    public async Task<int?> GetScoreAsync(Address avatarAddress, int seasonId)
-    {
-        var score = await _redis.SortedSetScoreAsync(
-            $"{RankingKeyPrefix}:{seasonId}",
-            $"participant:{avatarAddress.ToHex()}:{seasonId}"
-        );
-        return score.HasValue ? (int)score.Value : null;
-    }
+        var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
 
-    public async Task<
-        List<(int Rank, Address AvatarAddress, int SeasonId, int Score)>
-    > GetRankingsWithPaginationAsync(int seasonId, int pageNumber, int pageSize)
-    {
-        int start = (pageNumber - 1) * pageSize;
-        int end = start + pageSize - 1;
+        if (!score.HasValue)
+        {
+            throw new Exception("Participant not found.");
+        }
 
-        var rankedParticipants = await _redis.SortedSetRangeByRankWithScoresAsync(
-            $"{RankingKeyPrefix}:{seasonId}",
-            start,
-            end,
-            Order.Descending
-        );
-
-        return rankedParticipants
-            .Select(
-                (entry, index) =>
-                {
-                    var avatarAddress = entry.Element.ToString().Split(':')[1];
-                    var seasonId = int.Parse(entry.Element.ToString().Split(':')[2]);
-                    return (
-                        Rank: start + index + 1,
-                        AvatarAddress: new Address(avatarAddress),
-                        SeasonId: seasonId,
-                        Score: (int)entry.Score
-                    );
-                }
+        var higherScoresCount = (
+            await _redis.SortedSetRangeByScoreWithScoresAsync(
+                rankingKey,
+                double.PositiveInfinity,
+                score.Value
             )
-            .ToList();
+        ).Length;
+
+        return higherScoresCount;
+    }
+
+    public async Task<int> GetScoreAsync(Address avatarAddress, int seasonId, int roundId)
+    {
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+
+        var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
+        return score.HasValue ? (int)score.Value : throw new Exception("Participant not found.");
     }
 
     public async Task<
-        List<(Address AvatarAddress, int SeasonId, int Score, int Rank)>
-    > GetRandomParticipantsTempAsync(Address avatarAddress, int seasonId, int score, int count)
+        List<(Address AvatarAddress, int Score, int Rank)>
+    > GetRandomParticipantsAsync(
+        Address avatarAddress,
+        int seasonId,
+        int roundId,
+        int score,
+        int count
+    )
     {
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+
         double minScore = score - 100;
         double maxScore = score + 100;
 
         var participants = await _redis.SortedSetRangeByScoreWithScoresAsync(
-            $"{RankingKeyPrefix}:{seasonId}",
+            rankingKey,
             minScore,
             maxScore,
             Exclude.None,
@@ -109,18 +108,16 @@ public class RankingRepository : IRankingRepository
             {
                 var parts = entry.Element.ToString().Split(':');
                 var address = parts[1];
-                var participantSeasonId = int.Parse(parts[2]);
 
-                return address != avatarAddress.ToHex() && participantSeasonId == seasonId;
+                return address != avatarAddress.ToHex();
             })
             .Select(entry =>
             {
                 var parts = entry.Element.ToString().Split(':');
                 var address = new Address(parts[1]);
-                var participantSeasonId = int.Parse(parts[2]);
                 var participantScore = (int)entry.Score;
 
-                return (address, participantSeasonId, participantScore);
+                return (address, participantScore);
             })
             .ToList();
 
@@ -130,20 +127,19 @@ public class RankingRepository : IRankingRepository
             .Take(count)
             .ToList();
 
-        var result = new List<(Address AvatarAddress, int SeasonId, int Score, int Rank)>();
+        var result = new List<(Address AvatarAddress, int Score, int Rank)>();
 
         foreach (var participant in randomParticipants)
         {
             var rank = await _redis.SortedSetRankAsync(
-                $"{RankingKeyPrefix}:{seasonId}",
-                $"participant:{participant.address.ToHex()}:{participant.participantSeasonId}",
+                rankingKey,
+                participantKey,
                 Order.Descending
             );
 
             result.Add(
                 (
                     AvatarAddress: participant.address,
-                    SeasonId: participant.participantSeasonId,
                     Score: participant.participantScore,
                     Rank: rank.HasValue ? (int)rank.Value + 1 : -1
                 )
@@ -151,5 +147,13 @@ public class RankingRepository : IRankingRepository
         }
 
         return result;
+    }
+
+    public async Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId)
+    {
+        string sourceKey = string.Format(RankingKeyFormat, seasonId, sourceRoundId);
+        string targetKey = string.Format(RankingKeyFormat, seasonId, targetRoundId);
+
+        await _redis.SortedSetCombineAndStoreAsync(SetOperation.Union, targetKey, [sourceKey]);
     }
 }
