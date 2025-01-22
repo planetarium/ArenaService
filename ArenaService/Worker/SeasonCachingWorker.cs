@@ -1,4 +1,5 @@
 using ArenaService.Client;
+using ArenaService.Exceptions;
 using ArenaService.Repositories;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -91,20 +92,22 @@ public class SeasonCachingWorker : BackgroundService
         ISeasonCacheRepository seasonCacheRepo
     )
     {
-        var cachedSeason = await seasonCacheRepo.GetSeasonAsync();
-        var cachedRound = await seasonCacheRepo.GetRoundAsync();
-
-        if (cachedSeason == null || cachedRound == null)
+        try
         {
-            return false;
-        }
+            var cachedSeason = await seasonCacheRepo.GetSeasonAsync();
+            var cachedRound = await seasonCacheRepo.GetRoundAsync();
 
-        if (blockIndex < cachedSeason.Value.StartBlock || blockIndex > cachedSeason.Value.EndBlock)
-        {
-            return false;
-        }
+            if (blockIndex < cachedSeason.StartBlock || blockIndex > cachedSeason.EndBlock)
+            {
+                return false;
+            }
 
-        if (blockIndex < cachedRound.Value.StartBlock || blockIndex > cachedRound.Value.EndBlock)
+            if (blockIndex < cachedRound.StartBlock || blockIndex > cachedRound.EndBlock)
+            {
+                return false;
+            }
+        }
+        catch (CacheUnavailableException)
         {
             return false;
         }

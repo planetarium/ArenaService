@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Constants;
+using ArenaService.Models.BattleTicket;
+using ArenaService.Models.RefreshTicket;
 using ArenaService.Models.Ticket;
 
 namespace ArenaService.Models;
@@ -24,7 +26,19 @@ public class Season
     public int RoundInterval { get; set; }
 
     [Required]
-    public int RequiredMedalCount { get; }
+    public int RequiredMedalCount { get; set; }
+
+    [Required]
+    public int BattleTicketPolicyId { get; set; }
+
+    [ForeignKey(nameof(BattleTicketPolicyId))]
+    public BattleTicketPolicy BattleTicketPolicy { get; set; } = null!;
+
+    [Required]
+    public int RefreshTicketPolicyId { get; set; }
+
+    [ForeignKey(nameof(RefreshTicketPolicyId))]
+    public RefreshTicketPolicy RefreshTicketPolicy { get; set; } = null!;
 
     [Required]
     [Column(TypeName = "timestamptz")]
@@ -35,5 +49,4 @@ public class Season
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Round> Rounds { get; set; } = null!;
-    public ICollection<TicketPolicy> TicketPolicies { get; set; } = null!;
 }

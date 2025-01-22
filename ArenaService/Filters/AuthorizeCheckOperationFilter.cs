@@ -1,4 +1,4 @@
-namespace ArenaService.Auth;
+namespace ArenaService.Filter;
 
 using System.Linq;
 using Microsoft.AspNetCore.Authorization;

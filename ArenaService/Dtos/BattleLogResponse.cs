@@ -1,6 +1,8 @@
 using ArenaService.Constants;
 using ArenaService.Models;
 using ArenaService.Models.Enums;
+using Libplanet.Crypto;
+using Libplanet.Types.Tx;
 
 namespace ArenaService.Dtos;
 
@@ -9,12 +11,12 @@ public class BattleResponse
     public int Id { get; set; }
     public int SeasonId { get; set; }
 
-    public required string AttackerAvatarAddress { get; set; }
+    public Address AttackerAvatarAddress { get; set; }
 
-    public required string DefenderAvatarAddress { get; set; }
+    public Address DefenderAvatarAddress { get; set; }
 
     public BattleStatus BattleStatus { get; set; }
-    public string? TxId { get; set; }
+    public TxId? TxId { get; set; }
     public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }
     public int? ParticipantScore { get; set; }

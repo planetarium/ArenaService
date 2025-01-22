@@ -40,8 +40,7 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
     {
         var availableOpponents = await _context
             .AvailableOpponents.Where(ao =>
-                ao.AvatarAddress == avatarAddress.ToHex()
-                && ao.RoundId == roundId
+                ao.AvatarAddress == avatarAddress && ao.RoundId == roundId
             )
             .ToListAsync();
 
@@ -62,11 +61,11 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         {
             var newOpponent = new AvailableOpponent
             {
-                AvatarAddress = avatarAddress.ToHex(),
+                AvatarAddress = avatarAddress,
                 SeasonId = seasonId,
                 RoundId = roundId,
                 GroupId = opponent.Item2,
-                OpponentAvatarAddress = opponent.Item1.ToHex(),
+                OpponentAvatarAddress = opponent.Item1,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };

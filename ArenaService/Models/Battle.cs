@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Constants;
 using ArenaService.Models.Enums;
+using Libplanet.Types.Tx;
 
 namespace ArenaService.Models;
 
@@ -21,7 +22,7 @@ public class Battle
     public required string Token { get; set; }
 
     public BattleStatus BattleStatus { get; set; }
-    public string? TxId { get; set; }
+    public TxId? TxId { get; set; }
     public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }
     public int? MyScoreChange { get; set; }

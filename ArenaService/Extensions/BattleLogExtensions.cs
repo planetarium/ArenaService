@@ -1,6 +1,5 @@
 namespace ArenaService.Extensions;
 
-using ArenaService.Constants;
 using ArenaService.Dtos;
 using ArenaService.Models;
 

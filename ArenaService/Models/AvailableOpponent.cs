@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Libplanet.Crypto;
 
 namespace ArenaService.Models;
 
@@ -11,7 +12,7 @@ public class AvailableOpponent
 
     [Required]
     [StringLength(40, MinimumLength = 40)]
-    public required string AvatarAddress { get; set; }
+    public Address AvatarAddress { get; set; }
 
     public Participant Me { get; set; } = null!;
 
@@ -29,7 +30,7 @@ public class AvailableOpponent
 
     [Required]
     [StringLength(40, MinimumLength = 40)]
-    public required string OpponentAvatarAddress { get; set; }
+    public Address OpponentAvatarAddress { get; set; }
 
     public Participant Opponent { get; set; } = null!;
 
@@ -50,5 +51,4 @@ public class AvailableOpponent
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<Battle> Battles { get; set; } = null!;
-
 }

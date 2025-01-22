@@ -1,15 +1,15 @@
 using ArenaService.Models.Enums;
+using Libplanet.Types.Tx;
 
 namespace ArenaService.Dtos;
 
-
 public class TicketPurchaseLogResponse
 {
-    public TicketType TicketType { get; set; }
-    public int PurchaseOrderPerRound { get; set; }
-    public decimal PurchasePrice { get; set; }
+    public int SeasonId { get; set; }
+    public int RoundId { get; set; }
+    public decimal? AmountPaid { get; set; }
     public int PurchaseCount { get; set; }
     public PurchaseStatus PurchaseStatus { get; set; }
-    public required string TxId { get; set; }
+    public TxId TxId { get; set; }
     public TxStatus? TxStatus { get; set; }
 }

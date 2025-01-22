@@ -33,7 +33,7 @@ public class ParticipantRepository : IParticipantRepository
     public async Task<Participant> AddParticipantAsync(int seasonId, Address avatarAddress)
     {
         var participant = await _context.Participants.AddAsync(
-            new Participant { AvatarAddress = avatarAddress.ToHex(), SeasonId = seasonId }
+            new Participant { AvatarAddress = avatarAddress, SeasonId = seasonId }
         );
         _context.SaveChanges();
         return participant.Entity;
@@ -53,7 +53,7 @@ public class ParticipantRepository : IParticipantRepository
         }
 
         return await query.FirstAsync(p =>
-            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex()
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
         );
     }
 
@@ -64,7 +64,7 @@ public class ParticipantRepository : IParticipantRepository
     )
     {
         var participant = await _context.Participants.FirstOrDefaultAsync(p =>
-            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex()
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
         );
         ;
         if (participant == null)
@@ -87,7 +87,7 @@ public class ParticipantRepository : IParticipantRepository
     )
     {
         var participant = await _context.Participants.FirstOrDefaultAsync(p =>
-            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress.ToHex()
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
         );
 
         if (participant == null)

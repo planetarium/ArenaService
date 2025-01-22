@@ -5,6 +5,7 @@ using ArenaService.Data;
 using ArenaService.Models;
 using ArenaService.Models.Enums;
 using Libplanet.Crypto;
+using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 
 public interface IBattleRepository
@@ -15,7 +16,7 @@ public interface IBattleRepository
         Address defenderAvatarAddress,
         string token
     );
-    Task<Battle> UpdateTxIdAsync(int battleId, string txId);
+    Task<Battle> UpdateTxIdAsync(int battleId, TxId txId);
     Task<Battle> UpdateTxStatusAsync(int battleId, TxStatus txStatus);
     Task<Battle> UpdateBattleResultAsync(
         int battleId,
@@ -43,12 +44,7 @@ public class BattleRepository : IBattleRepository
         string token
     )
     {
-        var battle = await _context.Battles.AddAsync(
-            new Battle
-            {
-                Token = token
-            }
-        );
+        var battle = await _context.Battles.AddAsync(new Battle { Token = token });
         _context.SaveChanges();
         return battle.Entity;
     }
@@ -69,7 +65,7 @@ public class BattleRepository : IBattleRepository
         return battle;
     }
 
-    public async Task<Battle> UpdateTxIdAsync(int battleId, string txId)
+    public async Task<Battle> UpdateTxIdAsync(int battleId, TxId txId)
     {
         var battle = await _context.Battles.FindAsync(battleId);
         if (battle == null)
@@ -110,9 +106,7 @@ public class BattleRepository : IBattleRepository
 
     public async Task<Battle?> GetBattleAsync(int battleId)
     {
-        var battle = await _context
-            .Battles
-            .FirstOrDefaultAsync(b => b.Id == battleId);
+        var battle = await _context.Battles.FirstOrDefaultAsync(b => b.Id == battleId);
         return battle;
     }
 }

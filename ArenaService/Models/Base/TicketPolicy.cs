@@ -4,26 +4,13 @@ using ArenaService.Models.Enums;
 
 namespace ArenaService.Models.Ticket;
 
-[Table("ticket_policies")]
-public class TicketPolicy
+public abstract class TicketPolicy
 {
     [Key]
     public int Id { get; set; }
 
     [Required]
-    public int SeasonId { get; set; }
-
-    [ForeignKey(nameof(SeasonId))]
-    public Season Season { get; set; } = null!;
-
-    [Required]
     public required string Name { get; set; }
-
-    [Required]
-    public TicketType TicketType { get; set; }
-
-    [Required]
-    public bool IsPricePersistentForSeason { get; set; }
 
     [Required]
     public int DefaultTicketsPerRound { get; set; }
@@ -43,18 +30,13 @@ public class TicketPolicy
     [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-    public decimal GetPrice(int purchaseOrder)
+    public decimal GetPrice(int purchaseCount)
     {
-        if (purchaseOrder < 1 || purchaseOrder > PurchasePrices.Count)
+        if (purchaseCount > PurchasePrices.Count)
         {
             throw new InvalidOperationException("Invalid purchase order.");
         }
 
-        return PurchasePrices[purchaseOrder - 1];
-    }
-
-    public bool CanPurchaseMore(int currentPurchased)
-    {
-        return currentPurchased < MaxPurchasableTicketsPerRound;
+        return PurchasePrices[purchaseCount];
     }
 }
