@@ -3,8 +3,8 @@ using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
 using ArenaService.Models;
-using ArenaService.Models.RefreshTicket;
 using ArenaService.Models.Enums;
+using ArenaService.Models.RefreshTicket;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
@@ -22,14 +22,14 @@ public class PurchaseRefreshTicketProcessor
 {
     private readonly Address _recipientAddress;
     private readonly Codec Codec = new();
-    private readonly ILogger<RefreshProcessor> _logger;
+    private readonly ILogger<PurchaseRefreshTicketProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ITxTrackingService _txTrackingService;
 
     public PurchaseRefreshTicketProcessor(
-        ILogger<RefreshProcessor> logger,
+        ILogger<PurchaseRefreshTicketProcessor> logger,
         IHeadlessClient client,
         ITicketRepository ticketRepo,
         ISeasonRepository seasonRepo,
@@ -314,9 +314,9 @@ public class PurchaseRefreshTicketProcessor
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
                 season.RefreshTicketPolicyId,
-                season.RefreshTicketPolicy.DefaultTicketsPerRound,
+                season.RefreshTicketPolicy.DefaultTicketsPerRound += purchaseLog.PurchaseCount,
                 0,
-                1
+                purchaseLog.PurchaseCount
             );
         }
         else
@@ -326,8 +326,8 @@ public class PurchaseRefreshTicketProcessor
                 purchaseLog.AvatarAddress,
                 bts =>
                 {
-                    bts.RemainingCount += 1;
-                    bts.PurchaseCount += 1;
+                    bts.RemainingCount += purchaseLog.PurchaseCount;
+                    bts.PurchaseCount += purchaseLog.PurchaseCount;
                 }
             );
         }

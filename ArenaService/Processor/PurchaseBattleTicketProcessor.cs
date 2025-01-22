@@ -22,14 +22,14 @@ public class PurchaseBattleTicketProcessor
 {
     private readonly Address _recipientAddress;
     private readonly Codec Codec = new();
-    private readonly ILogger<RefreshProcessor> _logger;
+    private readonly ILogger<PurchaseBattleTicketProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ITxTrackingService _txTrackingService;
 
     public PurchaseBattleTicketProcessor(
-        ILogger<RefreshProcessor> logger,
+        ILogger<PurchaseBattleTicketProcessor> logger,
         IHeadlessClient client,
         ITicketRepository ticketRepo,
         ISeasonRepository seasonRepo,
@@ -314,7 +314,7 @@ public class PurchaseBattleTicketProcessor
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
                 season.BattleTicketPolicyId,
-                season.BattleTicketPolicy.DefaultTicketsPerRound,
+                season.BattleTicketPolicy.DefaultTicketsPerRound += purchaseLog.PurchaseCount,
                 0,
                 purchaseLog.PurchaseCount
             );

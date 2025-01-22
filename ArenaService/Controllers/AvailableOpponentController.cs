@@ -20,6 +20,7 @@ using Swashbuckle.AspNetCore.Annotations;
 public class AvailableOpponentController : ControllerBase
 {
     private readonly IBackgroundJobClient _jobClient;
+    private readonly ITicketRepository _ticketRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly IParticipantRepository _participantRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
@@ -30,6 +31,7 @@ public class AvailableOpponentController : ControllerBase
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
         IParticipantRepository participantRepo,
+        ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
         ISpecifyOpponentsService specifyOpponentsService,
@@ -38,6 +40,7 @@ public class AvailableOpponentController : ControllerBase
     )
     {
         _availableOpponentRepo = availableOpponentRepo;
+        _ticketRepo = ticketRepo;
         _participantRepo = participantRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
@@ -58,7 +61,12 @@ public class AvailableOpponentController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
     public async Task<
-        Results<UnauthorizedHttpResult, NotFound<string>, StatusCodeHttpResult, Ok>
+        Results<
+            UnauthorizedHttpResult,
+            NotFound<string>,
+            StatusCodeHttpResult,
+            Ok<List<AvailableOpponentResponse>>
+        >
     > GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -72,39 +80,30 @@ public class AvailableOpponentController : ControllerBase
             query => query.Include(p => p.User)
         );
 
+        var availableOpponents = await _availableOpponentRepo.GetAvailableOpponents(
+            avatarAddress,
+            cachedRound.Id,
+            query => query.Include(ao => ao.Opponent).ThenInclude(p => p.User)
+        );
+
+        if (!availableOpponents.Any())
+        {
+            return TypedResults.NotFound("Refresh first");
+        }
+
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
+        foreach (var availableOpponent in availableOpponents)
+        {
+            var opponentRank = await _rankingRepo.GetRankAsync(
+                availableOpponent.Opponent.AvatarAddress,
+                cachedSeason.Id
+            );
+            availableOpponentsResponses.Add(
+                AvailableOpponentResponse.FromAvailableOpponent(availableOpponent, opponentRank)
+            );
+        }
 
-        // foreach (var availableOpponent in availableOpponents)
-        // {
-        //     var opponentRank = await _rankingRepo.GetRankAsync(
-        //         new Address(availableOpponent.Opponent.AvatarAddress),
-        //         cachedSeason.Id
-        //     );
-        //     availableOpponentsResponses.Add(
-        //         new AvailableOpponentResponse
-        //         {
-        //             AvatarAddress = availableOpponent.Opponent.AvatarAddress,
-        //             NameWithHash = availableOpponent.Opponent.User.NameWithHash,
-        //             PortraitId = availableOpponent.Opponent.User.PortraitId,
-        //             Cp = availableOpponent.Opponent.User.Cp,
-        //             Level = availableOpponent.Opponent.User.Level,
-        //             SeasonId = availableOpponent.Opponent.SeasonId,
-        //             Score = availableOpponent.Opponent.Score,
-        //             Rank = opponentRank,
-        //             IsAttacked = availableOpponent.BattleId is not null,
-        //             ScoreGainOnWin = OpponentGroupConstants
-        //                 .Groups[availableOpponent.GroupId]
-        //                 .WinScore,
-        //             ScoreLossOnLose = OpponentGroupConstants
-        //                 .Groups[availableOpponent.GroupId]
-        //                 .LoseScore,
-        //             IsVictory = availableOpponent.Battle?.IsVictory,
-        //             ClanImageURL = ""
-        //         }
-        //     );
-        // }
-
-        return TypedResults.Ok();
+        return TypedResults.Ok(availableOpponentsResponses);
     }
 
     [HttpPost("refresh")]
@@ -122,7 +121,12 @@ public class AvailableOpponentController : ControllerBase
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<
-        Results<NotFound<string>, StatusCodeHttpResult, BadRequest<string>, Ok>
+        Results<
+            NotFound<string>,
+            StatusCodeHttpResult,
+            BadRequest<string>,
+            Ok<List<AvailableOpponentResponse>>
+        >
     > RequestFreeRefresh()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -133,8 +137,35 @@ public class AvailableOpponentController : ControllerBase
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
             avatarAddress,
-            query => query.Include(p => p.User)
+            query =>
+                query
+                    .Include(p => p.User)
+                    .Include(p => p.Season)
+                    .ThenInclude(s => s.RefreshTicketPolicy)
         );
+
+        var refreshTicketStatusPerRound = await _ticketRepo.GetRefreshTicketStatusPerRound(
+            cachedRound.Id,
+            avatarAddress
+        );
+
+        if (refreshTicketStatusPerRound is null)
+        {
+            refreshTicketStatusPerRound = await _ticketRepo.AddRefreshTicketStatusPerRound(
+                cachedSeason.Id,
+                cachedRound.Id,
+                avatarAddress,
+                participant.Season.RefreshTicketPolicyId,
+                participant.Season.RefreshTicketPolicy.DefaultTicketsPerRound,
+                0,
+                0
+            );
+        }
+
+        if (refreshTicketStatusPerRound.RemainingCount <= 0)
+        {
+            return TypedResults.BadRequest("RemainingCount 0");
+        }
 
         var opponents = await _specifyOpponentsService.SpecifyOpponentsAsync(
             avatarAddress,
@@ -142,49 +173,57 @@ public class AvailableOpponentController : ControllerBase
             cachedRound.Id
         );
 
-        // await _availableOpponentRepo.AddAvailableOpponents(
-        //     cachedSeason.Id,
-        //     cachedRound.Id,
-        //     avatarAddress,
-        //     refreshRequest.Id,
-        //     opponents.Select(o => (o.AvatarAddress, o.GroupId)).ToList()
-        // );
-        // await _participantRepo.UpdateLastRefreshRequestId(
-        //     cachedSeason.Id,
-        //     avatarAddress,
-        //     refreshRequest.Id
-        // );
+        var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
+            cachedSeason.Id,
+            cachedRound.Id,
+            avatarAddress,
+            opponents.Select(o => (o.AvatarAddress, o.GroupId)).ToList()
+        );
 
-        // var availableOpponentsResponses = new List<AvailableOpponentResponse>();
+        await _ticketRepo.UpdateRefreshTicketStatusPerRound(
+            refreshTicketStatusPerRound,
+            rts =>
+            {
+                rts.RemainingCount -= 1;
+                rts.UsedCount += 1;
+            }
+        );
 
-        // foreach (var opponent in opponents)
-        // {
-        //     var opponentParticipant = await _participantRepo.GetParticipantAsync(
-        //         cachedSeason.Id,
-        //         opponent.AvatarAddress,
-        //         query => query.Include(p => p.User)
-        //     );
+        await _ticketRepo.AddRefreshTicketUsageLog(
+            refreshTicketStatusPerRound.Id,
+            availableOpponents.Select(o => o.Id).ToList()
+        );
 
-        //     availableOpponentsResponses.Add(
-        //         new AvailableOpponentResponse
-        //         {
-        //             AvatarAddress = opponentParticipant.AvatarAddress,
-        //             NameWithHash = opponentParticipant.User.NameWithHash,
-        //             PortraitId = opponentParticipant.User.PortraitId,
-        //             Cp = opponentParticipant.User.Cp,
-        //             Level = opponentParticipant.User.Level,
-        //             SeasonId = opponentParticipant.SeasonId,
-        //             Score = opponentParticipant.Score,
-        //             Rank = opponent.Rank,
-        //             IsAttacked = false,
-        //             ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,
-        //             ScoreLossOnLose = OpponentGroupConstants.Groups[opponent.GroupId].LoseScore,
-        //             IsVictory = null,
-        //             ClanImageURL = ""
-        //         }
-        //     );
-        // }
+        var availableOpponentsResponses = new List<AvailableOpponentResponse>();
 
-        return TypedResults.Ok();
+        foreach (var opponent in opponents)
+        {
+            var opponentParticipant = await _participantRepo.GetParticipantAsync(
+                cachedSeason.Id,
+                opponent.AvatarAddress,
+                query => query.Include(p => p.User)
+            );
+
+            availableOpponentsResponses.Add(
+                new AvailableOpponentResponse
+                {
+                    AvatarAddress = opponentParticipant.AvatarAddress,
+                    NameWithHash = opponentParticipant.User.NameWithHash,
+                    PortraitId = opponentParticipant.User.PortraitId,
+                    Cp = opponentParticipant.User.Cp,
+                    Level = opponentParticipant.User.Level,
+                    SeasonId = opponentParticipant.SeasonId,
+                    Score = opponentParticipant.Score,
+                    Rank = opponent.Rank,
+                    IsAttacked = false,
+                    ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,
+                    ScoreLossOnLose = OpponentGroupConstants.Groups[opponent.GroupId].LoseScore,
+                    IsVictory = null,
+                    ClanImageURL = ""
+                }
+            );
+        }
+
+        return TypedResults.Ok(availableOpponentsResponses);
     }
 }

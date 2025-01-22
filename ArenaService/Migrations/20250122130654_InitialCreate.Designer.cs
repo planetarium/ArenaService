@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ArenaService.Migrations
 {
     [DbContext(typeof(ArenaDbContext))]
-    [Migration("20250121183817_InitialCreate")]
+    [Migration("20250122130654_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -44,6 +44,11 @@ namespace ArenaService.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .IsRequired()
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
 
                     b.Property<int>("GroupId")
                         .HasColumnType("integer")
@@ -202,7 +207,6 @@ namespace ArenaService.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("AmountPaid")
-                        .IsRequired()
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount_paid");
 
@@ -487,7 +491,6 @@ namespace ArenaService.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("AmountPaid")
-                        .IsRequired()
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount_paid");
 
@@ -610,10 +613,6 @@ namespace ArenaService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AvailableOpponentId")
-                        .HasColumnType("integer")
-                        .HasColumnName("available_opponent_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
@@ -621,6 +620,11 @@ namespace ArenaService.Migrations
                     b.Property<int>("RefreshTicketStatusPerRoundId")
                         .HasColumnType("integer")
                         .HasColumnName("refresh_ticket_status_per_round_id");
+
+                    b.Property<List<int>>("SpecifiedOpponentIds")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("specified_opponent_ids");
 
                     b.HasKey("Id")
                         .HasName("pk_refresh_ticket_usage_logs");

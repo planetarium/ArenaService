@@ -104,6 +104,11 @@ public interface ITicketRepository
         Action<RefreshTicketStatusPerRound> updateFields
     );
 
+    Task<RefreshTicketStatusPerRound> UpdateRefreshTicketStatusPerRound(
+        RefreshTicketStatusPerRound refreshTicketStatusPerRound,
+        Action<RefreshTicketStatusPerRound> updateFields
+    );
+
     Task<BattleTicketStatusPerRound> UpdateBattleTicketStatusPerRound(
         int roundId,
         Address avatarAddress,
@@ -114,6 +119,11 @@ public interface ITicketRepository
         int seasonId,
         Address avatarAddress,
         Action<BattleTicketStatusPerSeason> updateFields
+    );
+
+    Task<RefreshTicketUsageLog> AddRefreshTicketUsageLog(
+        int refreshTicketStatusPerRoundId,
+        List<int> specifiedOpponentIds
     );
 }
 
@@ -389,6 +399,14 @@ public class TicketRepository : ITicketRepository
             );
         }
 
+        return await UpdateRefreshTicketStatusPerRound(refreshTicketStatusPerRound, updateFields);
+    }
+
+    public async Task<RefreshTicketStatusPerRound> UpdateRefreshTicketStatusPerRound(
+        RefreshTicketStatusPerRound refreshTicketStatusPerRound,
+        Action<RefreshTicketStatusPerRound> updateFields
+    )
+    {
         updateFields(refreshTicketStatusPerRound);
 
         refreshTicketStatusPerRound.UpdatedAt = DateTime.UtcNow;
@@ -460,5 +478,21 @@ public class TicketRepository : ITicketRepository
         return await _context.RefreshTicketPurchaseLogs.SingleOrDefaultAsync(rtpl =>
             rtpl.Id == purchaseLogId
         );
+    }
+
+    public async Task<RefreshTicketUsageLog> AddRefreshTicketUsageLog(
+        int refreshTicketStatusPerRoundId,
+        List<int> specifiedOpponentIds
+    )
+    {
+        var refreshTicketUsageLog = await _context.RefreshTicketUsageLogs.AddAsync(
+            new RefreshTicketUsageLog
+            {
+                RefreshTicketStatusPerRoundId = refreshTicketStatusPerRoundId,
+                SpecifiedOpponentIds = specifiedOpponentIds
+            }
+        );
+        _context.SaveChanges();
+        return refreshTicketUsageLog.Entity;
     }
 }

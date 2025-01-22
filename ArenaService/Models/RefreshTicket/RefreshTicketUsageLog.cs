@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Models.Enums;
 using ArenaService.Models.Ticket;
+using Libplanet.Crypto;
 
 namespace ArenaService.Models.RefreshTicket;
 
@@ -14,6 +15,6 @@ public class RefreshTicketUsageLog : TicketUsageLog
     [ForeignKey(nameof(RefreshTicketStatusPerRoundId))]
     public RefreshTicketStatusPerRound RefreshTicketStatusPerRound { get; set; } = null!;
 
-    [Required]
-    public int AvailableOpponentId { get; set; }
+    [Column(TypeName = "integer[]")]
+    public required List<int> SpecifiedOpponentIds { get; set; }
 }

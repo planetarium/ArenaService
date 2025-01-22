@@ -40,7 +40,7 @@ namespace ArenaService.Migrations
                     avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     season_id = table.Column<int>(type: "integer", nullable: false),
                     round_id = table.Column<int>(type: "integer", nullable: false),
-                    amount_paid = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    amount_paid = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     purchase_status = table.Column<int>(type: "integer", nullable: false),
                     purchase_count = table.Column<int>(type: "integer", nullable: false),
                     tx_id = table.Column<string>(type: "text", nullable: false),
@@ -80,7 +80,7 @@ namespace ArenaService.Migrations
                     avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
                     season_id = table.Column<int>(type: "integer", nullable: false),
                     round_id = table.Column<int>(type: "integer", nullable: false),
-                    amount_paid = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    amount_paid = table.Column<decimal>(type: "numeric(18,2)", nullable: true),
                     purchase_status = table.Column<int>(type: "integer", nullable: false),
                     purchase_count = table.Column<int>(type: "integer", nullable: false),
                     tx_id = table.Column<string>(type: "text", nullable: false),
@@ -350,7 +350,7 @@ namespace ArenaService.Migrations
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     refresh_ticket_status_per_round_id = table.Column<int>(type: "integer", nullable: false),
-                    available_opponent_id = table.Column<int>(type: "integer", nullable: false),
+                    specified_opponent_ids = table.Column<List<int>>(type: "integer[]", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },
                 constraints: table =>
@@ -377,7 +377,8 @@ namespace ArenaService.Migrations
                     group_id = table.Column<int>(type: "integer", nullable: false),
                     success_battle_id = table.Column<int>(type: "integer", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
-                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    deleted_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },
                 constraints: table =>
                 {
