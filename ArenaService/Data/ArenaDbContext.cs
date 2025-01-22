@@ -15,6 +15,7 @@ public class ArenaDbContext : DbContext
     public required DbSet<User> Users { get; set; }
     public required DbSet<Season> Seasons { get; set; }
     public required DbSet<Round> Rounds { get; set; }
+    public required DbSet<Medal> Medals { get; set; }
     public required DbSet<Participant> Participants { get; set; }
     public required DbSet<BattleTicketPolicy> BattleTicketPolicies { get; set; }
     public required DbSet<BattleTicketPurchaseLog> BattleTicketPurchaseLogs { get; set; }

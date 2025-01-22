@@ -20,7 +20,7 @@ public class Season
     public long EndBlock { get; set; }
 
     [Required]
-    public ArenaType arenaType { get; set; }
+    public ArenaType ArenaType { get; set; }
 
     [Required]
     public int RoundInterval { get; set; }

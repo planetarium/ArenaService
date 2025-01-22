@@ -145,6 +145,33 @@ namespace ArenaService.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "medals",
+                columns: table => new
+                {
+                    avatar_address = table.Column<string>(type: "character varying(40)", maxLength: 40, nullable: false),
+                    season_id = table.Column<int>(type: "integer", nullable: false),
+                    medal_count = table.Column<int>(type: "integer", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_medals", x => new { x.avatar_address, x.season_id });
+                    table.ForeignKey(
+                        name: "fk_medals_seasons_season_id",
+                        column: x => x.season_id,
+                        principalTable: "seasons",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "fk_medals_users_avatar_address",
+                        column: x => x.avatar_address,
+                        principalTable: "users",
+                        principalColumn: "avatar_address",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "participants",
                 columns: table => new
                 {
@@ -547,6 +574,11 @@ namespace ArenaService.Migrations
                 column: "season_id");
 
             migrationBuilder.CreateIndex(
+                name: "ix_medals_season_id",
+                table: "medals",
+                column: "season_id");
+
+            migrationBuilder.CreateIndex(
                 name: "ix_participants_season_id",
                 table: "participants",
                 column: "season_id");
@@ -618,6 +650,9 @@ namespace ArenaService.Migrations
 
             migrationBuilder.DropTable(
                 name: "battle_ticket_usage_logs");
+
+            migrationBuilder.DropTable(
+                name: "medals");
 
             migrationBuilder.DropTable(
                 name: "refresh_ticket_purchase_logs");
