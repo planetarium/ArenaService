@@ -5,7 +5,7 @@ namespace ArenaService.Worker;
 
 public interface ISpecifyOpponentsService
 {
-    Task<List<(Address AvatarAddress, int GroupId, int Rank)>> SpecifyOpponentsAsync(
+    Task<List<(Address AvatarAddress, int GroupId, int Score, int Rank)>> SpecifyOpponentsAsync(
         Address avatarAddress,
         int seasonId,
         int roundId
@@ -26,20 +26,19 @@ public class SpecifyOpponentsService : ISpecifyOpponentsService
         _rankingRepository = rankingRepository;
     }
 
-    public async Task<List<(Address AvatarAddress, int GroupId, int Rank)>> SpecifyOpponentsAsync(
-        Address avatarAddress,
-        int seasonId,
-        int roundId
-    )
+    public async Task<
+        List<(Address AvatarAddress, int GroupId, int Score, int Rank)>
+    > SpecifyOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
     {
-        var myScore = await _rankingRepository.GetScoreAsync(avatarAddress, seasonId);
-        var opponents = await _rankingRepository.GetRandomParticipantsTempAsync(
+        var myScore = await _rankingRepository.GetScoreAsync(avatarAddress, seasonId, roundId);
+        var opponents = await _rankingRepository.GetRandomParticipantsAsync(
             avatarAddress,
             seasonId,
-            myScore.Value,
+            roundId,
+            myScore,
             5
         );
 
-        return opponents.Select(o => (o.AvatarAddress, 1, o.Rank)).ToList();
+        return opponents.Select(o => (o.AvatarAddress, 1, o.Score, o.Rank)).ToList();
     }
 }

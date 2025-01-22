@@ -24,7 +24,8 @@ public class AvailableOpponentResponse
 
     public static AvailableOpponentResponse FromAvailableOpponent(
         AvailableOpponent availableOpponent,
-        int opponentRank
+        int opponentRank,
+        int opponentScore
     )
     {
         return new AvailableOpponentResponse
@@ -35,7 +36,7 @@ public class AvailableOpponentResponse
             Cp = availableOpponent.Opponent.User.Cp,
             Level = availableOpponent.Opponent.User.Level,
             SeasonId = availableOpponent.Opponent.SeasonId,
-            Score = availableOpponent.Opponent.Score,
+            Score = opponentScore,
             Rank = opponentRank,
             IsAttacked = availableOpponent.SuccessBattleId is not null,
             ScoreGainOnWin = OpponentGroupConstants.Groups[availableOpponent.GroupId].WinScore,

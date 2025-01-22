@@ -10,6 +10,7 @@ public interface IParticipateService
 {
     Task<Participant> ParticipateAsync(
         int seasonId,
+        int roundId,
         Address avatarAddress,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     );
@@ -34,6 +35,7 @@ public class ParticipateService : IParticipateService
 
     public async Task<Participant> ParticipateAsync(
         int seasonId,
+        int roundId,
         Address avatarAddress,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     )
@@ -55,6 +57,7 @@ public class ParticipateService : IParticipateService
         await _rankingRepo.UpdateScoreAsync(
             participant.AvatarAddress,
             seasonId,
+            roundId,
             participant.Score
         );
 

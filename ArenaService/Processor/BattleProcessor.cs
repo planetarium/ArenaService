@@ -93,7 +93,7 @@ public class BattleProcessor
             battle.AvatarAddress
         );
         var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
-            battle.RoundId,
+            battle.SeasonId,
             battle.AvatarAddress
         );
 
@@ -354,10 +354,16 @@ public class BattleProcessor
                 p.Score += opponentScoreChange;
             }
         );
-        await _rankingRepo.UpdateScoreAsync(battle.AvatarAddress, battle.SeasonId, myScoreChange);
+        await _rankingRepo.UpdateScoreAsync(
+            battle.AvatarAddress,
+            battle.SeasonId,
+            battle.RoundId + 1,
+            myScoreChange
+        );
         await _rankingRepo.UpdateScoreAsync(
             battle.AvailableOpponent.AvatarAddress,
             battle.SeasonId,
+            battle.RoundId + 1,
             opponentScoreChange
         );
 

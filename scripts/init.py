@@ -136,11 +136,11 @@ def insert_participants(season_id, participants):
         print(f"An error occurred while inserting participants: {e}")
 
 def initialize_redis_participants(redis_client, season_id, participants):
-    ranking_key = f"ranking:season:{season_id}"
+    ranking_key = f"ranking:season:{season_id}:round:1"
     for participant in participants:
         avatar_address = participant["avatarAddr"][2:]
         initial_score = 1000
-        member_key = f"participant:{avatar_address}:{season_id}"
+        member_key = f"participant:{avatar_address}"
         redis_client.zadd(ranking_key, {str(member_key): float(initial_score)})
     print(f"{len(participants)} participants initialized in Redis for season {season_id}.")
 

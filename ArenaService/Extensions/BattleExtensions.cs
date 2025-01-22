@@ -5,7 +5,7 @@ using ArenaService.Models;
 
 public static class BattleExtensions
 {
-    public static BattleResponse ToResponse(this Battle battle)
+    public static BattleResponse ToResponse(this Battle battle, int score)
     {
         return new BattleResponse
         {
@@ -17,7 +17,7 @@ public static class BattleExtensions
             TxId = battle.TxId,
             TxStatus = battle.TxStatus,
             IsVictory = battle.IsVictory,
-            MyScore = battle.Participant.Score,
+            MyScore = score,
             MyScoreChange = battle.MyScoreChange,
             OpponentScoreChange = battle.OpponentScoreChange,
         };

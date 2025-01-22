@@ -31,6 +31,8 @@ public class SeasonCachingWorker : BackgroundService
                 {
                     var client = scope.ServiceProvider.GetRequiredService<IHeadlessClient>();
                     var seasonRepo = scope.ServiceProvider.GetRequiredService<ISeasonRepository>();
+                    var rankingRepo =
+                        scope.ServiceProvider.GetRequiredService<IRankingRepository>();
                     var seasonCacheRepo =
                         scope.ServiceProvider.GetRequiredService<ISeasonCacheRepository>();
 
@@ -38,6 +40,7 @@ public class SeasonCachingWorker : BackgroundService
                         client,
                         seasonRepo,
                         seasonCacheRepo,
+                        rankingRepo,
                         stoppingToken
                     );
                 }
@@ -45,9 +48,10 @@ public class SeasonCachingWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred in BlockIndexCachingWorker.");
+                break;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(4), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
         }
     }
 
@@ -55,6 +59,7 @@ public class SeasonCachingWorker : BackgroundService
         IHeadlessClient client,
         ISeasonRepository seasonRepo,
         ISeasonCacheRepository seasonCacheRepo,
+        IRankingRepository rankingRepo,
         CancellationToken stoppingToken
     )
     {
@@ -75,7 +80,12 @@ public class SeasonCachingWorker : BackgroundService
             return;
         }
 
-        await UpdateSeasonAndRoundCacheAsync(blockIndex.Value, seasonRepo, seasonCacheRepo);
+        await UpdateSeasonAndRoundCacheAsync(
+            blockIndex.Value,
+            seasonRepo,
+            seasonCacheRepo,
+            rankingRepo
+        );
     }
 
     private async Task<long?> GetCurrentBlockIndexAsync(
@@ -118,7 +128,8 @@ public class SeasonCachingWorker : BackgroundService
     private async Task UpdateSeasonAndRoundCacheAsync(
         long blockIndex,
         ISeasonRepository seasonRepo,
-        ISeasonCacheRepository seasonCacheRepo
+        ISeasonCacheRepository seasonCacheRepo,
+        IRankingRepository rankingRepo
     )
     {
         var seasons = await seasonRepo.GetAllSeasonsAsync();
@@ -151,6 +162,11 @@ public class SeasonCachingWorker : BackgroundService
             currentRound.Id,
             currentRound.StartBlock,
             currentRound.EndBlock
+        );
+        await rankingRepo.CopyRoundDataAsync(
+            currentSeason.Id,
+            currentRound.Id,
+            currentRound.Id + 1
         );
 
         _logger.LogInformation(
