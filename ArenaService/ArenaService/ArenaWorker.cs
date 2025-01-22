@@ -50,23 +50,20 @@ public class ArenaParticipantsWorker : BackgroundService
         var retry = 0;
         _cts.CancelAfter(TimeSpan.FromMinutes(5));
         var cancellationToken = _cts.Token;
-        // wait for render block and update tip.
-        while (_rpcClient.Tip?.Index == _rpcClient.PreviousTip?.Index)
+        // wait for update tip.
+        var tip = await _rpcClient.GetTip();
+        var blockIndex = tip.Index;
+        while (blockIndex == _previousBlockIndex)
         {
-            await Task.Delay((5 - retry) * 1000, cancellationToken);
+            await Task.Delay((5 + retry) * 1000, cancellationToken);
             retry++;
+            // catch stuck blocks on thor network case.
             if (retry >= 3)
             {
-                throw new InvalidOperationException();
+                throw new InvalidBlockIndexException($"block index({blockIndex}) not updated. restart worker.");
             }
-        }
-
-        var tip = _rpcClient.Tip!;
-        var blockIndex = tip.Index;
-        // catch stuck blocks on thor network case.
-        if (blockIndex == _previousBlockIndex)
-        {
-            throw new InvalidBlockIndexException("block index not updated. restart worker.");
+            tip = await _rpcClient.GetTip();
+            blockIndex = tip.Index;
         }
 
         _previousBlockIndex = blockIndex;
