@@ -132,6 +132,7 @@ public class Startup
         services.AddScoped<IAvailableOpponentRepository, AvailableOpponentRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ITicketRepository, TicketRepository>();
+        services.AddScoped<IMedalRepository, MedalRepository>();
 
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();

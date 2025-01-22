@@ -429,6 +429,38 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_usage_logs", (string)null);
                 });
 
+            modelBuilder.Entity("ArenaService.Models.Medal", b =>
+                {
+                    b.Property<string>("AvatarAddress")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("avatar_address");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("integer")
+                        .HasColumnName("season_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<int>("MedalCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("medal_count");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("AvatarAddress", "SeasonId")
+                        .HasName("pk_medals");
+
+                    b.HasIndex("SeasonId")
+                        .HasDatabaseName("ix_medals_season_id");
+
+                    b.ToTable("medals", (string)null);
+                });
+
             modelBuilder.Entity("ArenaService.Models.Participant", b =>
                 {
                     b.Property<string>("AvatarAddress")
@@ -968,6 +1000,27 @@ namespace ArenaService.Migrations
                     b.Navigation("BattleTicketStatusPerRound");
 
                     b.Navigation("BattleTicketStatusPerSeason");
+                });
+
+            modelBuilder.Entity("ArenaService.Models.Medal", b =>
+                {
+                    b.HasOne("ArenaService.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("AvatarAddress")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_medals_users_avatar_address");
+
+                    b.HasOne("ArenaService.Models.Season", "Season")
+                        .WithMany()
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_medals_seasons_season_id");
+
+                    b.Navigation("Season");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("ArenaService.Models.Participant", b =>
