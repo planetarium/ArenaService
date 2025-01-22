@@ -104,6 +104,11 @@ public interface ITicketRepository
         Action<RefreshTicketStatusPerRound> updateFields
     );
 
+    Task<RefreshTicketStatusPerRound> UpdateRefreshTicketStatusPerRound(
+        RefreshTicketStatusPerRound refreshTicketStatusPerRound,
+        Action<RefreshTicketStatusPerRound> updateFields
+    );
+
     Task<BattleTicketStatusPerRound> UpdateBattleTicketStatusPerRound(
         int roundId,
         Address avatarAddress,
@@ -114,6 +119,27 @@ public interface ITicketRepository
         int seasonId,
         Address avatarAddress,
         Action<BattleTicketStatusPerSeason> updateFields
+    );
+
+    Task<BattleTicketStatusPerRound> UpdateBattleTicketStatusPerRound(
+        BattleTicketStatusPerRound battleTicketStatusPerRound,
+        Action<BattleTicketStatusPerRound> updateFields
+    );
+
+    Task<BattleTicketStatusPerSeason> UpdateBattleTicketStatusPerSeason(
+        BattleTicketStatusPerSeason battleTicketStatusPerSeason,
+        Action<BattleTicketStatusPerSeason> updateFields
+    );
+
+    Task<RefreshTicketUsageLog> AddRefreshTicketUsageLog(
+        int refreshTicketStatusPerRoundId,
+        List<int> specifiedOpponentIds
+    );
+
+    Task<BattleTicketUsageLog> AddBattleTicketUsageLog(
+        int battleTicketStatusPerRoundId,
+        int battleTicketStatusPerSeasonId,
+        int battleId
     );
 }
 
@@ -389,6 +415,14 @@ public class TicketRepository : ITicketRepository
             );
         }
 
+        return await UpdateRefreshTicketStatusPerRound(refreshTicketStatusPerRound, updateFields);
+    }
+
+    public async Task<RefreshTicketStatusPerRound> UpdateRefreshTicketStatusPerRound(
+        RefreshTicketStatusPerRound refreshTicketStatusPerRound,
+        Action<RefreshTicketStatusPerRound> updateFields
+    )
+    {
         updateFields(refreshTicketStatusPerRound);
 
         refreshTicketStatusPerRound.UpdatedAt = DateTime.UtcNow;
@@ -417,14 +451,7 @@ public class TicketRepository : ITicketRepository
             );
         }
 
-        updateFields(battleTicketStatusPerRound);
-
-        battleTicketStatusPerRound.UpdatedAt = DateTime.UtcNow;
-
-        _context.BattleTicketStatusesPerRound.Update(battleTicketStatusPerRound);
-        await _context.SaveChangesAsync();
-
-        return battleTicketStatusPerRound;
+        return await UpdateBattleTicketStatusPerRound(battleTicketStatusPerRound, updateFields);
     }
 
     public async Task<BattleTicketStatusPerSeason> UpdateBattleTicketStatusPerSeason(
@@ -445,6 +472,70 @@ public class TicketRepository : ITicketRepository
             );
         }
 
+        return await UpdateBattleTicketStatusPerSeason(battleTicketStatusPerSeason, updateFields);
+    }
+
+    public async Task<RefreshTicketPurchaseLog?> GetRefreshTicketPurchaseLogById(int purchaseLogId)
+    {
+        return await _context.RefreshTicketPurchaseLogs.SingleOrDefaultAsync(rtpl =>
+            rtpl.Id == purchaseLogId
+        );
+    }
+
+    public async Task<RefreshTicketUsageLog> AddRefreshTicketUsageLog(
+        int refreshTicketStatusPerRoundId,
+        List<int> specifiedOpponentIds
+    )
+    {
+        var refreshTicketUsageLog = await _context.RefreshTicketUsageLogs.AddAsync(
+            new RefreshTicketUsageLog
+            {
+                RefreshTicketStatusPerRoundId = refreshTicketStatusPerRoundId,
+                SpecifiedOpponentIds = specifiedOpponentIds
+            }
+        );
+        _context.SaveChanges();
+        return refreshTicketUsageLog.Entity;
+    }
+
+    public async Task<BattleTicketUsageLog> AddBattleTicketUsageLog(
+        int battleTicketStatusPerRoundId,
+        int battleTicketStatusPerSeasonId,
+        int battleId
+    )
+    {
+        var battleTicketUsageLog = await _context.BattleTicketUsageLogs.AddAsync(
+            new BattleTicketUsageLog
+            {
+                BattleTicketStatusPerSeasonId = battleTicketStatusPerSeasonId,
+                BattleTicketStatusPerRoundId = battleTicketStatusPerRoundId,
+                BattleId = battleId
+            }
+        );
+        _context.SaveChanges();
+        return battleTicketUsageLog.Entity;
+    }
+
+    public async Task<BattleTicketStatusPerRound> UpdateBattleTicketStatusPerRound(
+        BattleTicketStatusPerRound battleTicketStatusPerRound,
+        Action<BattleTicketStatusPerRound> updateFields
+    )
+    {
+        updateFields(battleTicketStatusPerRound);
+
+        battleTicketStatusPerRound.UpdatedAt = DateTime.UtcNow;
+
+        _context.BattleTicketStatusesPerRound.Update(battleTicketStatusPerRound);
+        await _context.SaveChangesAsync();
+
+        return battleTicketStatusPerRound;
+    }
+
+    public async Task<BattleTicketStatusPerSeason> UpdateBattleTicketStatusPerSeason(
+        BattleTicketStatusPerSeason battleTicketStatusPerSeason,
+        Action<BattleTicketStatusPerSeason> updateFields
+    )
+    {
         updateFields(battleTicketStatusPerSeason);
 
         battleTicketStatusPerSeason.UpdatedAt = DateTime.UtcNow;
@@ -453,12 +544,5 @@ public class TicketRepository : ITicketRepository
         await _context.SaveChangesAsync();
 
         return battleTicketStatusPerSeason;
-    }
-
-    public async Task<RefreshTicketPurchaseLog?> GetRefreshTicketPurchaseLogById(int purchaseLogId)
-    {
-        return await _context.RefreshTicketPurchaseLogs.SingleOrDefaultAsync(rtpl =>
-            rtpl.Id == purchaseLogId
-        );
     }
 }

@@ -154,6 +154,22 @@ public class TicketController : ControllerBase
             }
         }
 
+        var requiredAmount = 0m;
+
+        var purchasedCount = battleTicketStatusPerSeason is null
+            ? 0
+            : battleTicketStatusPerSeason.PurchaseCount;
+
+        for (int i = 0; i < request.TicketCount; i++)
+        {
+            requiredAmount += season.BattleTicketPolicy.GetPrice(purchasedCount + i);
+        }
+
+        if (request.PurchasePrice >= requiredAmount)
+        {
+            return TypedResults.BadRequest($"{request.PurchasePrice} {requiredAmount}");
+        }
+
         purchaseLog = await _ticketRepo.AddBattleTicketPurchaseLog(
             cachedSeason.Id,
             cachedRound.Id,
@@ -203,6 +219,22 @@ public class TicketController : ControllerBase
             {
                 return TypedResults.BadRequest("Max purchaseable ticket reached");
             }
+        }
+
+        var requiredAmount = 0m;
+
+        var purchasedCount = refreshTicketStatusPerRound is null
+            ? 0
+            : refreshTicketStatusPerRound.PurchaseCount;
+
+        for (int i = 0; i < request.TicketCount; i++)
+        {
+            requiredAmount += season.BattleTicketPolicy.GetPrice(purchasedCount + i);
+        }
+
+        if (request.PurchasePrice >= requiredAmount)
+        {
+            return TypedResults.BadRequest($"{request.PurchasePrice} {requiredAmount}");
         }
 
         purchaseLog = await _ticketRepo.AddRefreshTicketPurchaseLog(

@@ -12,14 +12,29 @@ public interface IAvailableOpponentRepository
     Task<List<AvailableOpponent>> GetAvailableOpponents(
         Address avatarAddress,
         int roundId,
-        int refreshRequestId
+        Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
     );
-    Task AddAvailableOpponents(
+    Task<AvailableOpponent?> GetAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
+    );
+    Task<List<AvailableOpponent>> RefreshAvailableOpponents(
         int seasonId,
         int roundId,
         Address avatarAddress,
-        int requestId,
         List<(Address, int)> opponentAvatarAddresses
+    );
+    Task<AvailableOpponent> UpdateAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Action<AvailableOpponent> updateFields
+    );
+    Task<AvailableOpponent> UpdateAvailableOpponent(
+        AvailableOpponent availableOpponent,
+        Action<AvailableOpponent> updateFields
     );
 }
 
@@ -35,45 +50,128 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
     public async Task<List<AvailableOpponent>> GetAvailableOpponents(
         Address avatarAddress,
         int roundId,
-        int refreshRequestId
+        Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
     )
     {
-        var availableOpponents = await _context
-            .AvailableOpponents.Where(ao =>
-                ao.AvatarAddress == avatarAddress && ao.RoundId == roundId
+        var query = _context.AvailableOpponents.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query
+            .Where(ao =>
+                ao.AvatarAddress == avatarAddress && ao.RoundId == roundId && ao.DeletedAt == null
             )
             .ToListAsync();
-
-        return availableOpponents;
     }
 
-    public async Task AddAvailableOpponents(
+    public async Task<AvailableOpponent?> GetAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
+    )
+    {
+        var query = _context.AvailableOpponents.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.SingleOrDefaultAsync(ao =>
+            ao.RoundId == roundId
+            && ao.AvatarAddress == avatarAddress
+            && ao.OpponentAvatarAddress == opponentAvatarAddress
+        );
+    }
+
+    public async Task<List<AvailableOpponent>> RefreshAvailableOpponents(
         int seasonId,
         int roundId,
         Address avatarAddress,
-        int requestId,
         List<(Address, int)> opponents
     )
     {
-        var newOpponents = new List<AvailableOpponent>();
+        using var transaction = await _context.Database.BeginTransactionAsync();
 
-        foreach (var opponent in opponents)
+        try
         {
-            var newOpponent = new AvailableOpponent
-            {
-                AvatarAddress = avatarAddress,
-                SeasonId = seasonId,
-                RoundId = roundId,
-                GroupId = opponent.Item2,
-                OpponentAvatarAddress = opponent.Item1,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var existOpponents = await GetAvailableOpponents(avatarAddress, roundId);
 
-            newOpponents.Add(newOpponent);
+            foreach (var existOpponent in existOpponents)
+            {
+                existOpponent.DeletedAt = DateTime.UtcNow;
+
+                _context.AvailableOpponents.Update(existOpponent);
+            }
+
+            var newOpponents = new List<AvailableOpponent>();
+
+            foreach (var opponent in opponents)
+            {
+                var newOpponent = new AvailableOpponent
+                {
+                    AvatarAddress = avatarAddress,
+                    SeasonId = seasonId,
+                    RoundId = roundId,
+                    GroupId = opponent.Item2,
+                    OpponentAvatarAddress = opponent.Item1,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                newOpponents.Add(newOpponent);
+            }
+
+            await _context.AvailableOpponents.AddRangeAsync(newOpponents);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return newOpponents;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
+    public async Task<AvailableOpponent> UpdateAvailableOpponent(
+        Address avatarAddress,
+        int roundId,
+        Address opponentAvatarAddress,
+        Action<AvailableOpponent> updateFields
+    )
+    {
+        var availableOpponent = await GetAvailableOpponent(
+            avatarAddress,
+            roundId,
+            opponentAvatarAddress
+        );
+
+        if (availableOpponent is null)
+        {
+            throw new ArgumentException("AvailableOpponent not found");
         }
 
-        await _context.AvailableOpponents.AddRangeAsync(newOpponents);
+        return await UpdateAvailableOpponent(availableOpponent, updateFields);
+    }
+
+    public async Task<AvailableOpponent> UpdateAvailableOpponent(
+        AvailableOpponent availableOpponent,
+        Action<AvailableOpponent> updateFields
+    )
+    {
+        updateFields(availableOpponent);
+
+        availableOpponent.UpdatedAt = DateTime.UtcNow;
+
+        _context.AvailableOpponents.Update(availableOpponent);
         await _context.SaveChangesAsync();
+
+        return availableOpponent;
     }
 }

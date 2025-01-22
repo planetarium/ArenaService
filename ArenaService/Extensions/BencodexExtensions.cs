@@ -14,4 +14,10 @@ public static class ValueExtensions
         serialized is Bencodex.Types.List serializedList
             ? new FungibleAssetValue(serializedList)
             : throw new InvalidCastException();
+
+    public static bool ToBoolean(this IValue serialized) =>
+        ((Bencodex.Types.Boolean)serialized).Value;
+
+    public static Guid ToGuid(this IValue serialized) =>
+        new Guid(((Binary)serialized).ToByteArray());
 }

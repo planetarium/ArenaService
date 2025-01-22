@@ -2,10 +2,12 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Models.Enums;
 using ArenaService.Models.Ticket;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Models.BattleTicket;
 
 [Table("battle_ticket_statuses_per_round")]
+[Index(nameof(AvatarAddress), nameof(SeasonId), nameof(RoundId), IsUnique = true)]
 public class BattleTicketStatusPerRound : TicketStatus
 {
     [Required]

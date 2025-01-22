@@ -3,8 +3,8 @@ using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
 using ArenaService.Models;
-using ArenaService.Models.RefreshTicket;
 using ArenaService.Models.Enums;
+using ArenaService.Models.RefreshTicket;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
@@ -22,14 +22,14 @@ public class PurchaseRefreshTicketProcessor
 {
     private readonly Address _recipientAddress;
     private readonly Codec Codec = new();
-    private readonly ILogger<RefreshProcessor> _logger;
+    private readonly ILogger<PurchaseRefreshTicketProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ITxTrackingService _txTrackingService;
 
     public PurchaseRefreshTicketProcessor(
-        ILogger<RefreshProcessor> logger,
+        ILogger<PurchaseRefreshTicketProcessor> logger,
         IHeadlessClient client,
         ITicketRepository ticketRepo,
         ISeasonRepository seasonRepo,
@@ -85,13 +85,28 @@ public class PurchaseRefreshTicketProcessor
             purchaseLog.TxId,
             async status =>
             {
-                await _ticketRepo.UpdateRefreshTicketPurchaseLog(
-                    purchaseLog,
-                    btpl =>
-                    {
-                        btpl.TxStatus = status.ToModelTxStatus();
-                    }
-                );
+                if (status == Client.TxStatus.Failure)
+                {
+                    await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                        purchaseLog,
+                        btpl =>
+                        {
+                            btpl.TxStatus = status.ToModelTxStatus();
+                            btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        }
+                    );
+                    processResult = "tx failed";
+                }
+                else
+                {
+                    await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                        purchaseLog,
+                        btpl =>
+                        {
+                            btpl.TxStatus = status.ToModelTxStatus();
+                        }
+                    );
+                }
             },
             async successResponse =>
             {
@@ -195,26 +210,14 @@ public class PurchaseRefreshTicketProcessor
         foreach (var actionResponse in txResponse!.Data!.Transaction.GetTx!.Actions)
         {
             var action = Codec.Decode(Convert.FromHexString(actionResponse!.Raw));
-            var (actionType, actionValues) = DeconstructActionPlainValue(action);
 
-            var actionTypeStr = actionType switch
+            if (TransferAssetsActionParser.TryParseActionPayload(action, out var taActionValue))
             {
-                Integer integer => integer.ToString(),
-                Text text => (string)text,
-                _ => null
-            };
-
-            if (actionTypeStr is null || actionValues is null)
+                return taActionValue;
+            }
+            else
             {
                 continue;
-            }
-
-            if (Regex.IsMatch(actionTypeStr, "^transfer_asset[0-9]*$"))
-            {
-                var taActionValues = TransferAssetsParser.ParseActionPayload(
-                    (Dictionary)actionValues
-                );
-                return taActionValues;
             }
         }
 
@@ -314,9 +317,9 @@ public class PurchaseRefreshTicketProcessor
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
                 season.RefreshTicketPolicyId,
-                season.RefreshTicketPolicy.DefaultTicketsPerRound,
+                season.RefreshTicketPolicy.DefaultTicketsPerRound += purchaseLog.PurchaseCount,
                 0,
-                1
+                purchaseLog.PurchaseCount
             );
         }
         else
@@ -326,8 +329,8 @@ public class PurchaseRefreshTicketProcessor
                 purchaseLog.AvatarAddress,
                 bts =>
                 {
-                    bts.RemainingCount += 1;
-                    bts.PurchaseCount += 1;
+                    bts.RemainingCount += purchaseLog.PurchaseCount;
+                    bts.PurchaseCount += purchaseLog.PurchaseCount;
                 }
             );
         }

@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ArenaService.Migrations
 {
     [DbContext(typeof(ArenaDbContext))]
-    [Migration("20250121183817_InitialCreate")]
+    [Migration("20250122155847_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -44,6 +44,10 @@ namespace ArenaService.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("deleted_at");
 
                     b.Property<int>("GroupId")
                         .HasColumnType("integer")
@@ -105,6 +109,12 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("available_opponent_id");
 
+                    b.Property<string>("AvatarAddress")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
+                        .HasColumnName("avatar_address");
+
                     b.Property<int>("BattleStatus")
                         .HasColumnType("integer")
                         .HasColumnName("battle_status");
@@ -124,6 +134,14 @@ namespace ArenaService.Migrations
                     b.Property<int?>("OpponentScoreChange")
                         .HasColumnType("integer")
                         .HasColumnName("opponent_score_change");
+
+                    b.Property<int>("RoundId")
+                        .HasColumnType("integer")
+                        .HasColumnName("round_id");
+
+                    b.Property<int>("SeasonId")
+                        .HasColumnType("integer")
+                        .HasColumnName("season_id");
 
                     b.Property<string>("Token")
                         .IsRequired()
@@ -147,6 +165,12 @@ namespace ArenaService.Migrations
 
                     b.HasIndex("AvailableOpponentId")
                         .HasDatabaseName("ix_battles_available_opponent_id");
+
+                    b.HasIndex("SeasonId")
+                        .HasDatabaseName("ix_battles_season_id");
+
+                    b.HasIndex("AvatarAddress", "SeasonId")
+                        .HasDatabaseName("ix_battles_avatar_address_season_id");
 
                     b.ToTable("battles", (string)null);
                 });
@@ -202,7 +226,6 @@ namespace ArenaService.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("AmountPaid")
-                        .IsRequired()
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount_paid");
 
@@ -310,8 +333,9 @@ namespace ArenaService.Migrations
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_battle_ticket_statuses_per_round_season_id");
 
-                    b.HasIndex("AvatarAddress", "SeasonId")
-                        .HasDatabaseName("ix_battle_ticket_statuses_per_round_avatar_address_season_id");
+                    b.HasIndex("AvatarAddress", "SeasonId", "RoundId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_battle_ticket_statuses_per_round_avatar_address_season_id_r");
 
                     b.ToTable("battle_ticket_statuses_per_round", (string)null);
                 });
@@ -365,6 +389,7 @@ namespace ArenaService.Migrations
                         .HasDatabaseName("ix_battle_ticket_statuses_per_season_season_id");
 
                     b.HasIndex("AvatarAddress", "SeasonId")
+                        .IsUnique()
                         .HasDatabaseName("ix_battle_ticket_statuses_per_season_avatar_address_season_id");
 
                     b.ToTable("battle_ticket_statuses_per_season", (string)null);
@@ -383,6 +408,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("battle_id");
 
+                    b.Property<int>("BattleTicketStatusPerRoundId")
+                        .HasColumnType("integer")
+                        .HasColumnName("battle_ticket_status_per_round_id");
+
                     b.Property<int>("BattleTicketStatusPerSeasonId")
                         .HasColumnType("integer")
                         .HasColumnName("battle_ticket_status_per_season_id");
@@ -393,6 +422,9 @@ namespace ArenaService.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_battle_ticket_usage_logs");
+
+                    b.HasIndex("BattleTicketStatusPerRoundId")
+                        .HasDatabaseName("ix_battle_ticket_usage_logs_battle_ticket_status_per_round_id");
 
                     b.HasIndex("BattleTicketStatusPerSeasonId")
                         .HasDatabaseName("ix_battle_ticket_usage_logs_battle_ticket_status_per_season_id");
@@ -487,7 +519,6 @@ namespace ArenaService.Migrations
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal?>("AmountPaid")
-                        .IsRequired()
                         .HasColumnType("decimal(18,2)")
                         .HasColumnName("amount_paid");
 
@@ -595,8 +626,9 @@ namespace ArenaService.Migrations
                     b.HasIndex("SeasonId")
                         .HasDatabaseName("ix_refresh_ticket_statuses_per_round_season_id");
 
-                    b.HasIndex("AvatarAddress", "SeasonId")
-                        .HasDatabaseName("ix_refresh_ticket_statuses_per_round_avatar_address_season_id");
+                    b.HasIndex("AvatarAddress", "SeasonId", "RoundId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_refresh_ticket_statuses_per_round_avatar_address_season_id_");
 
                     b.ToTable("refresh_ticket_statuses_per_round", (string)null);
                 });
@@ -610,10 +642,6 @@ namespace ArenaService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
-                    b.Property<int>("AvailableOpponentId")
-                        .HasColumnType("integer")
-                        .HasColumnName("available_opponent_id");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
@@ -621,6 +649,11 @@ namespace ArenaService.Migrations
                     b.Property<int>("RefreshTicketStatusPerRoundId")
                         .HasColumnType("integer")
                         .HasColumnName("refresh_ticket_status_per_round_id");
+
+                    b.Property<List<int>>("SpecifiedOpponentIds")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("specified_opponent_ids");
 
                     b.HasKey("Id")
                         .HasName("pk_refresh_ticket_usage_logs");
@@ -822,12 +855,32 @@ namespace ArenaService.Migrations
 
             modelBuilder.Entity("ArenaService.Models.Battle", b =>
                 {
-                    b.HasOne("ArenaService.Models.AvailableOpponent", null)
+                    b.HasOne("ArenaService.Models.AvailableOpponent", "AvailableOpponent")
                         .WithMany("Battles")
                         .HasForeignKey("AvailableOpponentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battles_available_opponents_available_opponent_id");
+
+                    b.HasOne("ArenaService.Models.Season", "Season")
+                        .WithMany()
+                        .HasForeignKey("SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_battles_seasons_season_id");
+
+                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("AvatarAddress", "SeasonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_battles_participants_avatar_address_season_id");
+
+                    b.Navigation("AvailableOpponent");
+
+                    b.Navigation("Participant");
+
+                    b.Navigation("Season");
                 });
 
             modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketStatusPerRound", b =>
@@ -901,12 +954,21 @@ namespace ArenaService.Migrations
 
             modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketUsageLog", b =>
                 {
+                    b.HasOne("ArenaService.Models.BattleTicket.BattleTicketStatusPerRound", "BattleTicketStatusPerRound")
+                        .WithMany()
+                        .HasForeignKey("BattleTicketStatusPerRoundId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_battle_ticket_usage_logs_battle_ticket_statuses_per_round_b");
+
                     b.HasOne("ArenaService.Models.BattleTicket.BattleTicketStatusPerSeason", "BattleTicketStatusPerSeason")
                         .WithMany()
                         .HasForeignKey("BattleTicketStatusPerSeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_usage_logs_battle_ticket_statuses_per_season_");
+
+                    b.Navigation("BattleTicketStatusPerRound");
 
                     b.Navigation("BattleTicketStatusPerSeason");
                 });

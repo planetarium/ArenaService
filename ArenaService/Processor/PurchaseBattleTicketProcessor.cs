@@ -22,14 +22,14 @@ public class PurchaseBattleTicketProcessor
 {
     private readonly Address _recipientAddress;
     private readonly Codec Codec = new();
-    private readonly ILogger<RefreshProcessor> _logger;
+    private readonly ILogger<PurchaseBattleTicketProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ITxTrackingService _txTrackingService;
 
     public PurchaseBattleTicketProcessor(
-        ILogger<RefreshProcessor> logger,
+        ILogger<PurchaseBattleTicketProcessor> logger,
         IHeadlessClient client,
         ITicketRepository ticketRepo,
         ISeasonRepository seasonRepo,
@@ -85,13 +85,28 @@ public class PurchaseBattleTicketProcessor
             purchaseLog.TxId,
             async status =>
             {
-                await _ticketRepo.UpdateBattleTicketPurchaseLog(
-                    purchaseLog,
-                    btpl =>
-                    {
-                        btpl.TxStatus = status.ToModelTxStatus();
-                    }
-                );
+                if (status == Client.TxStatus.Failure)
+                {
+                    await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                        purchaseLog,
+                        btpl =>
+                        {
+                            btpl.TxStatus = status.ToModelTxStatus();
+                            btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        }
+                    );
+                    processResult = "tx failed";
+                }
+                else
+                {
+                    await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                        purchaseLog,
+                        btpl =>
+                        {
+                            btpl.TxStatus = status.ToModelTxStatus();
+                        }
+                    );
+                }
             },
             async successResponse =>
             {
@@ -195,26 +210,14 @@ public class PurchaseBattleTicketProcessor
         foreach (var actionResponse in txResponse!.Data!.Transaction.GetTx!.Actions)
         {
             var action = Codec.Decode(Convert.FromHexString(actionResponse!.Raw));
-            var (actionType, actionValues) = DeconstructActionPlainValue(action);
 
-            var actionTypeStr = actionType switch
+            if (TransferAssetsActionParser.TryParseActionPayload(action, out var taActionValue))
             {
-                Integer integer => integer.ToString(),
-                Text text => (string)text,
-                _ => null
-            };
-
-            if (actionTypeStr is null || actionValues is null)
+                return taActionValue;
+            }
+            else
             {
                 continue;
-            }
-
-            if (Regex.IsMatch(actionTypeStr, "^transfer_asset[0-9]*$"))
-            {
-                var taActionValues = TransferAssetsParser.ParseActionPayload(
-                    (Dictionary)actionValues
-                );
-                return taActionValues;
             }
         }
 
@@ -282,24 +285,6 @@ public class PurchaseBattleTicketProcessor
         return requiredAmount;
     }
 
-    private static (IValue? typeId, IValue? values) DeconstructActionPlainValue(
-        IValue actionPlainValue
-    )
-    {
-        if (actionPlainValue is not Dictionary actionPlainValueDict)
-        {
-            return (null, null);
-        }
-
-        var actionType = actionPlainValueDict.ContainsKey("type_id")
-            ? actionPlainValueDict["type_id"]
-            : null;
-        var actionPlainValueInternal = actionPlainValueDict.ContainsKey("values")
-            ? actionPlainValueDict["values"]
-            : null;
-        return (actionType, actionPlainValueInternal);
-    }
-
     private async Task UpdateTicket(Season season, BattleTicketPurchaseLog purchaseLog)
     {
         var existBattleTicketStatusPerRound = await _ticketRepo.GetBattleTicketStatusPerRound(
@@ -314,7 +299,7 @@ public class PurchaseBattleTicketProcessor
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
                 season.BattleTicketPolicyId,
-                season.BattleTicketPolicy.DefaultTicketsPerRound,
+                season.BattleTicketPolicy.DefaultTicketsPerRound += purchaseLog.PurchaseCount,
                 0,
                 purchaseLog.PurchaseCount
             );

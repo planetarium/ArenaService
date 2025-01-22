@@ -196,17 +196,6 @@ public class Startup
             endpoints.MapSwagger();
             endpoints.MapHealthChecks("/ping");
         });
-
-        PerformInitialSetup(serviceProvider);
-    }
-
-    private void PerformInitialSetup(IServiceProvider serviceProvider)
-    {
-        using var scope = serviceProvider.CreateScope();
-
-        var dbContext = scope.ServiceProvider.GetRequiredService<ArenaDbContext>();
-
-        dbContext.Database.Migrate();
     }
 }
 

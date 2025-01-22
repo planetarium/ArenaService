@@ -8,16 +8,19 @@ using Microsoft.EntityFrameworkCore;
 public interface IParticipantRepository
 {
     Task<Participant> AddParticipantAsync(int seasonId, Address avatarAddress);
-    Task<Participant> GetParticipantAsync(
+    Task<Participant?> GetParticipantAsync(
         int seasonId,
         Address avatarAddress,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     );
-    Task<Participant> UpdateScoreAsync(int seasonId, Address avatarAddress, int scoreChange);
-    Task<Participant> UpdateLastRefreshRequestId(
+    Task<Participant> UpdateParticipantAsync(
         int seasonId,
         Address avatarAddress,
-        int refreshRequestId
+        Action<Participant> updateFields
+    );
+    Task<Participant> UpdateParticipantAsync(
+        Participant participant,
+        Action<Participant> updateFields
     );
 }
 
@@ -39,7 +42,7 @@ public class ParticipantRepository : IParticipantRepository
         return participant.Entity;
     }
 
-    public async Task<Participant> GetParticipantAsync(
+    public async Task<Participant?> GetParticipantAsync(
         int seasonId,
         Address avatarAddress,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
@@ -52,48 +55,35 @@ public class ParticipantRepository : IParticipantRepository
             query = includeQuery(query);
         }
 
-        return await query.FirstAsync(p =>
+        return await query.SingleOrDefaultAsync(p =>
             p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
         );
     }
 
-    public async Task<Participant> UpdateScoreAsync(
+    public async Task<Participant> UpdateParticipantAsync(
         int seasonId,
         Address avatarAddress,
-        int scoreChange
+        Action<Participant> updateFields
     )
     {
-        var participant = await _context.Participants.FirstOrDefaultAsync(p =>
-            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
-        );
-        ;
-        if (participant == null)
+        var participant = await GetParticipantAsync(seasonId, avatarAddress);
+
+        if (participant is null)
         {
-            throw new KeyNotFoundException($"Participants {seasonId}, {avatarAddress} not found.");
+            throw new ArgumentException($"Participant not found for {seasonId}, {avatarAddress}");
         }
 
-        participant.Score += scoreChange;
-
-        _context.Participants.Update(participant);
-        await _context.SaveChangesAsync();
-
-        return participant;
+        return await UpdateParticipantAsync(participant, updateFields);
     }
 
-    public async Task<Participant> UpdateLastRefreshRequestId(
-        int seasonId,
-        Address avatarAddress,
-        int refreshRequestId
+    public async Task<Participant> UpdateParticipantAsync(
+        Participant participant,
+        Action<Participant> updateFields
     )
     {
-        var participant = await _context.Participants.FirstOrDefaultAsync(p =>
-            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
-        );
+        updateFields(participant);
 
-        if (participant == null)
-        {
-            throw new KeyNotFoundException($"Participants {seasonId}, {avatarAddress} not found.");
-        }
+        participant.UpdatedAt = DateTime.UtcNow;
 
         _context.Participants.Update(participant);
         await _context.SaveChangesAsync();

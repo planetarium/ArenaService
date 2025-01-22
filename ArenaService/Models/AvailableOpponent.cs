@@ -50,5 +50,8 @@ public class AvailableOpponent
     [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
+    [Column(TypeName = "timestamptz")]
+    public DateTime? DeletedAt { get; set; } = null;
+
     public ICollection<Battle> Battles { get; set; } = null!;
 }

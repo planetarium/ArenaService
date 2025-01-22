@@ -7,29 +7,35 @@ using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;
-using Libplanet.Types.Tx;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 [Route("battle")]
 [ApiController]
 public class BattleController : ControllerBase
 {
     private readonly IBackgroundJobClient _jobClient;
+    private readonly ITicketRepository _ticketRepo;
     private readonly IBattleRepository _battleRepo;
+    private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
-    private readonly ParticipateService _participateService;
+    private readonly IParticipateService _participateService;
 
     public BattleController(
         IBattleRepository battleRepo,
+        ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
-        ParticipateService participateService,
+        IAvailableOpponentRepository availableOpponentRepo,
+        IParticipateService participateService,
         IBackgroundJobClient jobClient
     )
     {
         _battleRepo = battleRepo;
+        _ticketRepo = ticketRepo;
         _jobClient = jobClient;
+        _availableOpponentRepo = availableOpponentRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
     }
@@ -42,25 +48,72 @@ public class BattleController : ControllerBase
     public async Task<
         Results<
             UnauthorizedHttpResult,
-            NotFound<string>,
+            BadRequest<string>,
             StatusCodeHttpResult,
             Ok<BattleTokenResponse>
         >
-    > CreateBattleToken(string opponentAvatarAddress)
+    > CreateBattleToken(Address opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        await _participateService.ParticipateAsync(cachedSeason.Id, avatarAddress);
-
-        var defenderAvatarAddress = new Address(opponentAvatarAddress);
-
-        var battle = await _battleRepo.AddBattleAsync(
+        var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
             avatarAddress,
-            defenderAvatarAddress,
+            query =>
+                query
+                    .Include(p => p.User)
+                    .Include(p => p.Season)
+                    .ThenInclude(s => s.BattleTicketPolicy)
+        );
+
+        var battleTicketStatusPerRound = await _ticketRepo.GetBattleTicketStatusPerRound(
+            cachedRound.Id,
+            avatarAddress
+        );
+
+        if (battleTicketStatusPerRound is null)
+        {
+            battleTicketStatusPerRound = await _ticketRepo.AddBattleTicketStatusPerRound(
+                cachedSeason.Id,
+                cachedRound.Id,
+                avatarAddress,
+                participant.Season.BattleTicketPolicyId,
+                participant.Season.BattleTicketPolicy.DefaultTicketsPerRound,
+                0,
+                0
+            );
+            await _ticketRepo.AddBattleTicketStatusPerSeason(
+                cachedSeason.Id,
+                avatarAddress,
+                participant.Season.BattleTicketPolicyId,
+                0,
+                0
+            );
+        }
+
+        if (battleTicketStatusPerRound.RemainingCount <= 0)
+        {
+            return TypedResults.BadRequest("RemainingCount 0");
+        }
+
+        var availableOpponent = await _availableOpponentRepo.GetAvailableOpponent(
+            avatarAddress,
+            cachedRound.Id,
+            opponentAvatarAddress
+        );
+        if (availableOpponent is null)
+        {
+            return TypedResults.BadRequest($"{opponentAvatarAddress} is not available opponent");
+        }
+
+        var battle = await _battleRepo.AddBattleAsync(
+            avatarAddress,
+            cachedSeason.Id,
+            cachedRound.Id,
+            availableOpponent.Id,
             "token"
         );
 
@@ -86,9 +139,15 @@ public class BattleController : ControllerBase
             return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
         }
 
-        _jobClient.Enqueue<BattleProcessor>(processor =>
-            processor.ProcessAsync(TxId.FromHex(request.TxId), battleId)
+        await _battleRepo.UpdateBattle(
+            battle,
+            b =>
+            {
+                b.TxId = request.TxId;
+            }
         );
+
+        _jobClient.Enqueue<BattleProcessor>(processor => processor.ProcessAsync(battleId));
 
         return TypedResults.Ok();
     }
@@ -102,7 +161,10 @@ public class BattleController : ControllerBase
         Results<UnauthorizedHttpResult, NotFound<string>, Ok<BattleResponse>>
     > GetBattle(int battleId)
     {
-        var battle = await _battleRepo.GetBattleAsync(battleId);
+        var battle = await _battleRepo.GetBattleAsync(
+            battleId,
+            q => q.Include(b => b.AvailableOpponent).Include(b => b.Participant)
+        );
 
         if (battle is null)
         {

@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ArenaService.Constants;
 using ArenaService.Models.Enums;
+using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 
 namespace ArenaService.Models;
@@ -13,10 +13,25 @@ public class Battle
     public int Id { get; set; }
 
     [Required]
+    [StringLength(40, MinimumLength = 40)]
+    public Address AvatarAddress { get; set; }
+
+    public Participant Participant { get; set; } = null!;
+
+    [Required]
+    public int SeasonId { get; set; }
+
+    [ForeignKey(nameof(SeasonId))]
+    public Season Season { get; set; } = null!;
+
+    [Required]
+    public int RoundId { get; set; }
+
+    [Required]
     public int AvailableOpponentId { get; set; }
 
     [ForeignKey(nameof(AvailableOpponentId))]
-    public AvailableOpponent AvailableOpponent = null!;
+    public AvailableOpponent AvailableOpponent { get; set; } = null!;
 
     [Required]
     public required string Token { get; set; }
