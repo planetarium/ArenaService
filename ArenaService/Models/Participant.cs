@@ -24,6 +24,8 @@ public class Participant
 
     public int InitializedScore { get; set; } = 1000;
     public int Score { get; set; } = 1000;
+    public int TotalWin { get; set; } = 0;
+    public int TotalLose { get; set; } = 0;
 
     [Required]
     [Column(TypeName = "timestamptz")]

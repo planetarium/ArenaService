@@ -19,7 +19,6 @@ using Swashbuckle.AspNetCore.Annotations;
 [ApiController]
 public class AvailableOpponentController : ControllerBase
 {
-    private readonly IBackgroundJobClient _jobClient;
     private readonly ITicketRepository _ticketRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly IParticipantRepository _participantRepo;
@@ -35,8 +34,7 @@ public class AvailableOpponentController : ControllerBase
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
         ISpecifyOpponentsService specifyOpponentsService,
-        IRankingRepository rankingRepo,
-        IBackgroundJobClient jobClient
+        IRankingRepository rankingRepo
     )
     {
         _availableOpponentRepo = availableOpponentRepo;
@@ -46,7 +44,6 @@ public class AvailableOpponentController : ControllerBase
         _participateService = participateService;
         _specifyOpponentsService = specifyOpponentsService;
         _rankingRepo = rankingRepo;
-        _jobClient = jobClient;
     }
 
     [HttpGet]

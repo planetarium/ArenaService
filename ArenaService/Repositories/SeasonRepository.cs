@@ -6,7 +6,9 @@ using Microsoft.EntityFrameworkCore;
 
 public interface ISeasonRepository
 {
-    Task<List<Season>> GetAllSeasonsAsync();
+    Task<List<Season>> GetAllSeasonsAsync(
+        Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
+    );
     Task<Season> GetSeasonAsync(
         int id,
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
@@ -22,12 +24,18 @@ public class SeasonRepository : ISeasonRepository
         _context = context;
     }
 
-    public async Task<List<Season>> GetAllSeasonsAsync()
+    public async Task<List<Season>> GetAllSeasonsAsync(
+        Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
+    )
     {
-        return await _context
-            .Seasons.Include(s => s.Rounds)
-            .OrderByDescending(s => s.StartBlock)
-            .ToListAsync();
+        var query = _context.Seasons.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.OrderByDescending(s => s.StartBlock).ToListAsync();
     }
 
     public async Task<Season> GetSeasonAsync(

@@ -23,7 +23,7 @@ public class TicketStatusResponse
     public bool IsUnused { get; set; }
 
     [SwaggerSchema("다음에 지불해야할 NCG")]
-    public decimal NextNCGCost { get; set; }
+    public required List<decimal> NextNCGCosts { get; set; }
 
     public static TicketStatusResponse FromBattleStatusModels(
         BattleTicketStatusPerSeason seasonStatus,
@@ -39,7 +39,9 @@ public class TicketStatusResponse
                 roundStatus.BattleTicketPolicy.MaxPurchasableTicketsPerRound
                 - roundStatus.PurchaseCount,
             IsUnused = roundStatus.UsedCount == 0,
-            NextNCGCost = seasonStatus.BattleTicketPolicy.GetPrice(seasonStatus.PurchaseCount),
+            NextNCGCosts = seasonStatus
+                .BattleTicketPolicy.PurchasePrices.Skip(seasonStatus.PurchaseCount)
+                .ToList(),
         };
     }
 
@@ -56,7 +58,9 @@ public class TicketStatusResponse
                 roundStatus.RefreshTicketPolicy.MaxPurchasableTicketsPerRound
                 - roundStatus.PurchaseCount,
             IsUnused = roundStatus.UsedCount == 0,
-            NextNCGCost = roundStatus.RefreshTicketPolicy.GetPrice(roundStatus.PurchaseCount),
+            NextNCGCosts = roundStatus
+                .RefreshTicketPolicy.PurchasePrices.Skip(roundStatus.PurchaseCount)
+                .ToList(),
         };
     }
 
@@ -71,7 +75,7 @@ public class TicketStatusResponse
                 .BattleTicketPolicy
                 .MaxPurchasableTicketsPerRound,
             IsUnused = true,
-            NextNCGCost = season.BattleTicketPolicy.GetPrice(0),
+            NextNCGCosts = season.BattleTicketPolicy.PurchasePrices,
         };
     }
 
@@ -86,7 +90,7 @@ public class TicketStatusResponse
                 .RefreshTicketPolicy
                 .MaxPurchasableTicketsPerRound,
             IsUnused = true,
-            NextNCGCost = season.RefreshTicketPolicy.GetPrice(0),
+            NextNCGCosts = season.RefreshTicketPolicy.PurchasePrices,
         };
     }
 }

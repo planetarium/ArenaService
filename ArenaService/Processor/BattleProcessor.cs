@@ -348,6 +348,8 @@ public class BattleProcessor
             p =>
             {
                 p.Score += myScoreChange;
+                p.TotalWin += isVictory ? 1 : 0;
+                p.TotalLose += isVictory ? 0 : 1;
             }
         );
         await _participantRepo.UpdateParticipantAsync(

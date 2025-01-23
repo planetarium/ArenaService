@@ -29,6 +29,9 @@ public class Season
     public int RequiredMedalCount { get; set; }
 
     [Required]
+    public int TotalPrize { get; set; }
+
+    [Required]
     public int BattleTicketPolicyId { get; set; }
 
     [ForeignKey(nameof(BattleTicketPolicyId))]
