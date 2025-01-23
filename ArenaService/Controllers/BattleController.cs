@@ -19,7 +19,6 @@ public class BattleController : ControllerBase
     private readonly IBackgroundJobClient _jobClient;
     private readonly ITicketRepository _ticketRepo;
     private readonly IBattleRepository _battleRepo;
-    private readonly IRankingRepository _rankingRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IParticipateService _participateService;
@@ -27,7 +26,6 @@ public class BattleController : ControllerBase
     public BattleController(
         IBattleRepository battleRepo,
         ITicketRepository ticketRepo,
-        IRankingRepository rankingRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IAvailableOpponentRepository availableOpponentRepo,
         IParticipateService participateService,
@@ -37,7 +35,6 @@ public class BattleController : ControllerBase
         _battleRepo = battleRepo;
         _ticketRepo = ticketRepo;
         _jobClient = jobClient;
-        _rankingRepo = rankingRepo;
         _availableOpponentRepo = availableOpponentRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
@@ -48,9 +45,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
-    public async Task<
-        IActionResult
-    > CreateBattleToken(Address opponentAvatarAddress)
+    public async Task<IActionResult> CreateBattleToken(Address opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -116,9 +111,7 @@ public class BattleController : ControllerBase
             "token"
         );
 
-        return Ok(
-            new BattleTokenResponse { Token = battle.Token, BattleId = battle.Id }
-        );
+        return Ok(new BattleTokenResponse { Token = battle.Token, BattleId = battle.Id });
     }
 
     [HttpPost("{battleId}/request")]
@@ -127,9 +120,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<
-        IActionResult
-    > RequestBattle(int battleId, [FromBody] BattleRequest request)
+    public async Task<IActionResult> RequestBattle(int battleId, [FromBody] BattleRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -164,9 +155,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<
-        IActionResult
-    > GetBattle(int battleId)
+    public async Task<IActionResult> GetBattle(int battleId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 

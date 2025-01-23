@@ -3,6 +3,7 @@ namespace ArenaService.Controllers;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -13,11 +14,20 @@ public class UserController : ControllerBase
 {
     private readonly IUserRepository _userRepo;
     private readonly ISeasonRepository _seasonRepo;
+    private readonly IParticipateService _participateService;
+    private readonly ISeasonCacheRepository _seasonCacheRepo;
 
-    public UserController(IUserRepository userRepo, ISeasonRepository seasonRepo)
+    public UserController(
+        IUserRepository userRepo,
+        ISeasonRepository seasonRepo,
+        IParticipateService participateService,
+        ISeasonCacheRepository seasonCacheRepo
+    )
     {
         _seasonRepo = seasonRepo;
         _userRepo = userRepo;
+        _participateService = participateService;
+        _seasonCacheRepo = seasonCacheRepo;
     }
 
     [HttpPost]
@@ -48,6 +58,16 @@ public class UserController : ControllerBase
                 nameof(GetUser),
                 new { avatarAddress = user.AvatarAddress }
             );
+
+            var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
+            var cachedRound = await _seasonCacheRepo.GetRoundAsync();
+
+            var participant = await _participateService.ParticipateAsync(
+                cachedSeason.Id,
+                cachedRound.Id,
+                avatarAddress
+            );
+
             return Created(locationUri, user.AvatarAddress);
         }
 

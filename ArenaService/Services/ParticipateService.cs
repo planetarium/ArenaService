@@ -60,6 +60,12 @@ public class ParticipateService : IParticipateService
             roundId,
             participant.Score
         );
+        await _rankingRepo.UpdateScoreAsync(
+            participant.AvatarAddress,
+            seasonId,
+            roundId + 1,
+            participant.Score
+        );
 
         return participant;
     }
