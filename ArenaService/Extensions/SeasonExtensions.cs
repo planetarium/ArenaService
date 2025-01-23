@@ -19,7 +19,7 @@ public static class SeasonExtensions
             RefreshTicketPolicy = season.RefreshTicketPolicy.ToResponse(),
             TotalPrize = season.TotalPrize,
             PrizeDetailSiteURL = "",
-            Rounds = season.Rounds.Select(r => r.ToResponse()).ToList(),
+            Rounds = season.Rounds.OrderBy(r => r.StartBlock).Select(r => r.ToResponse()).ToList(),
         };
     }
 }
