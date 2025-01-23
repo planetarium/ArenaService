@@ -111,7 +111,12 @@ public class BattleController : ControllerBase
             "token"
         );
 
-        return Ok(new BattleTokenResponse { Token = battle.Token, BattleId = battle.Id });
+        var locationUri = Url.Action(nameof(GetBattle), new { battleId = battle.Id });
+
+        return Created(
+            locationUri,
+            new BattleTokenResponse { Token = battle.Token, BattleId = battle.Id }
+        );
     }
 
     [HttpPost("{battleId}/request")]

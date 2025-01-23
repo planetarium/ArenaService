@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
 using ArenaService.Client;
@@ -228,12 +229,10 @@ public class PurchaseBattleTicketProcessor
     {
         if (taActionValue.Amount.Currency.Ticker == "NCG")
         {
-            decimal majorUnit = (decimal)taActionValue.Amount.MajorUnit;
-            decimal minorUnit = (decimal)taActionValue.Amount.MinorUnit;
-            decimal decimalPlaces = (decimal)
-                Math.Pow(10, taActionValue.Amount.Currency.DecimalPlaces);
-
-            decimal calculatedAmount = majorUnit + minorUnit / decimalPlaces;
+            decimal calculatedAmount = decimal.Parse(
+                taActionValue.Amount.GetQuantityString(),
+                CultureInfo.InvariantCulture
+            );
 
             if (Math.Abs(calculatedAmount - requiredAmount) < 0.0001m)
             {

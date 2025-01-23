@@ -110,7 +110,7 @@ public class TicketController : ControllerBase
     [HttpPost("battle/purchase")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(int))]
+    [SwaggerResponse(StatusCodes.Status201Created, "Purchase Log Id", typeof(int))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
@@ -174,13 +174,18 @@ public class TicketController : ControllerBase
             processor.ProcessAsync(purchaseLog.Id)
         );
 
-        return Ok(purchaseLog.Id);
+        var locationUri = Url.Action(
+            nameof(GetPurchaseBattleTicketLog),
+            new { purchaseLogId = purchaseLog.Id }
+        );
+
+        return Created(locationUri, purchaseLog.Id);
     }
 
     [HttpPost("refresh/purchase")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(int))]
+    [SwaggerResponse(StatusCodes.Status201Created, "Purchase Log Id", typeof(int))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<IActionResult> PurchaseRefreshTicket([FromBody] PurchaseTicketRequest request)
@@ -239,7 +244,12 @@ public class TicketController : ControllerBase
             processor.ProcessAsync(purchaseLog.Id)
         );
 
-        return Ok(purchaseLog.Id);
+        var locationUri = Url.Action(
+            nameof(GetPurchaseRefreshTicketLog),
+            new { purchaseLogId = purchaseLog.Id }
+        );
+
+        return Created(locationUri, purchaseLog.Id);
     }
 
     [HttpGet("battle/purchase-logs/{logId}")]
