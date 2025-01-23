@@ -2,6 +2,7 @@ namespace ArenaService.Controllers;
 
 using ArenaService.Dtos;
 using ArenaService.Extensions;
+using ArenaService.Models;
 using ArenaService.Repositories;
 using ArenaService.Services;
 using Libplanet.Crypto;
@@ -14,18 +15,24 @@ public class UserController : ControllerBase
 {
     private readonly IUserRepository _userRepo;
     private readonly ISeasonRepository _seasonRepo;
+    private readonly IMedalRepository _medalRepo;
+    private readonly ISeasonService _seasonService;
     private readonly IParticipateService _participateService;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public UserController(
         IUserRepository userRepo,
+        ISeasonService seasonService,
         ISeasonRepository seasonRepo,
+        IMedalRepository medalRepo,
         IParticipateService participateService,
         ISeasonCacheRepository seasonCacheRepo
     )
     {
         _seasonRepo = seasonRepo;
+        _seasonService = seasonService;
         _userRepo = userRepo;
+        _medalRepo = medalRepo;
         _participateService = participateService;
         _seasonCacheRepo = seasonCacheRepo;
     }
@@ -90,49 +97,32 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<IActionResult> GetMedals(long blockIndex)
     {
-        // var avatarAddress = HttpContext.User.RequireAvatarAddress();
+        var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        // var seasons = await _seasonRepo.GetAllSeasonsAsync(q =>
-        //     q.Include(s => s.Rounds)
-        //         .Include(s => s.BattleTicketPolicy)
-        //         .Include(s => s.RefreshTicketPolicy)
-        // );
+        var classifiedSeasons = await _seasonService.ClassifyByChampionship(blockIndex);
 
-        // var currentSeason = seasons.FirstOrDefault(s =>
-        //     s.StartBlock <= blockIndex && s.EndBlock >= blockIndex
-        // );
+        var medals = new Dictionary<int, int>();
+        var totalMedalCount = 0;
+        foreach (var season in classifiedSeasons)
+        {
+            if (season.ArenaType == Constants.ArenaType.SEASON)
+            {
+                var medal = await _medalRepo.GetMedalAsync(season.Id, avatarAddress);
 
-        // if (currentSeason == null)
-        // {
-        //     return Ok(
-        //         new ClassifyByBlockMedalsResponse
-        //         {
-        //             Medals = new(),
-        //             TotalMedalCountForThisChampionship = 0
-        //         }
-        //     );
-        // }
+                medals[season.Id] = medal is null ? 0 : medal.MedalCount;
 
-        // var filteredSeasons = seasons
-        //     .OrderBy(s => s.StartBlock)
-        //     .SkipWhile(s => s.StartBlock < currentSeason.StartBlock)
-        //     .ToList();
-
-        // var championshipIndex = filteredSeasons.FindIndex(s =>
-        //     s.ArenaType == ArenaType.CHAMPIONSHIP
-        // );
-        // if (championshipIndex != -1)
-        // {
-        //     filteredSeasons = filteredSeasons.Take(championshipIndex + 1).ToList();
-        // }
-
-        // var medals = filteredSeasons.Select(s=> s.Id)
+                if (medal is not null)
+                {
+                    totalMedalCount += medal.MedalCount;
+                }
+            }
+        }
 
         return Ok(
             new ClassifyByBlockMedalsResponse
             {
-                Medals = new(),
-                TotalMedalCountForThisChampionship = 1000
+                Medals = medals,
+                TotalMedalCountForThisChampionship = totalMedalCount
             }
         );
     }

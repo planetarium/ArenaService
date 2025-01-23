@@ -6,6 +6,6 @@ namespace ArenaService.Dtos;
 public class ClassifyByBlockMedalsResponse
 {
     [SwaggerSchema("(SeasonId, MedalCount)")]
-    public List<(int, int)> Medals { get; set; }
+    public Dictionary<int, int> Medals { get; set; }
     public int TotalMedalCountForThisChampionship { get; set; }
 }

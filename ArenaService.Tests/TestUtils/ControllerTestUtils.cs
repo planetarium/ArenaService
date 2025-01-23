@@ -1,4 +1,4 @@
-namespace ArenaService.Tests.Utils;
+namespace ArenaService.Tests.TestUtils;
 
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;

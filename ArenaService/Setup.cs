@@ -139,6 +139,7 @@ public class Startup
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 
+        services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
         services.AddScoped<ISpecifyOpponentsService, SpecifyOpponentsService>();
