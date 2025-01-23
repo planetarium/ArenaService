@@ -4,7 +4,7 @@ public class ArenaInfoResponse
 {
     public UserResponse User { get; set; }
 
-    public ClanResponse ClanInfo { get; set; }
+    public ClanResponse? ClanInfo { get; set; }
 
     public int SeasonId { get; set; }
     public int RoundId { get; set; }
