@@ -219,7 +219,7 @@ public class TicketController : ControllerBase
 
         for (int i = 0; i < request.TicketCount; i++)
         {
-            requiredAmount += season.BattleTicketPolicy.GetPrice(purchasedCount + i);
+            requiredAmount += season.RefreshTicketPolicy.GetPrice(purchasedCount + i);
         }
 
         if (request.PurchasePrice != requiredAmount)
