@@ -5,6 +5,7 @@ using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Options;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -16,17 +17,17 @@ using Microsoft.Extensions.Options;
 public class SeasonController : ControllerBase
 {
     private readonly ISeasonRepository _seasonRepo;
-    private readonly ISeasonCacheRepository _seasonCacheRepo;
+    private readonly ISeasonService _seasonService;
     private readonly Address _recipientAddress;
 
     public SeasonController(
         ISeasonRepository seasonRepo,
-        ISeasonCacheRepository seasonCacheRepo,
+        ISeasonService seasonService,
         IOptions<OpsConfigOptions> options
     )
     {
         _seasonRepo = seasonRepo;
-        _seasonCacheRepo = seasonCacheRepo;
+        _seasonService = seasonService;
         _recipientAddress = new Address(options.Value.RecipientAddress);
     }
 
@@ -60,40 +61,18 @@ public class SeasonController : ControllerBase
     [ProducesResponseType(typeof(SeasonsResponse), StatusCodes.Status200OK)]
     public async Task<IActionResult> GetSeasons(long blockIndex)
     {
-        var seasons = await _seasonRepo.GetAllSeasonsAsync(q =>
-            q.Include(s => s.Rounds)
-                .Include(s => s.BattleTicketPolicy)
-                .Include(s => s.RefreshTicketPolicy)
+        var classifiedSeasons = await _seasonService.ClassifyByChampionship(
+            blockIndex,
+            q =>
+                q.Include(s => s.BattleTicketPolicy)
+                    .Include(s => s.RefreshTicketPolicy)
+                    .Include(s => s.Rounds)
         );
-
-        var currentSeason = seasons.FirstOrDefault(s =>
-            s.StartBlock <= blockIndex && s.EndBlock >= blockIndex
-        );
-
-        if (currentSeason == null)
-        {
-            return Ok(
-                new SeasonsResponse { OperationAccountAddress = _recipientAddress, Seasons = new() }
-            );
-        }
-
-        var filteredSeasons = seasons
-            .OrderBy(s => s.StartBlock)
-            .SkipWhile(s => s.StartBlock < currentSeason.StartBlock)
-            .ToList();
-
-        var championshipIndex = filteredSeasons.FindIndex(s =>
-            s.ArenaType == ArenaType.CHAMPIONSHIP
-        );
-        if (championshipIndex != -1)
-        {
-            filteredSeasons = filteredSeasons.Take(championshipIndex + 1).ToList();
-        }
 
         var response = new SeasonsResponse
         {
             OperationAccountAddress = _recipientAddress,
-            Seasons = filteredSeasons.Select(s => s.ToResponse()).ToList()
+            Seasons = classifiedSeasons.Select(s => s.ToResponse()).ToList()
         };
 
         return Ok(response);
