@@ -157,7 +157,7 @@ public class TicketController : ControllerBase
             requiredAmount += season.BattleTicketPolicy.GetPrice(purchasedCount + i);
         }
 
-        if (request.PurchasePrice >= requiredAmount)
+        if (request.PurchasePrice != requiredAmount)
         {
             return BadRequest($"{request.PurchasePrice} {requiredAmount}");
         }
@@ -222,7 +222,7 @@ public class TicketController : ControllerBase
             requiredAmount += season.BattleTicketPolicy.GetPrice(purchasedCount + i);
         }
 
-        if (request.PurchasePrice >= requiredAmount)
+        if (request.PurchasePrice != requiredAmount)
         {
             return BadRequest($"{request.PurchasePrice} {requiredAmount}");
         }
