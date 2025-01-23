@@ -27,9 +27,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
-    public async Task<Results<NotFound<string>, Conflict<string>, Created>> Register(
-        [FromBody] UserRegisterRequest userRegisterRequest
-    )
+    public async Task<IActionResult> Register([FromBody] UserRegisterRequest userRegisterRequest)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
         var agentAddress = HttpContext.User.RequireAgentAddress();
@@ -43,7 +41,7 @@ public class UserController : ControllerBase
             userRegisterRequest.Level
         );
 
-        return TypedResults.Created();
+        return Created();
     }
 
     [HttpGet("classify-by-championship/medals/{blockIndex}")]
@@ -51,9 +49,7 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(ClassifyByBlockMedalsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<Results<NotFound<string>, Ok<ClassifyByBlockMedalsResponse>>> GetMedals(
-        long blockIndex
-    )
+    public async Task<IActionResult> GetMedals(long blockIndex)
     {
         // var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -69,7 +65,7 @@ public class UserController : ControllerBase
 
         // if (currentSeason == null)
         // {
-        //     return TypedResults.Ok(
+        //     return Ok(
         //         new ClassifyByBlockMedalsResponse
         //         {
         //             Medals = new(),
@@ -93,7 +89,7 @@ public class UserController : ControllerBase
 
         // var medals = filteredSeasons.Select(s=> s.Id)
 
-        return TypedResults.Ok(
+        return Ok(
             new ClassifyByBlockMedalsResponse
             {
                 Medals = new(),

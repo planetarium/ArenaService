@@ -57,14 +57,7 @@ public class AvailableOpponentController : ControllerBase
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
-    public async Task<
-        Results<
-            UnauthorizedHttpResult,
-            NotFound<string>,
-            StatusCodeHttpResult,
-            Ok<List<AvailableOpponentResponse>>
-        >
-    > GetAvailableOpponents()
+    public async Task<IActionResult> GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -90,7 +83,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (!availableOpponents.Any())
         {
-            return TypedResults.NotFound("Refresh first");
+            return NotFound("Refresh first");
         }
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
@@ -115,7 +108,7 @@ public class AvailableOpponentController : ControllerBase
             );
         }
 
-        return TypedResults.Ok(availableOpponentsResponses);
+        return Ok(availableOpponentsResponses);
     }
 
     [HttpPost("refresh")]
@@ -132,14 +125,7 @@ public class AvailableOpponentController : ControllerBase
     )]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<
-            NotFound<string>,
-            StatusCodeHttpResult,
-            BadRequest<string>,
-            Ok<List<AvailableOpponentResponse>>
-        >
-    > RequestFreeRefresh()
+    public async Task<IActionResult> RequestFreeRefresh()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -177,7 +163,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (refreshTicketStatusPerRound.RemainingCount <= 0)
         {
-            return TypedResults.BadRequest("RemainingCount 0");
+            return BadRequest("RemainingCount 0");
         }
 
         var opponents = await _specifyOpponentsService.SpecifyOpponentsAsync(
@@ -237,6 +223,6 @@ public class AvailableOpponentController : ControllerBase
             );
         }
 
-        return TypedResults.Ok(availableOpponentsResponses);
+        return Ok(availableOpponentsResponses);
     }
 }

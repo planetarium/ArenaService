@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ArenaService.Migrations
 {
     [DbContext(typeof(ArenaDbContext))]
-    [Migration("20250122201504_InitialCreate")]
+    [Migration("20250123045440_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -487,6 +487,14 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("score");
 
+                    b.Property<int>("TotalLose")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_lose");
+
+                    b.Property<int>("TotalWin")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_win");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("updated_at");
@@ -743,6 +751,10 @@ namespace ArenaService.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("ArenaType")
+                        .HasColumnType("integer")
+                        .HasColumnName("arena_type");
+
                     b.Property<int>("BattleTicketPolicyId")
                         .HasColumnType("integer")
                         .HasColumnName("battle_ticket_policy_id");
@@ -771,13 +783,13 @@ namespace ArenaService.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("start_block");
 
+                    b.Property<int>("TotalPrize")
+                        .HasColumnType("integer")
+                        .HasColumnName("total_prize");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("updated_at");
-
-                    b.Property<int>("arenaType")
-                        .HasColumnType("integer")
-                        .HasColumnName("arena_type");
 
                     b.HasKey("Id")
                         .HasName("pk_seasons");

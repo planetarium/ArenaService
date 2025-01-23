@@ -1,3 +1,6 @@
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+
 namespace ArenaService.Constants;
 
 public enum ArenaType

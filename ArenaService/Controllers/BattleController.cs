@@ -49,12 +49,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<
-        Results<
-            UnauthorizedHttpResult,
-            BadRequest<string>,
-            StatusCodeHttpResult,
-            Ok<BattleTokenResponse>
-        >
+        IActionResult
     > CreateBattleToken(Address opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -100,7 +95,7 @@ public class BattleController : ControllerBase
 
         if (battleTicketStatusPerRound.RemainingCount <= 0)
         {
-            return TypedResults.BadRequest("RemainingCount 0");
+            return BadRequest("RemainingCount 0");
         }
 
         var availableOpponent = await _availableOpponentRepo.GetAvailableOpponent(
@@ -110,7 +105,7 @@ public class BattleController : ControllerBase
         );
         if (availableOpponent is null)
         {
-            return TypedResults.BadRequest($"{opponentAvatarAddress} is not available opponent");
+            return BadRequest($"{opponentAvatarAddress} is not available opponent");
         }
 
         var battle = await _battleRepo.AddBattleAsync(
@@ -121,7 +116,7 @@ public class BattleController : ControllerBase
             "token"
         );
 
-        return TypedResults.Ok(
+        return Ok(
             new BattleTokenResponse { Token = battle.Token, BattleId = battle.Id }
         );
     }
@@ -133,7 +128,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
-        Results<UnauthorizedHttpResult, StatusCodeHttpResult, NotFound<string>, Ok>
+        IActionResult
     > RequestBattle(int battleId, [FromBody] BattleRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -142,12 +137,12 @@ public class BattleController : ControllerBase
 
         if (battle is null)
         {
-            return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
+            return NotFound($"Battle log with ID {battleId} not found.");
         }
 
         if (battle.AvatarAddress != avatarAddress)
         {
-            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+            return StatusCode(StatusCodes.Status403Forbidden);
         }
 
         await _battleRepo.UpdateBattle(
@@ -160,7 +155,7 @@ public class BattleController : ControllerBase
 
         _jobClient.Enqueue<BattleProcessor>(processor => processor.ProcessAsync(battleId));
 
-        return TypedResults.Ok();
+        return Ok();
     }
 
     [HttpGet("{battleId}")]
@@ -170,7 +165,7 @@ public class BattleController : ControllerBase
     [ProducesResponseType(StatusCodes.Status403Forbidden)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
     public async Task<
-        Results<UnauthorizedHttpResult, StatusCodeHttpResult, NotFound<string>, Ok<BattleResponse>>
+        IActionResult
     > GetBattle(int battleId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -182,23 +177,17 @@ public class BattleController : ControllerBase
 
         if (battle is null)
         {
-            return TypedResults.NotFound($"Battle log with ID {battleId} not found.");
+            return NotFound($"Battle log with ID {battleId} not found.");
         }
 
         if (battle.AvatarAddress != avatarAddress)
         {
-            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+            return StatusCode(StatusCodes.Status403Forbidden);
         }
 
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        var score = await _rankingRepo.GetScoreAsync(
-            avatarAddress,
-            cachedSeason.Id,
-            cachedRound.Id
-        );
-
-        return TypedResults.Ok(battle.ToResponse(score));
+        return Ok(battle.ToResponse());
     }
 }

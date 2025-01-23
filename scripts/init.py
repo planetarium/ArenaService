@@ -74,11 +74,11 @@ def insert_season(start_block, end_block, round_interval, battle_policy_id, refr
             with conn.cursor() as cursor:
                 cursor.execute(
                     sql.SQL("""
-                        INSERT INTO seasons (start_block, end_block, arena_type, round_interval, required_medal_count, battle_ticket_policy_id, refresh_ticket_policy_id, created_at, updated_at)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s, now(), now())
+                        INSERT INTO seasons (start_block, end_block, arena_type, round_interval, required_medal_count, total_prize, battle_ticket_policy_id, refresh_ticket_policy_id, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, now(), now())
                         RETURNING id
                     """),
-                    (start_block, end_block, 1, round_interval, 120, battle_policy_id, refresh_policy_id)
+                    (start_block, end_block, 1, round_interval, 120, 10000, battle_policy_id, refresh_policy_id)
                 )
                 season_id = cursor.fetchone()[0]
                 conn.commit()
@@ -125,10 +125,10 @@ def insert_participants(season_id, participants):
                     )
                     cursor.execute(
                         sql.SQL("""
-                            INSERT INTO participants (avatar_address, season_id, initialized_score, score, created_at, updated_at)
-                            VALUES (%s, %s, %s, %s, now(), now())
+                            INSERT INTO participants (avatar_address, season_id, initialized_score, score, total_win, total_lose, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, %s, %s, now(), now())
                         """),
-                        (participant["avatarAddr"][2:], season_id, 1000, 1000)
+                        (participant["avatarAddr"][2:], season_id, 1000, 1000, 0, 0)
                     )
                 conn.commit()
                 print(f"{len(participants)} participants successfully inserted for season {season_id}.")
@@ -154,8 +154,8 @@ def main():
 
         # Input block index
         start_block = int(input("Enter the starting block index: "))
-        end_block = start_block + 10000
-        round_interval = 100
+        end_block = start_block + 100000
+        round_interval = 1000
 
         # Insert policy and season
         battle_policy_id, refresh_policy_id = insert_policy()

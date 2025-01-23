@@ -122,6 +122,7 @@ namespace ArenaService.Migrations
                     arena_type = table.Column<int>(type: "integer", nullable: false),
                     round_interval = table.Column<int>(type: "integer", nullable: false),
                     required_medal_count = table.Column<int>(type: "integer", nullable: false),
+                    total_prize = table.Column<int>(type: "integer", nullable: false),
                     battle_ticket_policy_id = table.Column<int>(type: "integer", nullable: false),
                     refresh_ticket_policy_id = table.Column<int>(type: "integer", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
@@ -179,6 +180,8 @@ namespace ArenaService.Migrations
                     season_id = table.Column<int>(type: "integer", nullable: false),
                     initialized_score = table.Column<int>(type: "integer", nullable: false),
                     score = table.Column<int>(type: "integer", nullable: false),
+                    total_win = table.Column<int>(type: "integer", nullable: false),
+                    total_lose = table.Column<int>(type: "integer", nullable: false),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },

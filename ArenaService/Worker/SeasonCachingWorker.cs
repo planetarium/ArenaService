@@ -1,6 +1,7 @@
 using ArenaService.Client;
 using ArenaService.Exceptions;
 using ArenaService.Repositories;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace ArenaService.Worker;
@@ -132,7 +133,7 @@ public class SeasonCachingWorker : BackgroundService
         IRankingRepository rankingRepo
     )
     {
-        var seasons = await seasonRepo.GetAllSeasonsAsync();
+        var seasons = await seasonRepo.GetAllSeasonsAsync(q => q.Include(s => s.Rounds));
         var currentSeason = seasons.FirstOrDefault(s =>
             s.StartBlock <= blockIndex && s.EndBlock >= blockIndex
         );

@@ -33,17 +33,15 @@ public class SeasonController : ControllerBase
     [HttpGet("{seasonId}")]
     [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<Results<NotFound<string>, Ok<SeasonResponse>>> GetSeason(int seasonId)
+    public async Task<IActionResult> GetSeason(int seasonId)
     {
-        return TypedResults.Ok(new SeasonResponse());
+        return Ok(new SeasonResponse());
     }
 
     [HttpGet("by-block/{blockIndex}")]
     [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<Results<NotFound<string>, Ok<SeasonResponse>>> GetSeasonByBlock(
-        long blockIndex
-    )
+    public async Task<IActionResult> GetSeasonByBlock(long blockIndex)
     {
         var seasons = await _seasonRepo.GetAllSeasonsAsync();
         var season = seasons.FirstOrDefault(s =>
@@ -52,15 +50,15 @@ public class SeasonController : ControllerBase
 
         if (season == null)
         {
-            return TypedResults.NotFound($"No active season found for block index {blockIndex}.");
+            return NotFound($"No active season found for block index {blockIndex}.");
         }
 
-        return TypedResults.Ok(season.ToResponse());
+        return Ok(season.ToResponse());
     }
 
     [HttpGet("classify-by-championship/{blockIndex}")]
     [ProducesResponseType(typeof(SeasonsResponse), StatusCodes.Status200OK)]
-    public async Task<Ok<SeasonsResponse>> GetSeasons(long blockIndex)
+    public async Task<IActionResult> GetSeasons(long blockIndex)
     {
         var seasons = await _seasonRepo.GetAllSeasonsAsync(q =>
             q.Include(s => s.Rounds)
@@ -74,7 +72,7 @@ public class SeasonController : ControllerBase
 
         if (currentSeason == null)
         {
-            return TypedResults.Ok(
+            return Ok(
                 new SeasonsResponse { OperationAccountAddress = _recipientAddress, Seasons = new() }
             );
         }
@@ -92,12 +90,12 @@ public class SeasonController : ControllerBase
             filteredSeasons = filteredSeasons.Take(championshipIndex + 1).ToList();
         }
 
-        return TypedResults.Ok(
-            new SeasonsResponse
-            {
-                OperationAccountAddress = _recipientAddress,
-                Seasons = filteredSeasons.Select(s => s.ToResponse()).ToList()
-            }
-        );
+        var response = new SeasonsResponse
+        {
+            OperationAccountAddress = _recipientAddress,
+            Seasons = filteredSeasons.Select(s => s.ToResponse()).ToList()
+        };
+
+        return Ok(response);
     }
 }

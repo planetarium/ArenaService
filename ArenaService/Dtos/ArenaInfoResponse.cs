@@ -6,6 +6,8 @@ public class ArenaInfoResponse
 
     public ClanResponse ClanInfo { get; set; }
 
+    public int SeasonId { get; set; }
+    public int RoundId { get; set; }
     public int Score { get; set; }
     public int Rank { get; set; }
     public int CurrentRoundScoreChange { get; set; }

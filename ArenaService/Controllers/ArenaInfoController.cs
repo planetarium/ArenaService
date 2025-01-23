@@ -43,7 +43,7 @@ public class ArenaInfoController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "ArenaInfoResponse", typeof(ArenaInfoResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
-    public async Task<Results<NotFound<string>, Ok<ArenaInfoResponse>>> GetArenaInfo()
+    public async Task<IActionResult> GetArenaInfo()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -63,7 +63,7 @@ public class ArenaInfoController : ControllerBase
 
         if (participant is null)
         {
-            return TypedResults.NotFound("not found");
+            return NotFound("not found");
         }
 
         var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
@@ -126,6 +126,8 @@ public class ArenaInfoController : ControllerBase
 
         var arenaInfo = new ArenaInfoResponse
         {
+            SeasonId = cachedSeason.Id,
+            RoundId = cachedRound.Id,
             User = participant.User.ToResponse(),
             Score = score,
             Rank = rank,
@@ -138,6 +140,6 @@ public class ArenaInfoController : ControllerBase
             BattleTicketStatus = battleTicketStatus,
             RefreshTicketStatus = refreshTicketStatus
         };
-        return TypedResults.Ok(arenaInfo);
+        return Ok(arenaInfo);
     }
 }

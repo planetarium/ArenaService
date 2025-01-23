@@ -42,9 +42,7 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "TicketStatus", typeof(TicketStatusResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<NotFound<string>, StatusCodeHttpResult, Ok<TicketStatusResponse>>
-    > GetBattleTicketStatus()
+    public async Task<IActionResult> GetBattleTicketStatus()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -67,10 +65,10 @@ public class TicketController : ControllerBase
                 q => q.Include(s => s.BattleTicketPolicy)
             );
 
-            return TypedResults.Ok(TicketStatusResponse.CreateBattleTicketDefault(season));
+            return Ok(TicketStatusResponse.CreateBattleTicketDefault(season));
         }
 
-        return TypedResults.Ok(
+        return Ok(
             TicketStatusResponse.FromBattleStatusModels(
                 battleTicketStatusPerSeason,
                 battleTicketStatusPerRound
@@ -84,9 +82,7 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "TicketStatus", typeof(TicketStatusResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<NotFound<string>, StatusCodeHttpResult, Ok<TicketStatusResponse>>
-    > GetRefreshTicketStatus()
+    public async Task<IActionResult> GetRefreshTicketStatus()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -105,12 +101,10 @@ public class TicketController : ControllerBase
                 q => q.Include(s => s.RefreshTicketPolicy)
             );
 
-            return TypedResults.Ok(TicketStatusResponse.CreateRefreshTicketDefault(season));
+            return Ok(TicketStatusResponse.CreateRefreshTicketDefault(season));
         }
 
-        return TypedResults.Ok(
-            TicketStatusResponse.FromRefreshStatusModel(refreshTicketStatusPerRound)
-        );
+        return Ok(TicketStatusResponse.FromRefreshStatusModel(refreshTicketStatusPerRound));
     }
 
     [HttpPost("battle/purchase")]
@@ -120,9 +114,7 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status400BadRequest, "")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<Results<NotFound<string>, BadRequest<string>, Ok<int>>> PurchaseBattleTicket(
-        [FromBody] PurchaseTicketRequest request
-    )
+    public async Task<IActionResult> PurchaseBattleTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -150,7 +142,7 @@ public class TicketController : ControllerBase
                 > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound
             )
             {
-                return TypedResults.BadRequest("Max purchaseable ticket reached");
+                return BadRequest("Max purchaseable ticket reached");
             }
         }
 
@@ -167,7 +159,7 @@ public class TicketController : ControllerBase
 
         if (request.PurchasePrice >= requiredAmount)
         {
-            return TypedResults.BadRequest($"{request.PurchasePrice} {requiredAmount}");
+            return BadRequest($"{request.PurchasePrice} {requiredAmount}");
         }
 
         purchaseLog = await _ticketRepo.AddBattleTicketPurchaseLog(
@@ -182,7 +174,7 @@ public class TicketController : ControllerBase
             processor.ProcessAsync(purchaseLog.Id)
         );
 
-        return TypedResults.Ok(purchaseLog.Id);
+        return Ok(purchaseLog.Id);
     }
 
     [HttpPost("refresh/purchase")]
@@ -191,9 +183,7 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(int))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<Results<NotFound<string>, BadRequest<string>, Ok<int>>> PurchaseRefreshTicket(
-        [FromBody] PurchaseTicketRequest request
-    )
+    public async Task<IActionResult> PurchaseRefreshTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -217,7 +207,7 @@ public class TicketController : ControllerBase
                 > season.RefreshTicketPolicy.MaxPurchasableTicketsPerRound
             )
             {
-                return TypedResults.BadRequest("Max purchaseable ticket reached");
+                return BadRequest("Max purchaseable ticket reached");
             }
         }
 
@@ -234,7 +224,7 @@ public class TicketController : ControllerBase
 
         if (request.PurchasePrice >= requiredAmount)
         {
-            return TypedResults.BadRequest($"{request.PurchasePrice} {requiredAmount}");
+            return BadRequest($"{request.PurchasePrice} {requiredAmount}");
         }
 
         purchaseLog = await _ticketRepo.AddRefreshTicketPurchaseLog(
@@ -249,7 +239,7 @@ public class TicketController : ControllerBase
             processor.ProcessAsync(purchaseLog.Id)
         );
 
-        return TypedResults.Ok(purchaseLog.Id);
+        return Ok(purchaseLog.Id);
     }
 
     [HttpGet("battle/purchase-logs/{logId}")]
@@ -259,9 +249,7 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status403Forbidden, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<NotFound<string>, StatusCodeHttpResult, Ok<TicketPurchaseLogResponse>>
-    > GetPurchaseBattleTicketLog(int logId)
+    public async Task<IActionResult> GetPurchaseBattleTicketLog(int logId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -269,15 +257,15 @@ public class TicketController : ControllerBase
 
         if (purchaseLog is null)
         {
-            return TypedResults.NotFound($"Not found purchase log {logId}");
+            return NotFound($"Not found purchase log {logId}");
         }
 
         if (purchaseLog.AvatarAddress != avatarAddress)
         {
-            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+            return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        return TypedResults.Ok(purchaseLog.ToResponse());
+        return Ok(purchaseLog.ToResponse());
     }
 
     [HttpGet("refresh/purchase-logs/{logId}")]
@@ -286,9 +274,7 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(TicketPurchaseLogResponse))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
-    public async Task<
-        Results<NotFound<string>, StatusCodeHttpResult, Ok<TicketPurchaseLogResponse>>
-    > GetPurchaseRefreshTicketLog(int logId)
+    public async Task<IActionResult> GetPurchaseRefreshTicketLog(int logId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
@@ -296,14 +282,14 @@ public class TicketController : ControllerBase
 
         if (purchaseLog is null)
         {
-            return TypedResults.NotFound($"Not found purchase log {logId}");
+            return NotFound($"Not found purchase log {logId}");
         }
 
         if (purchaseLog.AvatarAddress != avatarAddress)
         {
-            return TypedResults.StatusCode(StatusCodes.Status403Forbidden);
+            return StatusCode(StatusCodes.Status403Forbidden);
         }
 
-        return TypedResults.Ok(purchaseLog.ToResponse());
+        return Ok(purchaseLog.ToResponse());
     }
 }

@@ -1,5 +1,6 @@
 using ArenaService.Models.Enums;
 using Libplanet.Types.Tx;
+using Swashbuckle.AspNetCore.Annotations;
 
 namespace ArenaService.Dtos;
 

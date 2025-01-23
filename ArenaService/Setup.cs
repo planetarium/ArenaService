@@ -1,5 +1,6 @@
 namespace ArenaService;
 
+using System.Text.Json.Serialization;
 using ArenaService.Auth;
 using ArenaService.Data;
 using ArenaService.Filter;
@@ -120,6 +121,7 @@ public class Startup
             );
 
             options.OperationFilter<AuthorizeCheckOperationFilter>();
+            options.SchemaFilter<TxIdSchemaFilter>();
 
             options.EnableAnnotations();
         });

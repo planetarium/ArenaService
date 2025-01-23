@@ -1,11 +1,14 @@
 using ArenaService.Constants;
-using Swashbuckle.AspNetCore.Annotations;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
 
 namespace ArenaService.Dtos;
 
 public class SeasonResponse
 {
     public int Id { get; set; }
+
+    [JsonConverter(typeof(StringEnumConverter))]
     public ArenaType ArenaType { get; set; }
     public long StartBlockIndex { get; set; }
     public long EndBlockIndex { get; set; }

@@ -14,15 +14,15 @@ public class ClanController : ControllerBase
 
     [HttpGet("leaderboard")]
     [ProducesResponseType(typeof(ClanLeaderboardResponse), StatusCodes.Status200OK)]
-    public async Task<Ok<List<SeasonResponse>>> GetClanLeaderboard(int offset = 0, int limit = 100)
+    public async Task<IActionResult> GetClanLeaderboard(int offset = 0, int limit = 100)
     {
-        return TypedResults.Ok(new List<SeasonResponse>());
+        return Ok(new List<SeasonResponse>());
     }
 
     [HttpGet]
     [ProducesResponseType(typeof(ClanResponse), StatusCodes.Status200OK)]
-    public async Task<Ok> GetMyClan()
+    public async Task<IActionResult> GetMyClan()
     {
-        return TypedResults.Ok();
+        return Ok();
     }
 }
