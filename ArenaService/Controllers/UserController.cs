@@ -46,17 +46,8 @@ public class UserController : ControllerBase
     [ProducesResponseType(typeof(ClassifyByBlockMedalsResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<Results<NotFound<string>, Ok>> GetArenaInfo(long blockIndex)
+    public async Task<Results<NotFound<string>, Ok>> GetMedals(long blockIndex)
     {
-        // 1오프시즌
-        // 2시즌
-        // 3오프시즌
-        // 4시즌
-        // 5오프시즌
-        // 6시즌
-        // 7오프시즌
-        // 8챔피언쉽 <- 입장 가능한 메달이 모였냐
-
         return TypedResults.Ok();
     }
 }
