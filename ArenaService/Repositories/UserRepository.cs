@@ -45,7 +45,7 @@ public class UserRepository : IUserRepository
         int level
     )
     {
-        var existingUser = await _context.Users.FindAsync(avatarAddress.ToHex());
+        var existingUser = await _context.Users.FindAsync(avatarAddress);
 
         if (existingUser != null)
         {
@@ -66,7 +66,7 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetUserAsync(Address avatarAddress)
     {
-        var user = await _context.Users.FindAsync(avatarAddress.ToHex());
+        var user = await _context.Users.FindAsync(avatarAddress);
         return user;
     }
 
