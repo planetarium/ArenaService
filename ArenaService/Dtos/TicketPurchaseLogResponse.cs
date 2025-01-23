@@ -5,11 +5,11 @@ namespace ArenaService.Dtos;
 
 public class TicketPurchaseLogResponse
 {
-    public int SeasonId { get; set; }
-    public int RoundId { get; set; }
+    public required int SeasonId { get; set; }
+    public required int RoundId { get; set; }
     public decimal? AmountPaid { get; set; }
-    public int PurchaseCount { get; set; }
-    public PurchaseStatus PurchaseStatus { get; set; }
-    public TxId TxId { get; set; }
+    public required int PurchaseCount { get; set; }
+    public required PurchaseStatus PurchaseStatus { get; set; }
+    public required TxId TxId { get; set; }
     public TxStatus? TxStatus { get; set; }
 }

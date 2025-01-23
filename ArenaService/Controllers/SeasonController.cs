@@ -31,14 +31,6 @@ public class SeasonController : ControllerBase
         _recipientAddress = new Address(options.Value.RecipientAddress);
     }
 
-    [HttpGet("{seasonId}")]
-    [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
-    public async Task<IActionResult> GetSeason(int seasonId)
-    {
-        return Ok(new SeasonResponse());
-    }
-
     [HttpGet("by-block/{blockIndex}")]
     [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
     [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]

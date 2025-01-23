@@ -1,25 +1,27 @@
 using ArenaService.Constants;
 using ArenaService.Models;
 using Libplanet.Crypto;
+using Newtonsoft.Json;
 
 namespace ArenaService.Dtos;
 
 public class AvailableOpponentResponse
 {
-    public Address AvatarAddress { get; set; }
+    public required Address AvatarAddress { get; set; }
 
+    [JsonProperty(Required = Required.DisallowNull)]
     public required string NameWithHash { get; set; }
 
-    public int PortraitId { get; set; }
-    public long Cp { get; set; }
-    public int Level { get; set; }
-    public int SeasonId { get; set; }
-    public int Score { get; set; }
-    public int Rank { get; set; }
-    public int GroupId { get; set; }
-    public bool IsAttacked { get; set; }
-    public int ScoreGainOnWin { get; set; }
-    public int ScoreLossOnLose { get; set; }
+    public required int PortraitId { get; set; }
+    public required long Cp { get; set; }
+    public required int Level { get; set; }
+    public required int SeasonId { get; set; }
+    public required int Score { get; set; }
+    public required int Rank { get; set; }
+    public required int GroupId { get; set; }
+    public required bool IsAttacked { get; set; }
+    public required int ScoreGainOnWin { get; set; }
+    public required int ScoreLossOnLose { get; set; }
     public bool? IsVictory { get; set; } = null;
     public ClanResponse? ClanInfo { get; set; } = null;
 

@@ -8,14 +8,14 @@ namespace ArenaService.Dtos;
 
 public class BattleResponse
 {
-    public int Id { get; set; }
-    public int SeasonId { get; set; }
+    public required int Id { get; set; }
+    public required int SeasonId { get; set; }
 
-    public Address MyAvatarAddress { get; set; }
+    public required Address MyAvatarAddress { get; set; }
 
-    public Address OpponentAvatarAddress { get; set; }
+    public required Address OpponentAvatarAddress { get; set; }
 
-    public BattleStatus BattleStatus { get; set; }
+    public required BattleStatus BattleStatus { get; set; }
     public TxId? TxId { get; set; }
     public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }

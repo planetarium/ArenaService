@@ -7,5 +7,5 @@ namespace ArenaService.Dtos;
 
 public class BattleRequest
 {
-    public TxId TxId { get; set; }
+    public required TxId TxId { get; set; }
 }

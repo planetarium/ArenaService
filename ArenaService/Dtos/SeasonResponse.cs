@@ -6,18 +6,20 @@ namespace ArenaService.Dtos;
 
 public class SeasonResponse
 {
-    public int Id { get; set; }
+    public required int Id { get; set; }
 
     [JsonConverter(typeof(StringEnumConverter))]
-    public ArenaType ArenaType { get; set; }
-    public long StartBlockIndex { get; set; }
-    public long EndBlockIndex { get; set; }
-    public int RoundInterval { get; set; }
-    public int RequiredMedalCount { get; set; }
-    public TicketPolicyResponse BattleTicketPolicy { get; set; }
-    public TicketPolicyResponse RefreshTicketPolicy { get; set; }
-    public int TotalPrize { get; set; }
-    public string PrizeDetailSiteURL { get; set; }
+    public required ArenaType ArenaType { get; set; }
+    public required long StartBlockIndex { get; set; }
+    public required long EndBlockIndex { get; set; }
+    public required int RoundInterval { get; set; }
+    public required int RequiredMedalCount { get; set; }
+    public required TicketPolicyResponse BattleTicketPolicy { get; set; }
+    public required TicketPolicyResponse RefreshTicketPolicy { get; set; }
+    public required int TotalPrize { get; set; }
 
-    public List<RoundResponse> Rounds { get; set; } = new List<RoundResponse>();
+    [JsonProperty(Required = Required.DisallowNull)]
+    public required string PrizeDetailSiteURL { get; set; }
+
+    public required List<RoundResponse> Rounds { get; set; } = new List<RoundResponse>();
 }

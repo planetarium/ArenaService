@@ -6,7 +6,7 @@ namespace ArenaService.Dtos;
 
 public class PurchaseTicketRequest
 {
-    public int TicketCount { get; set; }
-    public decimal PurchasePrice { get; set; }
-    public TxId TxId { get; set; }
+    public required int TicketCount { get; set; }
+    public required decimal PurchasePrice { get; set; }
+    public required TxId TxId { get; set; }
 }

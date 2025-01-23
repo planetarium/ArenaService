@@ -213,6 +213,7 @@ public class AvailableOpponentController : ControllerBase
                     Level = opponentParticipant.User.Level,
                     SeasonId = opponentParticipant.SeasonId,
                     Score = opponent.Score,
+                    GroupId = opponent.GroupId,
                     Rank = opponent.Rank,
                     IsAttacked = false,
                     ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,

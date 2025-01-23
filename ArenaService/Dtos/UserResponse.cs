@@ -1,14 +1,16 @@
 using Libplanet.Crypto;
+using Newtonsoft.Json;
 
 namespace ArenaService.Dtos;
 
 public class UserResponse
 {
-    public Address AvatarAddress { get; set; }
+    public required Address AvatarAddress { get; set; }
 
+    [JsonProperty(Required = Required.DisallowNull)]
     public required string NameWithHash { get; set; }
 
-    public int PortraitId { get; set; }
-    public long Cp { get; set; }
-    public int Level { get; set; }
+    public required int PortraitId { get; set; }
+    public required long Cp { get; set; }
+    public required int Level { get; set; }
 }

@@ -43,7 +43,6 @@ public class AuthorizeCheckOperationFilter : IOperationFilter
                     In = ParameterLocation.Header,
                     Description =
                         "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
-                    Required = true,
                     Schema = new OpenApiSchema { Type = "string" }
                 }
             );
