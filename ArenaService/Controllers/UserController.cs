@@ -1,13 +1,11 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Constants;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
+using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 [Route("users")]
 [ApiController]
@@ -24,24 +22,45 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
-    public async Task<IActionResult> Register([FromBody] UserRegisterRequest userRegisterRequest)
+    public async Task<ActionResult<string>> Register(
+        [FromBody] UserRegisterRequest userRegisterRequest
+    )
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
         var agentAddress = HttpContext.User.RequireAgentAddress();
 
-        await _userRepo.AddOrGetUserAsync(
-            agentAddress,
-            avatarAddress,
-            userRegisterRequest.NameWithHash,
-            userRegisterRequest.PortraitId,
-            userRegisterRequest.Cp,
-            userRegisterRequest.Level
-        );
+        var user = await _userRepo.GetUserAsync(avatarAddress);
+        if (user == null)
+        {
+            user = await _userRepo.AddUserAsync(
+                agentAddress,
+                avatarAddress,
+                userRegisterRequest.NameWithHash,
+                userRegisterRequest.PortraitId,
+                userRegisterRequest.Cp,
+                userRegisterRequest.Level
+            );
 
-        return Created();
+            var locationUri = Url.Action(
+                nameof(GetUser),
+                new { avatarAddress = user.AvatarAddress }
+            );
+            return Created(locationUri, user.AvatarAddress);
+        }
+
+        return Conflict("Already registered");
+    }
+
+    [HttpGet("{avatarAddress}")]
+    [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
+    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<ActionResult<UserResponse>> GetUser(Address avatarAddress)
+    {
+        return Ok();
     }
 
     [HttpGet("classify-by-championship/medals/{blockIndex}")]
