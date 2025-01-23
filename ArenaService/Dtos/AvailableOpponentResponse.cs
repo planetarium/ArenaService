@@ -16,11 +16,12 @@ public class AvailableOpponentResponse
     public int SeasonId { get; set; }
     public int Score { get; set; }
     public int Rank { get; set; }
+    public int GroupId { get; set; }
     public bool IsAttacked { get; set; }
     public int ScoreGainOnWin { get; set; }
     public int ScoreLossOnLose { get; set; }
     public bool? IsVictory { get; set; } = null;
-    public required string ClanImageURL { get; set; }
+    public ClanResponse? ClanInfo { get; set; } = null;
 
     public static AvailableOpponentResponse FromAvailableOpponent(
         AvailableOpponent availableOpponent,
@@ -36,13 +37,14 @@ public class AvailableOpponentResponse
             Cp = availableOpponent.Opponent.User.Cp,
             Level = availableOpponent.Opponent.User.Level,
             SeasonId = availableOpponent.Opponent.SeasonId,
+            GroupId = availableOpponent.GroupId,
             Score = opponentScore,
             Rank = opponentRank,
             IsAttacked = availableOpponent.SuccessBattleId is not null,
             ScoreGainOnWin = OpponentGroupConstants.Groups[availableOpponent.GroupId].WinScore,
             ScoreLossOnLose = OpponentGroupConstants.Groups[availableOpponent.GroupId].LoseScore,
             IsVictory = availableOpponent.SuccessBattle?.IsVictory,
-            ClanImageURL = ""
+            ClanInfo = null
         };
     }
 }

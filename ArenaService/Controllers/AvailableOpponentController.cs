@@ -94,7 +94,7 @@ public class AvailableOpponentController : ControllerBase
                 cachedSeason.Id,
                 cachedRound.Id
             );
-            var opponentScore = await _rankingRepo.GetRankAsync(
+            var opponentScore = await _rankingRepo.GetScoreAsync(
                 availableOpponent.Opponent.AvatarAddress,
                 cachedSeason.Id,
                 cachedRound.Id
@@ -218,7 +218,7 @@ public class AvailableOpponentController : ControllerBase
                     ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,
                     ScoreLossOnLose = OpponentGroupConstants.Groups[opponent.GroupId].LoseScore,
                     IsVictory = null,
-                    ClanImageURL = ""
+                    ClanInfo = null
                 }
             );
         }
