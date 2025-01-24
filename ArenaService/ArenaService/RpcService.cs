@@ -1,6 +1,6 @@
 namespace ArenaService;
 
-public class RpcService(RpcClient rpcClient, RpcNodeHealthCheck rpcNodeHealthCheck) : IHostedService
+public class RpcService(RpcClient rpcClient) : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
     {
@@ -21,7 +21,6 @@ public class RpcService(RpcClient rpcClient, RpcNodeHealthCheck rpcNodeHealthChe
                 await Task.Delay((3 - retry) * 1000, cancellationToken);
                 retry++;
             }
-            rpcNodeHealthCheck.ConnectCompleted = rpcClient.Ready;
             await Task.Delay(3000, cancellationToken);
         }
     }
