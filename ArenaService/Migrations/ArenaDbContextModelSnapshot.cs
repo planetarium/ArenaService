@@ -429,6 +429,40 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_usage_logs", (string)null);
                 });
 
+            modelBuilder.Entity("ArenaService.Models.Clan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ImageURL")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("image_url");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_clans");
+
+                    b.ToTable("clans", (string)null);
+                });
+
             modelBuilder.Entity("ArenaService.Models.Medal", b =>
                 {
                     b.Property<string>("AvatarAddress")
@@ -813,6 +847,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("character varying(40)")
                         .HasColumnName("agent_address");
 
+                    b.Property<int?>("ClanId")
+                        .HasColumnType("integer")
+                        .HasColumnName("clan_id");
+
                     b.Property<long>("Cp")
                         .HasColumnType("bigint")
                         .HasColumnName("cp");
@@ -844,6 +882,9 @@ namespace ArenaService.Migrations
                     b.HasIndex("AgentAddress")
                         .IsUnique()
                         .HasDatabaseName("ix_users_agent_address");
+
+                    b.HasIndex("ClanId")
+                        .HasDatabaseName("ix_users_clan_id");
 
                     b.ToTable("users", (string)null);
                 });
@@ -1138,6 +1179,16 @@ namespace ArenaService.Migrations
                     b.Navigation("BattleTicketPolicy");
 
                     b.Navigation("RefreshTicketPolicy");
+                });
+
+            modelBuilder.Entity("ArenaService.Models.User", b =>
+                {
+                    b.HasOne("ArenaService.Models.Clan", "Clan")
+                        .WithMany()
+                        .HasForeignKey("ClanId")
+                        .HasConstraintName("fk_users_clans_clan_id");
+
+                    b.Navigation("Clan");
                 });
 
             modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>

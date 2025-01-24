@@ -13,6 +13,7 @@ public class ArenaDbContext : DbContext
         : base(options) { }
 
     public required DbSet<User> Users { get; set; }
+    public required DbSet<Clan> Clans { get; set; }
     public required DbSet<Season> Seasons { get; set; }
     public required DbSet<Round> Rounds { get; set; }
     public required DbSet<Medal> Medals { get; set; }
@@ -42,6 +43,8 @@ public class ArenaDbContext : DbContext
             .Entity<User>()
             .Property(p => p.AgentAddress)
             .HasConversion(new AddressConverter());
+
+        modelBuilder.Entity<User>().HasOne(u => u.Clan).WithMany().HasForeignKey(u => u.ClanId);
 
         modelBuilder
             .Entity<Round>()

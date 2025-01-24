@@ -1,3 +1,4 @@
+using ArenaService.Exceptions;
 using Humanizer;
 using Libplanet.Crypto;
 using StackExchange.Redis;
@@ -25,8 +26,9 @@ public interface IRankingRepository
 
 public class RankingRepository : IRankingRepository
 {
-    private const string RankingKeyFormat = "ranking:season:{0}:round:{1}";
-    private const string ParticipantKeyFormat = "participant:{0}";
+    public const string RankingKeyFormat = "season:{0}:round:{1}:ranking";
+    public const string ParticipantKeyFormat = "participant:{0}";
+
     private readonly IDatabase _redis;
 
     public RankingRepository(IConnectionMultiplexer redis)
@@ -56,7 +58,7 @@ public class RankingRepository : IRankingRepository
 
         if (!score.HasValue)
         {
-            throw new Exception("Participant not found.");
+            throw new NotRankedException($"Participant {avatarAddress} not found.");
         }
 
         var higherScoresCount = (
@@ -76,7 +78,9 @@ public class RankingRepository : IRankingRepository
         string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
 
         var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
-        return score.HasValue ? (int)score.Value : throw new Exception("Participant not found.");
+        return score.HasValue
+            ? (int)score.Value
+            : throw new NotRankedException($"Participant {avatarAddress} not found.");
     }
 
     public async Task<

@@ -136,7 +136,7 @@ def insert_participants(season_id, participants):
         print(f"An error occurred while inserting participants: {e}")
 
 def initialize_redis_participants(redis_client, season_id, participants):
-    ranking_key = f"ranking:season:{season_id}:round:1"
+    ranking_key = f"season:{season_id}:round:1:ranking"
     for participant in participants:
         avatar_address = participant["avatarAddr"][2:]
         initial_score = 1000

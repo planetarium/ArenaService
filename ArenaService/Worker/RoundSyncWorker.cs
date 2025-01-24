@@ -6,15 +6,12 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace ArenaService.Worker;
 
-public class SeasonCachingWorker : BackgroundService
+public class RoundSyncWorker : BackgroundService
 {
-    private readonly ILogger<SeasonCachingWorker> _logger;
+    private readonly ILogger<RoundSyncWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
 
-    public SeasonCachingWorker(
-        ILogger<SeasonCachingWorker> logger,
-        IServiceProvider serviceProvider
-    )
+    public RoundSyncWorker(ILogger<RoundSyncWorker> logger, IServiceProvider serviceProvider)
     {
         _logger = logger;
         _serviceProvider = serviceProvider;
@@ -81,12 +78,7 @@ public class SeasonCachingWorker : BackgroundService
             return;
         }
 
-        await UpdateSeasonAndRoundCacheAsync(
-            blockIndex.Value,
-            seasonRepo,
-            seasonCacheRepo,
-            rankingRepo
-        );
+        await UpdateCacheDatasAsync(blockIndex.Value, seasonRepo, seasonCacheRepo, rankingRepo);
     }
 
     private async Task<long?> GetCurrentBlockIndexAsync(
@@ -126,7 +118,7 @@ public class SeasonCachingWorker : BackgroundService
         return true;
     }
 
-    private async Task UpdateSeasonAndRoundCacheAsync(
+    private async Task UpdateCacheDatasAsync(
         long blockIndex,
         ISeasonRepository seasonRepo,
         ISeasonCacheRepository seasonCacheRepo,

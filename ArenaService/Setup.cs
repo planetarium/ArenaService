@@ -135,10 +135,13 @@ public class Startup
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IMedalRepository, MedalRepository>();
+        services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
+        services.AddScoped<IClanRepository, ClanRepository>();
 
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 
+        services.AddScoped<IRankingService, RankingService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
@@ -165,8 +168,8 @@ public class Startup
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
         services
-            .AddSingleton<SeasonCachingWorker>()
-            .AddHostedService(provider => provider.GetRequiredService<SeasonCachingWorker>());
+            .AddSingleton<RoundSyncWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<RoundSyncWorker>());
 
         services.AddHangfireServer();
         services.AddHealthChecks();
