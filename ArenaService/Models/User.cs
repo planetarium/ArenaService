@@ -29,6 +29,11 @@ public class User
     [Required]
     public int Level { get; set; }
 
+    public int? ClanId { get; set; }
+
+    [ForeignKey(nameof(ClanId))]
+    public Clan? Clan { get; set; }
+
     [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

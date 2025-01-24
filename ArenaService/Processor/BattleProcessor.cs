@@ -26,7 +26,7 @@ public class BattleProcessor
     private readonly ILogger<BattleProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly IBattleRepository _battleRepo;
-    private readonly IRankingRepository _rankingRepo;
+    private readonly IRankingService _rankingService;
     private readonly IMedalRepository _medalRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
     private readonly IParticipantRepository _participantRepo;
@@ -37,7 +37,7 @@ public class BattleProcessor
         ILogger<BattleProcessor> logger,
         IHeadlessClient client,
         IBattleRepository battleRepo,
-        IRankingRepository rankingRepo,
+        IRankingService rankingService,
         IMedalRepository medalRepo,
         IAvailableOpponentRepository availableOpponentRepo,
         ITicketRepository ticketRepo,
@@ -49,7 +49,7 @@ public class BattleProcessor
         _logger = logger;
         _client = client;
         _battleRepo = battleRepo;
-        _rankingRepo = rankingRepo;
+        _rankingService = rankingService;
         _ticketRepo = ticketRepo;
         _medalRepo = medalRepo;
         _txTrackingService = txTrackingService;
@@ -66,9 +66,12 @@ public class BattleProcessor
                 q.Include(b => b.AvailableOpponent)
                     .ThenInclude(ao => ao.Opponent)
                     .ThenInclude(p => p.User)
+                    .ThenInclude(u => u.Clan)
                     .Include(b => b.Season)
                     .ThenInclude(s => s.BattleTicketPolicy)
                     .Include(b => b.Participant)
+                    .ThenInclude(p => p.User)
+                    .ThenInclude(u => u.Clan)
         );
         if (battle is null)
         {
@@ -359,17 +362,21 @@ public class BattleProcessor
                 p.Score += opponentScoreChange;
             }
         );
-        await _rankingRepo.UpdateScoreAsync(
+        await _rankingService.UpdateScoreAsync(
             battle.AvatarAddress,
             battle.SeasonId,
             battle.RoundId + 1,
-            myScoreChange
+            myScoreChange,
+            battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
         );
-        await _rankingRepo.UpdateScoreAsync(
+        await _rankingService.UpdateScoreAsync(
             battle.AvailableOpponent.AvatarAddress,
             battle.SeasonId,
             battle.RoundId + 1,
-            opponentScoreChange
+            opponentScoreChange,
+            battle.AvailableOpponent.Opponent.User.Clan is null
+                ? null
+                : battle.AvailableOpponent.Opponent.User.Clan.Id
         );
 
         await _ticketRepo.UpdateBattleTicketStatusPerRound(

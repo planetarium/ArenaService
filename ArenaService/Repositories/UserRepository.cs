@@ -3,6 +3,7 @@ namespace ArenaService.Repositories;
 using ArenaService.Data;
 using ArenaService.Models;
 using Libplanet.Crypto;
+using Microsoft.EntityFrameworkCore;
 
 public interface IUserRepository
 {
@@ -24,7 +25,10 @@ public interface IUserRepository
         int level
     );
 
-    Task<User?> GetUserAsync(Address avatarAddress);
+    Task<User?> GetUserAsync(
+        Address avatarAddress,
+        Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
+    );
 }
 
 public class UserRepository : IUserRepository
@@ -64,10 +68,19 @@ public class UserRepository : IUserRepository
         return newUser;
     }
 
-    public async Task<User?> GetUserAsync(Address avatarAddress)
+    public async Task<User?> GetUserAsync(
+        Address avatarAddress,
+        Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
+    )
     {
-        var user = await _context.Users.FindAsync(avatarAddress);
-        return user;
+        var query = _context.Users.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.SingleOrDefaultAsync(u => u.AvatarAddress == avatarAddress);
     }
 
     public async Task<User> AddUserAsync(

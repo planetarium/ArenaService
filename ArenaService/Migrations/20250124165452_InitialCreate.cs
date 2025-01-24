@@ -54,6 +54,22 @@ namespace ArenaService.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "clans",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    name = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    image_url = table.Column<string>(type: "text", nullable: false),
+                    created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
+                    updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_clans", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "refresh_ticket_policies",
                 columns: table => new
                 {
@@ -103,12 +119,18 @@ namespace ArenaService.Migrations
                     portrait_id = table.Column<int>(type: "integer", nullable: false),
                     cp = table.Column<long>(type: "bigint", nullable: false),
                     level = table.Column<int>(type: "integer", nullable: false),
+                    clan_id = table.Column<int>(type: "integer", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamptz", nullable: false),
                     updated_at = table.Column<DateTime>(type: "timestamptz", nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_users", x => x.avatar_address);
+                    table.ForeignKey(
+                        name: "fk_users_clans_clan_id",
+                        column: x => x.clan_id,
+                        principalTable: "clans",
+                        principalColumn: "id");
                 });
 
             migrationBuilder.CreateTable(
@@ -633,6 +655,11 @@ namespace ArenaService.Migrations
                 column: "agent_address",
                 unique: true);
 
+            migrationBuilder.CreateIndex(
+                name: "ix_users_clan_id",
+                table: "users",
+                column: "clan_id");
+
             migrationBuilder.AddForeignKey(
                 name: "fk_available_opponents_battles_success_battle_id",
                 table: "available_opponents",
@@ -689,6 +716,9 @@ namespace ArenaService.Migrations
 
             migrationBuilder.DropTable(
                 name: "seasons");
+
+            migrationBuilder.DropTable(
+                name: "clans");
 
             migrationBuilder.DropTable(
                 name: "battle_ticket_policies");
