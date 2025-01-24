@@ -30,15 +30,13 @@ public class SpecifyOpponentsService : ISpecifyOpponentsService
         List<(Address AvatarAddress, int GroupId, int Score, int Rank)>
     > SpecifyOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
     {
-        var myScore = await _rankingRepository.GetScoreAsync(avatarAddress, seasonId, roundId);
-        var opponents = await _rankingRepository.GetRandomParticipantsAsync(
-            avatarAddress,
-            seasonId,
-            roundId,
-            myScore,
-            5
-        );
+        // var opponents = await _rankingRepository.SelectBattleOpponentsAsync(
+        //     avatarAddress,
+        //     seasonId,
+        //     roundId
+        // );
 
-        return opponents.Select(o => (o.AvatarAddress, 1, o.Score, o.Rank)).ToList();
+        // return opponents.Select(o => (o.AvatarAddress, 1, o.Score, o.Rank)).ToList();
+        return [];
     }
 }

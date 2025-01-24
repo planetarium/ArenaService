@@ -1,0 +1,28 @@
+name: ArenaServiceTest
+services:
+  redis:
+    image: redis:latest
+    container_name: test-redis
+    networks:
+      - test-network
+    command: [ "redis-server", "--save", "", "--appendonly", "no" ]
+
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: test-runner
+    depends_on:
+      - redis
+    environment:
+      REDIS_CONNECTION: "redis:6379"
+    networks:
+      - test-network
+    volumes:
+      - .:/source
+    working_dir: /source
+    command: [ "ArenaService.IntegrationTests/ArenaService.IntegrationTests.csproj" ]
+
+networks:
+  test-network:
+    driver: bridge

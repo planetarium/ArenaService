@@ -1,0 +1,17 @@
+using ArenaService.IntegrationTests.Fixtures;
+using ArenaService.Repositories;
+using StackExchange.Redis;
+
+namespace ArenaService.IntegrationTests.Repositories.GroupRankingRepo;
+
+public abstract class BaseTest : IClassFixture<RedisTestFixture>
+{
+    protected GroupRankingRepository Repository { get; }
+    protected IDatabase Database { get; }
+
+    protected BaseTest(RedisTestFixture fixture, int databaseNumber = 0)
+    {
+        Database = fixture.GetDatabase(databaseNumber);
+        Repository = new GroupRankingRepository(fixture.Redis, databaseNumber);
+    }
+}
