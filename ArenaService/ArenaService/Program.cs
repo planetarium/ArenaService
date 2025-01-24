@@ -40,17 +40,12 @@ if (enableWorker)
         .AddSingleton<RpcClient>()
         .AddHostedService<RpcService>()
         .AddSingleton(new PrivateKey())
-        .AddSingleton<RpcNodeHealthCheck>()
         .AddHostedService<ArenaParticipantsWorker>();
 }
 
-var healthChecksBuilder = builder.Services
+builder.Services
     .AddHealthChecks()
     .AddRedis(redis);
-if (enableWorker)
-{
-    healthChecksBuilder.AddCheck<RpcNodeHealthCheck>(nameof(RpcNodeHealthCheck));
-}
 
 builder.WebHost.ConfigureKestrel(options =>
 {

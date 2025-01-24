@@ -446,6 +446,14 @@ public class RpcClient: IDisposable, IActionEvaluationHubReceiver
         return result;
     }
 
+    public async Task<Block> GetTip()
+    {
+        var tip = await _service.GetTip();
+        var dict = (Dictionary)_codec.Decode(tip);
+        var block = BlockMarshaler.UnmarshalBlock(dict);
+        return block;
+    }
+
     public static List<RuneOptionSheet.Row.RuneOptionInfo> GetRuneOptions(
         List<RuneState> runeStates,
         RuneOptionSheet sheet)
