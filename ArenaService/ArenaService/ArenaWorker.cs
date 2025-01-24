@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Libplanet.Types.Blocks;
 
 namespace ArenaService;
 
@@ -9,6 +10,7 @@ public class ArenaParticipantsWorker : BackgroundService
     private IRedisArenaParticipantsService _service;
     private ILogger<ArenaParticipantsWorker> _logger;
     private static readonly CancellationTokenSource _cts = new CancellationTokenSource();
+    private long _previousBlockIndex = 0L;
 
     public ArenaParticipantsWorker(RpcClient rpcClient, IRedisArenaParticipantsService service, ILogger<ArenaParticipantsWorker> logger)
     {
@@ -48,18 +50,23 @@ public class ArenaParticipantsWorker : BackgroundService
         var retry = 0;
         _cts.CancelAfter(TimeSpan.FromMinutes(5));
         var cancellationToken = _cts.Token;
-        while (_rpcClient.Tip?.Index == _rpcClient.PreviousTip?.Index)
+        // wait for update tip.
+        var tip = await _rpcClient.GetTip();
+        var blockIndex = tip.Index;
+        while (blockIndex == _previousBlockIndex)
         {
-            await Task.Delay((5 - retry) * 1000, cancellationToken);
+            await Task.Delay((5 + retry) * 1000, cancellationToken);
             retry++;
+            // catch stuck blocks on thor network case.
             if (retry >= 3)
             {
-                throw new InvalidOperationException();
+                throw new InvalidBlockIndexException($"block index({blockIndex}) not updated. restart worker.");
             }
+            tip = await _rpcClient.GetTip();
+            blockIndex = tip.Index;
         }
 
-        var tip = _rpcClient.Tip!;
-        var blockIndex = tip.Index;
+        _previousBlockIndex = blockIndex;
         var currentRoundData = await _rpcClient.GetRoundData(tip, cancellationToken);
         var participants = await _rpcClient.GetArenaParticipantsState(tip, currentRoundData, cancellationToken);
         var championshipId = currentRoundData.ChampionshipId;
