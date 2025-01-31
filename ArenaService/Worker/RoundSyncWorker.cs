@@ -29,8 +29,8 @@ public class RoundSyncWorker : BackgroundService
                 {
                     var client = scope.ServiceProvider.GetRequiredService<IHeadlessClient>();
                     var seasonRepo = scope.ServiceProvider.GetRequiredService<ISeasonRepository>();
-                    var rankingRepo =
-                        scope.ServiceProvider.GetRequiredService<IRankingRepository>();
+                    var rankingService =
+                        scope.ServiceProvider.GetRequiredService<IRankingService>();
                     var seasonCacheRepo =
                         scope.ServiceProvider.GetRequiredService<ISeasonCacheRepository>();
 
@@ -38,7 +38,7 @@ public class RoundSyncWorker : BackgroundService
                         client,
                         seasonRepo,
                         seasonCacheRepo,
-                        rankingRepo,
+                        rankingService,
                         stoppingToken
                     );
                 }
@@ -57,7 +57,7 @@ public class RoundSyncWorker : BackgroundService
         IHeadlessClient client,
         ISeasonRepository seasonRepo,
         ISeasonCacheRepository seasonCacheRepo,
-        IRankingRepository rankingRepo,
+        IRankingService rankingService,
         CancellationToken stoppingToken
     )
     {
@@ -78,7 +78,7 @@ public class RoundSyncWorker : BackgroundService
             return;
         }
 
-        await UpdateCacheDatasAsync(blockIndex.Value, seasonRepo, seasonCacheRepo, rankingRepo);
+        await UpdateCacheDatasAsync(blockIndex.Value, seasonRepo, seasonCacheRepo, rankingService);
     }
 
     private async Task<long?> GetCurrentBlockIndexAsync(
@@ -122,7 +122,7 @@ public class RoundSyncWorker : BackgroundService
         long blockIndex,
         ISeasonRepository seasonRepo,
         ISeasonCacheRepository seasonCacheRepo,
-        IRankingRepository rankingRepo
+        IRankingService rankingService
     )
     {
         var seasons = await seasonRepo.GetAllSeasonsAsync(q => q.Include(s => s.Rounds));
@@ -156,7 +156,7 @@ public class RoundSyncWorker : BackgroundService
             currentRound.StartBlock,
             currentRound.EndBlock
         );
-        await rankingRepo.CopyRoundDataAsync(
+        await rankingService.CopyRoundDataAsync(
             currentSeason.Id,
             currentRound.Id,
             currentRound.Id + 1

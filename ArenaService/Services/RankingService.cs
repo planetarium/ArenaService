@@ -18,6 +18,8 @@ public interface IRankingService
         int seasonId,
         int roundId
     );
+
+    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId);
 }
 
 public class RankingService : IRankingService
@@ -121,5 +123,17 @@ public class RankingService : IRankingService
         }
 
         return result;
+    }
+
+    public async Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId)
+    {
+        var copyTasks = new List<Task>
+        {
+            _rankingRepo.CopyRoundDataAsync(seasonId, sourceRoundId, targetRoundId),
+            _groupRankingRepo.CopyRoundDataAsync(seasonId, sourceRoundId, targetRoundId),
+            _clanRankingRepo.CopyRoundDataAsync(seasonId, sourceRoundId, targetRoundId)
+        };
+
+        await Task.WhenAll(copyTasks);
     }
 }

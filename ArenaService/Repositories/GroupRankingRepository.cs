@@ -22,12 +22,15 @@ public interface IGroupRankingRepository
         int seasonId,
         int roundId
     );
+
+    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId);
 }
 
 public class GroupRankingRepository : IGroupRankingRepository
 {
     public const string ParticipantKeyFormat = "participant:{0}";
     public const string GroupedRankingKeyFormat = "season:{0}:round:{1}:ranking-group";
+    public const string GroupRankingMemberKeyFormat = "group:{2}";
     public const string GroupKeyFormat = "season:{0}:round:{1}:group:{2}";
 
     private readonly IDatabase _redis;
@@ -53,19 +56,22 @@ public class GroupRankingRepository : IGroupRankingRepository
     )
     {
         string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+
+        string prevGroupRankingMemberKey = string.Format(GroupRankingMemberKeyFormat, prevScore);
+        string changedGroupRankingMemberKey = string.Format(GroupRankingMemberKeyFormat, nextScore);
 
         string changedGroupKey = string.Format(GroupKeyFormat, seasonId, roundId, nextScore);
         string prevGroupKey = string.Format(GroupKeyFormat, seasonId, roundId, prevScore);
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
 
         await _redis.HashDeleteAsync(prevGroupKey, participantKey);
         await _redis.HashSetAsync(changedGroupKey, participantKey, nextScore);
-        await _redis.SortedSetAddAsync(groupRankingKey, changedGroupKey, nextScore);
+        await _redis.SortedSetAddAsync(groupRankingKey, changedGroupRankingMemberKey, nextScore);
 
         bool isPrevGroupEmpty = await _redis.HashLengthAsync(prevGroupKey) == 0;
         if (isPrevGroupEmpty)
         {
-            await _redis.SortedSetRemoveAsync(groupRankingKey, prevGroupKey);
+            await _redis.SortedSetRemoveAsync(groupRankingKey, prevGroupRankingMemberKey);
         }
     }
 
@@ -120,7 +126,9 @@ public class GroupRankingRepository : IGroupRankingRepository
             int selectedGroupIndex = random.Next(groupKeys.Count());
             var selectedGroupKey = groupKeys[selectedGroupIndex];
 
-            var groupParticipants = await _redis.HashGetAllAsync(selectedGroupKey.ToString());
+            var groupParticipants = await _redis.HashGetAllAsync(
+                $"season:{seasonId}:round:{roundId}:" + selectedGroupKey.ToString()
+            );
 
             var filteredParticipants = groupParticipants
                 .Where(p => !p.Name.Equals(participantKey))
@@ -156,5 +164,40 @@ public class GroupRankingRepository : IGroupRankingRepository
         long max = Math.Min(totalRankings, (long)(adjustedRanking * maxMultiplier));
 
         return (min, max);
+    }
+
+    public async Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId)
+    {
+        string sourceGroupRankingKey = string.Format(
+            GroupedRankingKeyFormat,
+            seasonId,
+            sourceRoundId
+        );
+        string targetGroupRankingKey = string.Format(
+            GroupedRankingKeyFormat,
+            seasonId,
+            targetRoundId
+        );
+
+        await _redis.SortedSetCombineAndStoreAsync(
+            SetOperation.Union,
+            targetGroupRankingKey,
+            [sourceGroupRankingKey]
+        );
+
+        var sourceGroups = await _redis.SortedSetRangeByRankAsync(sourceGroupRankingKey);
+        foreach (var sourceGroup in sourceGroups)
+        {
+            var parts = sourceGroup.ToString().Split(":");
+            var score = int.Parse(parts[1]);
+            string sourceGroupKey = string.Format(GroupKeyFormat, seasonId, sourceRoundId, score);
+            string targetGroupKey = string.Format(GroupKeyFormat, seasonId, targetRoundId, score);
+
+            var groupParticipants = await _redis.HashGetAllAsync(sourceGroupKey);
+            if (groupParticipants.Length > 0)
+            {
+                await _redis.HashSetAsync(targetGroupKey, groupParticipants);
+            }
+        }
     }
 }

@@ -135,9 +135,10 @@ public class Startup
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IMedalRepository, MedalRepository>();
-        services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
         services.AddScoped<IClanRepository, ClanRepository>();
 
+        services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
+        services.AddScoped<IGroupRankingRepository, GroupRankingRepository>();
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 

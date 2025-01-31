@@ -175,8 +175,9 @@ def initialize_redis_group_ranking(redis_client, season_id, round_id):
                     for avatar_address, score in participants:
                         participant_key = f"participant:{avatar_address}"
                         group_key = f"season:{season_id}:round:{r}:group:{score}"
+                        group_member_key = f"group:{score}"
                         redis_client.hset(group_key, participant_key, score)
-                        redis_client.zadd(group_ranking_key, {group_key: float(score)})
+                        redis_client.zadd(group_ranking_key, {group_member_key: float(score)})
 
             print(f"✅ 그룹 랭킹 초기화 완료: 시즌 {season_id}, 라운드 {r}")
     except Exception as e:
