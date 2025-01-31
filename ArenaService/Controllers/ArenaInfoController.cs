@@ -15,25 +15,22 @@ public class ArenaInfoController : ControllerBase
 {
     private readonly IParticipantRepository _participantRepo;
     private readonly ITicketRepository _ticketRepo;
-    private readonly IBattleRepository _battleRepo;
     private readonly IRankingRepository _rankingRepo;
-    private readonly IAvailableOpponentRepository _availableOpponentRepo;
+    private readonly IClanRankingRepository _clanRankingRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public ArenaInfoController(
         IParticipantRepository participantRepo,
-        IBattleRepository battleRepo,
         ITicketRepository ticketRepo,
         IRankingRepository rankingRepo,
-        ISeasonCacheRepository seasonCacheRepo,
-        IAvailableOpponentRepository availableOpponentRepo
+        IClanRankingRepository clanRankingRepo,
+        ISeasonCacheRepository seasonCacheRepo
     )
     {
         _participantRepo = participantRepo;
-        _battleRepo = battleRepo;
         _ticketRepo = ticketRepo;
         _rankingRepo = rankingRepo;
-        _availableOpponentRepo = availableOpponentRepo;
+        _clanRankingRepo = clanRankingRepo;
         _seasonCacheRepo = seasonCacheRepo;
     }
 
@@ -59,11 +56,35 @@ public class ArenaInfoController : ControllerBase
                     .ThenInclude(s => s.BattleTicketPolicy)
                     .Include(p => p.Season)
                     .ThenInclude(s => s.RefreshTicketPolicy)
+                    .Include(p => p.User)
+                    .ThenInclude(u => u.Clan)
         );
 
         if (participant is null)
         {
             return NotFound("not found");
+        }
+
+        ClanResponse? myClanResponse = null;
+        if (participant.User.Clan is not null)
+        {
+            var myClanRank = await _clanRankingRepo.GetRankAsync(
+                participant.User.ClanId!.Value,
+                cachedSeason.Id,
+                cachedRound.Id
+            );
+            var myClanScore = await _clanRankingRepo.GetScoreAsync(
+                participant.User.ClanId!.Value,
+                cachedSeason.Id,
+                cachedRound.Id
+            );
+            myClanResponse = new ClanResponse
+            {
+                ImageURL = participant.User!.Clan!.ImageURL,
+                Name = participant.User!.Clan!.Name,
+                Rank = myClanRank,
+                Score = myClanScore,
+            };
         }
 
         var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
@@ -128,6 +149,7 @@ public class ArenaInfoController : ControllerBase
         {
             SeasonId = cachedSeason.Id,
             RoundId = cachedRound.Id,
+            ClanInfo = myClanResponse,
             User = participant.User.ToResponse(),
             Score = score,
             Rank = rank,
