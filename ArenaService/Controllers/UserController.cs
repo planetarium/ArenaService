@@ -101,7 +101,7 @@ public class UserController : ControllerBase
 
         var classifiedSeasons = await _seasonService.ClassifyByChampionship(blockIndex);
 
-        var medals = new Dictionary<int, int>();
+        var medals = new List<MedalResponse>();
         var totalMedalCount = 0;
         foreach (var season in classifiedSeasons)
         {
@@ -109,7 +109,13 @@ public class UserController : ControllerBase
             {
                 var medal = await _medalRepo.GetMedalAsync(season.Id, avatarAddress);
 
-                medals[season.Id] = medal is null ? 0 : medal.MedalCount;
+                medals.Add(
+                    new MedalResponse
+                    {
+                        SeasonId = season.Id,
+                        MedalCount = medal is null ? 0 : medal.MedalCount
+                    }
+                );
 
                 if (medal is not null)
                 {
