@@ -5,5 +5,5 @@ namespace ArenaService.Dtos;
 public class ClanLeaderboardResponse
 {
     public required List<ClanResponse> Leaderboard { get; set; }
-    public required ClanResponse MyClan { get; set; }
+    public ClanResponse? MyClan { get; set; }
 }

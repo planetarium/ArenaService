@@ -47,9 +47,30 @@ public class ClanController : ControllerBase
             return NotFound($"Not found {avatarAddress}");
         }
 
+        ClanResponse? myClanResponse = null;
         if (user.Clan is null)
         {
             return NotFound($"Not found clan");
+        }
+        else
+        {
+            var myClanRank = await _clanRankingRepository.GetRankAsync(
+                user.ClanId!.Value,
+                cachedSeason.Id,
+                cachedRound.Id
+            );
+            var myClanScore = await _clanRankingRepository.GetScoreAsync(
+                user.ClanId!.Value,
+                cachedSeason.Id,
+                cachedRound.Id
+            );
+            myClanResponse = new ClanResponse
+            {
+                ImageURL = user!.Clan!.ImageURL,
+                Name = user!.Clan!.Name,
+                Rank = myClanRank,
+                Score = myClanScore,
+            };
         }
 
         var clans = await _clanRankingRepository.GetTopClansAsync(
@@ -74,27 +95,10 @@ public class ClanController : ControllerBase
             );
         }
 
-        var myClanRank = await _clanRankingRepository.GetRankAsync(
-            user.ClanId!.Value,
-            cachedSeason.Id,
-            cachedRound.Id
-        );
-        var myClanScore = await _clanRankingRepository.GetScoreAsync(
-            user.ClanId!.Value,
-            cachedSeason.Id,
-            cachedRound.Id
-        );
-
         var response = new ClanLeaderboardResponse
         {
             Leaderboard = clanResponses,
-            MyClan = new ClanResponse
-            {
-                ImageURL = user!.Clan!.ImageURL,
-                Name = user!.Clan!.Name,
-                Rank = myClanRank,
-                Score = myClanScore,
-            }
+            MyClan = myClanResponse
         };
 
         return Ok(response);
