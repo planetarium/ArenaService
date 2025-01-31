@@ -5,12 +5,7 @@ using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
 using ArenaService.Services;
-using ArenaService.Worker;
-using Hangfire;
-using Libplanet.Crypto;
-using Libplanet.Types.Tx;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Swashbuckle.AspNetCore.Annotations;
@@ -25,7 +20,7 @@ public class AvailableOpponentController : ControllerBase
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IParticipateService _participateService;
     private readonly IRankingRepository _rankingRepo;
-    private readonly ISpecifyOpponentsService _specifyOpponentsService;
+    private readonly IRankingService _rankingService;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
@@ -33,7 +28,7 @@ public class AvailableOpponentController : ControllerBase
         ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
-        ISpecifyOpponentsService specifyOpponentsService,
+        IRankingService rankingService,
         IRankingRepository rankingRepo
     )
     {
@@ -42,7 +37,7 @@ public class AvailableOpponentController : ControllerBase
         _participantRepo = participantRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
-        _specifyOpponentsService = specifyOpponentsService;
+        _rankingService = rankingService;
         _rankingRepo = rankingRepo;
     }
 
@@ -166,7 +161,7 @@ public class AvailableOpponentController : ControllerBase
             return BadRequest("RemainingCount 0");
         }
 
-        var opponents = await _specifyOpponentsService.SpecifyOpponentsAsync(
+        var opponents = await _rankingService.SpecifyOpponentsAsync(
             avatarAddress,
             cachedSeason.Id,
             cachedRound.Id
