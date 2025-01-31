@@ -30,7 +30,7 @@ public class GroupRankingRepository : IGroupRankingRepository
 {
     public const string ParticipantKeyFormat = "participant:{0}";
     public const string GroupedRankingKeyFormat = "season:{0}:round:{1}:ranking-group";
-    public const string GroupRankingMemberKeyFormat = "group:{2}";
+    public const string GroupRankingMemberKeyFormat = "group:{0}";
     public const string GroupKeyFormat = "season:{0}:round:{1}:group:{2}";
 
     private readonly IDatabase _redis;
@@ -88,9 +88,10 @@ public class GroupRankingRepository : IGroupRankingRepository
             return new Dictionary<int, (Address AvatarAddress, int Score)?>();
         }
 
+        var groupKey = string.Format(GroupKeyFormat, seasonId, roundId, score);
         long? myRank = await _redis.SortedSetRankAsync(
             groupRankingKey,
-            string.Format(GroupKeyFormat, seasonId, roundId, score)
+            string.Format(GroupRankingMemberKeyFormat, score)
         );
 
         if (!myRank.HasValue)

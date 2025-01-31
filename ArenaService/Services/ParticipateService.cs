@@ -1,6 +1,7 @@
 namespace ArenaService.Services;
 
 using System.Threading.Tasks;
+using ArenaService.Exceptions;
 using ArenaService.Models;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
@@ -47,19 +48,24 @@ public class ParticipateService : IParticipateService
     )
     {
         includeQuery ??= q => q;
-        includeQuery = q => includeQuery(q).Include(p => p.User);
+        var finalQuery = (IQueryable<Participant> q) => includeQuery(q).Include(p => p.User);
 
         var existingParticipant = await _participantRepo.GetParticipantAsync(
             seasonId,
             avatarAddress,
-            includeQuery
+            finalQuery
         );
         if (existingParticipant is not null)
         {
             return existingParticipant;
         }
 
-        await _userRepo.GetUserAsync(avatarAddress);
+        var user = await _userRepo.GetUserAsync(avatarAddress);
+
+        if (user is null)
+        {
+            throw new NotRegisteredUserException("Register first");
+        }
 
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 

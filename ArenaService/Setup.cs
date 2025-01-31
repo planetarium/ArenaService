@@ -71,6 +71,7 @@ public class Startup
             .AddControllers(options =>
             {
                 options.Filters.Add<CacheExceptionFilter>();
+                options.Filters.Add<NotRegisteredUserExceptionFilter>();
             })
             .AddNewtonsoftJson(options =>
             {
