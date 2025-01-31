@@ -366,6 +366,7 @@ public class BattleProcessor
             battle.AvatarAddress,
             battle.SeasonId,
             battle.RoundId + 1,
+            battle.Participant.Score,
             myScoreChange,
             battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
         );
@@ -373,6 +374,7 @@ public class BattleProcessor
             battle.AvailableOpponent.AvatarAddress,
             battle.SeasonId,
             battle.RoundId + 1,
+            battle.AvailableOpponent.Opponent.Score,
             opponentScoreChange,
             battle.AvailableOpponent.Opponent.User.Clan is null
                 ? null

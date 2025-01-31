@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService", "ArenaServic
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.Tests", "ArenaService.Tests\ArenaService.Tests.csproj", "{850FC8A4-CA30-4D78-ADD6-679D66D5CDC9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.IntegrationTests", "ArenaService.IntegrationTests\ArenaService.IntegrationTests.csproj", "{FB711D4F-1AF8-4304-B45E-5E7D5D4C2AF9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -24,5 +26,9 @@ Global
 		{850FC8A4-CA30-4D78-ADD6-679D66D5CDC9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{850FC8A4-CA30-4D78-ADD6-679D66D5CDC9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{850FC8A4-CA30-4D78-ADD6-679D66D5CDC9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB711D4F-1AF8-4304-B45E-5E7D5D4C2AF9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB711D4F-1AF8-4304-B45E-5E7D5D4C2AF9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB711D4F-1AF8-4304-B45E-5E7D5D4C2AF9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB711D4F-1AF8-4304-B45E-5E7D5D4C2AF9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

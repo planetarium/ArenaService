@@ -145,7 +145,6 @@ public class Startup
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
-        services.AddScoped<ISpecifyOpponentsService, SpecifyOpponentsService>();
 
         services.AddCors(options =>
         {
