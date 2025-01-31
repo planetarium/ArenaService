@@ -48,11 +48,7 @@ public class ClanController : ControllerBase
         }
 
         ClanResponse? myClanResponse = null;
-        if (user.Clan is null)
-        {
-            return NotFound($"Not found clan");
-        }
-        else
+        if (user.Clan is not null)
         {
             var myClanRank = await _clanRankingRepository.GetRankAsync(
                 user.ClanId!.Value,
