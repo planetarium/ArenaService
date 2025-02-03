@@ -161,8 +161,12 @@ public class Startup
             {
                 var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
                 config.UseRedisStorage(
-                    $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.HangfireDbNumber}",
-                    new RedisStorageOptions { Prefix = redisOptions.HangfirePrefix }
+                    $"{redisOptions.Host}:{redisOptions.Port}",
+                    new RedisStorageOptions
+                    {
+                        Prefix = redisOptions.HangfirePrefix,
+                        Db = redisOptions.HangfireDbNumber
+                    }
                 );
             }
         );
@@ -186,11 +190,11 @@ public class Startup
         app.UseSwagger();
         app.UseSwaggerUI();
 
-        app.UseHttpsRedirection();
+        app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
+        app.UseHttpsRedirection();
         app.UseCors("AllowAllOrigins");
-        app.UseRouting();
         app.UseAuthorization();
 
         app.UseHangfireDashboard(

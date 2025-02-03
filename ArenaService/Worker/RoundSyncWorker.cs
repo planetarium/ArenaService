@@ -49,7 +49,7 @@ public class RoundSyncWorker : BackgroundService
                 break;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(4), stoppingToken);
         }
     }
 

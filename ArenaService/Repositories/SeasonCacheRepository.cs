@@ -64,7 +64,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         await _redis.StringSetAsync(
             $"{PREFIX}:{BlockIndexKey}",
             blockIndex.ToString(),
-            TimeSpan.FromMinutes(10)
+            TimeSpan.FromMinutes(1)
         );
     }
 

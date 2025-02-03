@@ -6,7 +6,6 @@ using Microsoft.EntityFrameworkCore;
 namespace ArenaService.Models;
 
 [Table("users")]
-[Index(nameof(AgentAddress), IsUnique = true)]
 public class User
 {
     [Key]
