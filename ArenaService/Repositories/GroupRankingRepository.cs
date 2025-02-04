@@ -13,7 +13,8 @@ public interface IGroupRankingRepository
         int seasonId,
         int roundId,
         int prevScore,
-        int scoreChange
+        int scoreChange,
+        int roundInterval
     );
 
     Task<Dictionary<int, (Address AvatarAddress, int Score)?>> SelectBattleOpponentsAsync(
@@ -61,7 +62,8 @@ public class GroupRankingRepository : IGroupRankingRepository
         int seasonId,
         int roundId,
         int prevScore,
-        int nextScore
+        int nextScore,
+        int roundInterval
     )
     {
         await InsureRankingStatus(seasonId, roundId);
@@ -77,6 +79,12 @@ public class GroupRankingRepository : IGroupRankingRepository
 
         await _redis.HashDeleteAsync(prevGroupKey, participantKey);
         await _redis.HashSetAsync(changedGroupKey, participantKey, nextScore);
+        await _redis.KeyExpireAsync(
+            changedGroupKey,
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
         await _redis.SortedSetAddAsync(groupRankingKey, changedGroupRankingMemberKey, nextScore);
 
         bool isPrevGroupEmpty = await _redis.HashLengthAsync(prevGroupKey) == 0;

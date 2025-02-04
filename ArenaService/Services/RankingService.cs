@@ -10,6 +10,7 @@ public interface IRankingService
         int roundId,
         int prevScore,
         int scoreChange,
+        int roundInterval,
         int? clanId
     );
 
@@ -43,6 +44,7 @@ public class RankingService : IRankingService
         int roundId,
         int prevScore,
         int scoreChange,
+        int roundInterval,
         int? clanId = null
     )
     {
@@ -52,7 +54,8 @@ public class RankingService : IRankingService
             seasonId,
             roundId,
             prevScore,
-            prevScore + scoreChange
+            prevScore + scoreChange,
+            roundInterval
         );
 
         if (clanId is not null)

@@ -368,18 +368,23 @@ public class BattleProcessor
             battle.RoundId + 1,
             battle.Participant.Score,
             myScoreChange,
+            battle.Season.RoundInterval,
             battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
         );
-        await _rankingService.UpdateScoreAsync(
-            battle.AvailableOpponent.AvatarAddress,
-            battle.SeasonId,
-            battle.RoundId + 1,
-            battle.AvailableOpponent.Opponent.Score,
-            opponentScoreChange,
-            battle.AvailableOpponent.Opponent.User.Clan is null
-                ? null
-                : battle.AvailableOpponent.Opponent.User.Clan.Id
-        );
+        if (opponentScoreChange != 0)
+        {
+            await _rankingService.UpdateScoreAsync(
+                battle.AvailableOpponent.AvatarAddress,
+                battle.SeasonId,
+                battle.RoundId + 1,
+                battle.AvailableOpponent.Opponent.Score,
+                opponentScoreChange,
+                battle.Season.RoundInterval,
+                battle.AvailableOpponent.Opponent.User.Clan is null
+                    ? null
+                    : battle.AvailableOpponent.Opponent.User.Clan.Id
+            );
+        }
 
         await _ticketRepo.UpdateBattleTicketStatusPerRound(
             battleTicketStatusPerRound,
