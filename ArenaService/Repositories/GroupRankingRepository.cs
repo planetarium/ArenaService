@@ -39,6 +39,7 @@ public class GroupRankingRepository : IGroupRankingRepository
     public const string GroupedRankingKeyFormat = "season:{0}:round:{1}:ranking-group";
     public const string GroupRankingMemberKeyFormat = "group:{0}";
     public const string GroupKeyFormat = "season:{0}:round:{1}:group:{2}";
+    public const string StatusKeyFormat = "season:{0}:round:{1}:ranking-group:status";
 
     private readonly IDatabase _redis;
 
@@ -62,6 +63,8 @@ public class GroupRankingRepository : IGroupRankingRepository
         int nextScore
     )
     {
+        await InsureRankingStatus(seasonId, roundId);
+
         string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
 
         string prevGroupRankingMemberKey = string.Format(GroupRankingMemberKeyFormat, prevScore);
@@ -86,6 +89,8 @@ public class GroupRankingRepository : IGroupRankingRepository
         Dictionary<int, (Address AvatarAddress, int Score)?>
     > SelectBattleOpponentsAsync(Address avatarAddress, int score, int seasonId, int roundId)
     {
+        await InsureRankingStatus(seasonId, roundId);
+
         string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
         string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
 
@@ -181,6 +186,8 @@ public class GroupRankingRepository : IGroupRankingRepository
         int roundInterval
     )
     {
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
+        await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
         string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
 
         foreach (var rankingEntry in rankingData)
@@ -209,6 +216,7 @@ public class GroupRankingRepository : IGroupRankingRepository
             await _redis.HashSetAsync(groupKey, participantKey, rankingEntry.Score);
             await _redis.KeyExpireAsync(groupKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
         }
+        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
     }
 
     public async Task CopyRoundDataAsync(
@@ -218,6 +226,9 @@ public class GroupRankingRepository : IGroupRankingRepository
         int roundInterval
     )
     {
+        string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundId);
+        await _redis.StringSetAsync(statusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
+
         string sourceGroupRankingKey = string.Format(
             GroupedRankingKeyFormat,
             seasonId,
@@ -256,6 +267,17 @@ public class GroupRankingRepository : IGroupRankingRepository
                     TimeSpan.FromSeconds(roundInterval * 10 * 2)
                 );
             }
+        }
+        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+    }
+
+    private async Task InsureRankingStatus(int seasonId, int roundId)
+    {
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
+        var rankingStatus = await _redis.StringGetAsync(statusKey);
+        if (rankingStatus != RankingStatus.DONE.ToString())
+        {
+            throw new CacheUnavailableException($"Ranking is {rankingStatus}");
         }
     }
 }

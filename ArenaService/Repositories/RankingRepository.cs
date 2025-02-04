@@ -30,7 +30,7 @@ public class RankingRepository : IRankingRepository
 {
     public const string RankingKeyFormat = "season:{0}:round:{1}:ranking";
     public const string ParticipantKeyFormat = "participant:{0}";
-    public const string StatusKey = "status:ranking";
+    public const string StatusKeyFormat = "season:{0}:round:{1}:ranking:status";
 
     private readonly IDatabase _redis;
 
@@ -46,7 +46,7 @@ public class RankingRepository : IRankingRepository
         int scoreChange
     )
     {
-        await InsureRankingStatus();
+        await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
         string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
@@ -56,6 +56,8 @@ public class RankingRepository : IRankingRepository
 
     public async Task<int> GetRankAsync(Address avatarAddress, int seasonId, int roundId)
     {
+        await InsureRankingStatus(seasonId, roundId);
+
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
         string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
 
@@ -82,6 +84,8 @@ public class RankingRepository : IRankingRepository
         int roundId
     )
     {
+        await InsureRankingStatus(seasonId, roundId);
+
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
 
         var scores = await _redis.SortedSetRangeByRankWithScoresAsync(rankingKey);
@@ -101,6 +105,8 @@ public class RankingRepository : IRankingRepository
 
     public async Task<int> GetScoreAsync(Address avatarAddress, int seasonId, int roundId)
     {
+        await InsureRankingStatus(seasonId, roundId);
+
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
         string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
 
@@ -117,7 +123,8 @@ public class RankingRepository : IRankingRepository
         int roundInterval
     )
     {
-        await _redis.StringSetAsync(StatusKey, RankingStatus.INITIALIZING.ToString());
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
+        await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
 
         foreach (var rankingEntry in rankingData)
@@ -130,7 +137,7 @@ public class RankingRepository : IRankingRepository
         }
 
         await _redis.KeyExpireAsync(rankingKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
-        await _redis.StringSetAsync(StatusKey, RankingStatus.DONE.ToString());
+        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
     }
 
     public async Task CopyRoundDataAsync(
@@ -140,19 +147,21 @@ public class RankingRepository : IRankingRepository
         int roundInterval
     )
     {
-        await _redis.StringSetAsync(StatusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
+        string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundId);
+        await _redis.StringSetAsync(statusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
 
         string sourceKey = string.Format(RankingKeyFormat, seasonId, sourceRoundId);
         string targetKey = string.Format(RankingKeyFormat, seasonId, targetRoundId);
 
         await _redis.SortedSetCombineAndStoreAsync(SetOperation.Union, targetKey, [sourceKey]);
         await _redis.KeyExpireAsync(targetKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
-        await _redis.StringSetAsync(StatusKey, RankingStatus.DONE.ToString());
+        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
     }
 
-    private async Task InsureRankingStatus()
+    private async Task InsureRankingStatus(int seasonId, int roundId)
     {
-        var rankingStatus = await _redis.StringGetAsync(StatusKey);
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
+        var rankingStatus = await _redis.StringGetAsync(statusKey);
         if (rankingStatus != RankingStatus.DONE.ToString())
         {
             throw new CacheUnavailableException($"Ranking is {rankingStatus}");
