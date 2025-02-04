@@ -36,12 +36,12 @@ public class AllCaseTests : BaseTest
 
         foreach (var (address, initialScore, _) in scores)
         {
-            await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, initialScore);
+            await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, initialScore, 100);
         }
 
         foreach (var (address, initialScore, newScore) in scores)
         {
-            await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore);
+            await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore, 100);
         }
 
         foreach (var (address, _, newScore) in scores)

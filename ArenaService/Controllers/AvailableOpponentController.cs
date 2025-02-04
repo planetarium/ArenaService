@@ -63,6 +63,7 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id,
             avatarAddress,
+            (int)(cachedRound.EndBlock - cachedRound.StartBlock),
             query => query.Include(p => p.User)
         );
 
@@ -131,6 +132,7 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id,
             avatarAddress,
+            (int)(cachedRound.EndBlock - cachedRound.StartBlock),
             query =>
                 query
                     .Include(p => p.User)

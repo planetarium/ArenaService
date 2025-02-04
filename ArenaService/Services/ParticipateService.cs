@@ -13,6 +13,7 @@ public interface IParticipateService
         int seasonId,
         int roundId,
         Address avatarAddress,
+        int roundInterval,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     );
 }
@@ -44,6 +45,7 @@ public class ParticipateService : IParticipateService
         int seasonId,
         int roundId,
         Address avatarAddress,
+        int roundInterval,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     )
     {
@@ -87,14 +89,16 @@ public class ParticipateService : IParticipateService
             seasonId,
             roundId,
             0,
-            participant.Score
+            participant.Score,
+            roundInterval
         );
         await _groupRankingRepo.UpdateScoreAsync(
             participant.AvatarAddress,
             seasonId,
             roundId + 1,
             0,
-            participant.Score
+            participant.Score,
+            roundInterval
         );
 
         if (participant.User.ClanId is not null)

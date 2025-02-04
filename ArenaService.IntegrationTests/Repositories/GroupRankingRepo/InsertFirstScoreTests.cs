@@ -33,7 +33,7 @@ public class InsertFirstScoreTests : BaseTest
             address.ToHex()
         );
 
-        await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, score);
+        await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, score, 100);
 
         var groupData = await Database.HashGetAsync(groupKey, participantKey);
         Assert.Equal(score.ToString(), groupData);

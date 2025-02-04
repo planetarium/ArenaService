@@ -36,9 +36,9 @@ public class RemoveEmptyGroupTests : BaseTest
             newScore
         );
 
-        await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, initialScore);
+        await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, initialScore, 100);
 
-        await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore);
+        await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore, 100);
 
         var groupData = await Database.HashGetAsync(
             groupKey1001,

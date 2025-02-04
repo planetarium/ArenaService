@@ -72,7 +72,8 @@ public class UserController : ControllerBase
             var participant = await _participateService.ParticipateAsync(
                 cachedSeason.Id,
                 cachedRound.Id,
-                avatarAddress
+                avatarAddress,
+                (int)(cachedRound.EndBlock - cachedRound.StartBlock)
             );
 
             return Created(locationUri, user.AvatarAddress);

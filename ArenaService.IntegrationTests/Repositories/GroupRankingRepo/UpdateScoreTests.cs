@@ -37,13 +37,13 @@ public class UpdateScoreTests : BaseTest
         foreach (var (address, initialScore, _) in scores)
         {
             // 초기 점수 설정
-            await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, initialScore);
+            await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, initialScore, 100);
         }
 
         foreach (var (address, initialScore, newScore) in scores)
         {
             // 점수 업데이트
-            await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore);
+            await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore, 100);
         }
 
         foreach (var (address, _, newScore) in scores)

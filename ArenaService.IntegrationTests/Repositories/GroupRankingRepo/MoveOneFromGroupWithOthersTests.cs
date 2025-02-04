@@ -33,11 +33,11 @@ public class MoveOneFromGroupWithOthersTests : BaseTest
             newScore
         );
 
-        await Repository.UpdateScoreAsync(address1, seasonId, roundId, 0, initialScore);
-        await Repository.UpdateScoreAsync(address2, seasonId, roundId, 0, initialScore);
-        await Repository.UpdateScoreAsync(address3, seasonId, roundId, 0, initialScore);
+        await Repository.UpdateScoreAsync(address1, seasonId, roundId, 0, initialScore, 100);
+        await Repository.UpdateScoreAsync(address2, seasonId, roundId, 0, initialScore, 100);
+        await Repository.UpdateScoreAsync(address3, seasonId, roundId, 0, initialScore, 100);
 
-        await Repository.UpdateScoreAsync(address3, seasonId, roundId, initialScore, newScore);
+        await Repository.UpdateScoreAsync(address3, seasonId, roundId, initialScore, newScore, 100);
 
         var groupData = await Database.HashGetAsync(
             groupKey1001,

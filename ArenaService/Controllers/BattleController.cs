@@ -63,6 +63,7 @@ public class BattleController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id,
             avatarAddress,
+            (int)(cachedRound.EndBlock - cachedRound.StartBlock),
             query =>
                 query
                     .Include(p => p.User)
