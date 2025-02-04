@@ -346,6 +346,15 @@ public class BattleProcessor
                 b.OpponentScoreChange = opponentScoreChange;
             }
         );
+        await _rankingService.UpdateScoreAsync(
+            battle.AvatarAddress,
+            battle.SeasonId,
+            battle.RoundId + 1,
+            battle.Participant.Score,
+            myScoreChange,
+            battle.Season.RoundInterval,
+            battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
+        );
         await _participantRepo.UpdateParticipantAsync(
             battle.Participant,
             p =>
@@ -361,15 +370,6 @@ public class BattleProcessor
             {
                 p.Score += opponentScoreChange;
             }
-        );
-        await _rankingService.UpdateScoreAsync(
-            battle.AvatarAddress,
-            battle.SeasonId,
-            battle.RoundId + 1,
-            battle.Participant.Score,
-            myScoreChange,
-            battle.Season.RoundInterval,
-            battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
         );
         if (opponentScoreChange != 0)
         {

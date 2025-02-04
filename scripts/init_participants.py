@@ -89,7 +89,7 @@ def insert_participants(season_id):
                     print("⚠️ 새로운 참가자가 없습니다.")
                     return
 
-                participants = [(u[0], season_id, random.randint(1000, 1200)) for u in users]
+                participants = [(u[0], season_id, 1000) for u in users]
 
                 cursor.executemany("""
                     INSERT INTO participants (avatar_address, season_id, initialized_score, score, total_win, total_lose, created_at, updated_at)
@@ -101,89 +101,6 @@ def insert_participants(season_id):
     except Exception as e:
         print(f"❌ 참가자 추가 중 오류 발생: {e}")
 
-def initialize_redis_participants(redis_client, season_id, round_id):
-    """ Redis에 참가자 초기화 (현재 라운드 + 다음 라운드) """
-    try:
-        rounds = [round_id, round_id + 1]
-
-        for r in rounds:
-            ranking_key = f"season:{season_id}:round:{r}:ranking"
-            redis_client.delete(ranking_key)
-
-            with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT avatar_address, score FROM participants
-                        WHERE season_id = %s
-                    """, (season_id,))
-                    participants = cursor.fetchall()
-
-                    for avatar_address, score in participants:
-                        participant_key = f"participant:{avatar_address}"
-                        redis_client.zadd(ranking_key, {participant_key: float(score)})
-
-            print(f"✅ Redis 참가자 랭킹 초기화 완료: 시즌 {season_id}, 라운드 {r}")
-    except Exception as e:
-        print(f"❌ 참가자 랭킹 초기화 오류: {e}")
-
-def initialize_clan_ranking(redis_client, season_id, round_id):
-    """ 클랜 랭킹 초기화 (현재 라운드 + 다음 라운드) """
-    try:
-        rounds = [round_id, round_id + 1]
-
-        for r in rounds:
-            clan_ranking_key = f"season:{season_id}:round:{r}:ranking-clan"
-            redis_client.delete(clan_ranking_key)
-
-            with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT u.clan_id, SUM(p.score)
-                        FROM users u
-                        JOIN participants p ON u.avatar_address = p.avatar_address
-                        WHERE u.clan_id IS NOT NULL AND p.season_id = %s
-                        GROUP BY u.clan_id
-                    """, (season_id,))
-                    clans = cursor.fetchall()
-
-                    for (clan_id, total_score) in clans:
-                        clan_key = f"clan:{clan_id}"
-                        redis_client.zadd(clan_ranking_key, {clan_key: float(total_score)})
-
-            print(f"✅ 클랜 랭킹 초기화 완료: 시즌 {season_id}, 라운드 {r}")
-    except Exception as e:
-        print(f"❌ 클랜 랭킹 초기화 오류: {e}")
-
-
-def initialize_redis_group_ranking(redis_client, season_id, round_id):
-    """ 그룹 랭킹 초기화 (현재 라운드 + 다음 라운드) """
-    try:
-        rounds = [round_id, round_id + 1]
-
-        for r in rounds:
-            group_ranking_key = f"season:{season_id}:round:{r}:ranking-group"
-            redis_client.delete(group_ranking_key)
-
-            with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
-                with conn.cursor() as cursor:
-                    cursor.execute("""
-                        SELECT avatar_address, score FROM participants
-                        WHERE season_id = %s
-                    """, (season_id,))
-                    participants = cursor.fetchall()
-
-                    for avatar_address, score in participants:
-                        participant_key = f"participant:{avatar_address}"
-                        group_key = f"season:{season_id}:round:{r}:group:{score}"
-                        group_member_key = f"group:{score}"
-                        redis_client.hset(group_key, participant_key, score)
-                        redis_client.zadd(group_ranking_key, {group_member_key: float(score)})
-
-            print(f"✅ 그룹 랭킹 초기화 완료: 시즌 {season_id}, 라운드 {r}")
-    except Exception as e:
-        print(f"❌ 그룹 랭킹 초기화 오류: {e}")
-
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="시즌 참가자 추가 및 Redis 초기화 스크립트")
     parser.add_argument("block_index", type=int, help="현재 블록 인덱스")
@@ -193,12 +110,5 @@ if __name__ == "__main__":
 
     if season_id and round_id:
         insert_participants(season_id)
-
-        host, port, db = parse_redis_config(REDIS_CONFIG)
-        redis_client = redis.StrictRedis(host=host, port=port, db=db, decode_responses=True)
-
-        initialize_redis_participants(redis_client, season_id, round_id)
-        initialize_clan_ranking(redis_client, season_id, round_id)
-        initialize_redis_group_ranking(redis_client, season_id, round_id)
     else:
         print("❌ 현재 블록 인덱스에 해당하는 시즌 및 라운드를 찾을 수 없습니다.")

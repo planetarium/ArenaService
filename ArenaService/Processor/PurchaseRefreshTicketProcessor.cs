@@ -141,6 +141,7 @@ public class PurchaseRefreshTicketProcessor
                     {
                         var requiredAmount = await CalcRequiredAmount(
                             season,
+                            purchaseLog.RoundId,
                             purchaseLog.AvatarAddress,
                             purchaseLog.PurchaseCount
                         );
@@ -262,6 +263,7 @@ public class PurchaseRefreshTicketProcessor
 
     private async Task<decimal> CalcRequiredAmount(
         Season season,
+        int roundId,
         Address avatarAddress,
         int purchaseCount
     )
@@ -269,7 +271,7 @@ public class PurchaseRefreshTicketProcessor
         var requiredAmount = 0m;
 
         var refreshTicketStatusPerRound = await _ticketRepo.GetRefreshTicketStatusPerRound(
-            season.Id,
+            roundId,
             avatarAddress
         );
         var purchasedCount = refreshTicketStatusPerRound is null

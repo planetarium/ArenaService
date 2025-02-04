@@ -113,13 +113,20 @@ public class TicketController : ControllerBase
     [SwaggerResponse(StatusCodes.Status201Created, "Purchase Log Id", typeof(int))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
+    [SwaggerResponse(StatusCodes.Status423Locked, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<IActionResult> PurchaseBattleTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
+        var cachedBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
+
+        if (cachedRound.EndBlock - 5 <= cachedBlockIndex)
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
 
         var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
             cachedSeason.Id,
@@ -192,8 +199,14 @@ public class TicketController : ControllerBase
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
+        var cachedBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
+
+        if (cachedRound.EndBlock - 5 <= cachedBlockIndex)
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
 
         var refreshTicketStatusPerRound = await _ticketRepo.GetRefreshTicketStatusPerRound(
             cachedRound.Id,
