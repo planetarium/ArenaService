@@ -81,10 +81,12 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
             query = includeQuery(query);
         }
 
-        return await query.SingleOrDefaultAsync(ao =>
+        return await query.FirstOrDefaultAsync(ao =>
             ao.RoundId == roundId
             && ao.AvatarAddress == avatarAddress
             && ao.OpponentAvatarAddress == opponentAvatarAddress
+            && ao.SuccessBattleId == null
+            && ao.DeletedAt == null
         );
     }
 

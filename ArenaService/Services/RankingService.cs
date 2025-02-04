@@ -82,12 +82,18 @@ public class RankingService : IRankingService
         {
             if (opponent.Value is null)
             {
-                for (int i = 1; i <= 4; i++)
+                for (int i = opponent.Key; i <= 4; i++)
                 {
                     var lowerGroupId = opponent.Key + i;
+                    var lowerGroupOpponents = await _groupRankingRepo.SelectBattleOpponentsAsync(
+                        avatarAddress,
+                        score,
+                        seasonId,
+                        roundId
+                    );
 
                     if (
-                        opponents.TryGetValue(lowerGroupId, out var lowerOpponent)
+                        lowerGroupOpponents.TryGetValue(lowerGroupId, out var lowerOpponent)
                         && lowerOpponent.HasValue
                     )
                     {
