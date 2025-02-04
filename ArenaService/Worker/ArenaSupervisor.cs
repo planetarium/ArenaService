@@ -226,10 +226,10 @@ public class ArenaSupervisor : BackgroundService
     {
         var cachedRound = await seasonCacheRepo.GetRoundAsync();
 
-        if (blockIndex >= cachedRound.EndBlock - 15)
+        if (blockIndex >= cachedRound.EndBlock - 2)
         {
-            // 라운드가 끝나기 15 블록 전에 다음 라운드 랭킹을 준비합니다.
-            var nextRoundInfo = await GetCurrentSeasonInfo(blockIndex + 16, seasonRepo);
+            // 라운드가 끝나기 2 블록 전에 다음 라운드 랭킹을 준비합니다.
+            var nextRoundInfo = await GetCurrentSeasonInfo(blockIndex + 3, seasonRepo);
             if (
                 !prepareRoundInProgress
                 && !prepareSeasonInProgress

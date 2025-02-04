@@ -43,14 +43,21 @@ public class BattleController : ControllerBase
     [HttpPost("token")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
+    [ProducesResponseType(StatusCodes.Status423Locked)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
     [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
     public async Task<IActionResult> CreateBattleToken(Address opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
+        var cachedBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
+
+        if (cachedRound.EndBlock - 3 <= cachedBlockIndex)
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
 
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
