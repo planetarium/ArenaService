@@ -82,24 +82,20 @@ public class RankingService : IRankingService
         {
             if (opponent.Value is null)
             {
-                var lowerGroupId = opponent.Key + 1;
-                var lowerGroupOpponents = await _groupRankingRepo.SelectBattleOpponentsAsync(
-                    avatarAddress,
-                    score,
-                    seasonId,
-                    roundId
-                );
+                for (int i = 1; i <= 4; i++)
+                {
+                    var lowerGroupId = opponent.Key + i;
 
-                if (
-                    lowerGroupOpponents.TryGetValue(lowerGroupId, out var lowerOpponent)
-                    && lowerOpponent.HasValue
-                )
-                {
-                    result.Add((lowerOpponent.Value.AvatarAddress, 3, lowerOpponent.Value.Score));
-                }
-                else
-                {
-                    result.Add((default, opponent.Key, 0));
+                    if (
+                        opponents.TryGetValue(lowerGroupId, out var lowerOpponent)
+                        && lowerOpponent.HasValue
+                    )
+                    {
+                        result.Add(
+                            (lowerOpponent.Value.AvatarAddress, 3, lowerOpponent.Value.Score)
+                        );
+                        break;
+                    }
                 }
             }
             else
