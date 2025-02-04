@@ -45,7 +45,17 @@ public class SeasonService : ISeasonService
             .OrderBy(s => s.StartBlock)
             .ToList();
 
-        var nextChampionship = championshipSeasons.FirstOrDefault(s => s.StartBlock > blockIndex);
+        Season? nextChampionship;
+        if (currentSeason.ArenaType == ArenaType.CHAMPIONSHIP)
+        {
+            nextChampionship = currentSeason;
+        }
+        else
+        {
+            nextChampionship = championshipSeasons.FirstOrDefault(s =>
+                s.StartBlock > blockIndex && s.EndBlock >= blockIndex
+            );
+        }
 
         if (nextChampionship == null)
         {
