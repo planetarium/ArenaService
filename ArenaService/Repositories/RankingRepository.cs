@@ -1,3 +1,4 @@
+using ArenaService.Constants;
 using ArenaService.Exceptions;
 using Humanizer;
 using Libplanet.Crypto;
@@ -11,29 +12,31 @@ public interface IRankingRepository
 
     Task<int> GetRankAsync(Address avatarAddress, int seasonId, int roundId);
 
+    Task<List<(Address AvatarAddress, int Score)>> GetScoresAsync(int seasonId, int roundId);
+
     Task<int> GetScoreAsync(Address avatarAddress, int seasonId, int roundId);
 
-    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId);
+    Task InitRankingAsync(
+        List<(Address AvatarAddress, int Score)> rankingData,
+        int seasonId,
+        int roundId,
+        int roundInterval
+    );
+
+    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId, int roundInterval);
 }
 
 public class RankingRepository : IRankingRepository
 {
     public const string RankingKeyFormat = "season:{0}:round:{1}:ranking";
     public const string ParticipantKeyFormat = "participant:{0}";
+    public const string StatusKey = "status:ranking";
 
     private readonly IDatabase _redis;
 
     public RankingRepository(IConnectionMultiplexer redis)
     {
         _redis = redis.GetDatabase();
-    }
-
-    public async Task AddScoreAsync(Address avatarAddress, int seasonId, int roundId, int score)
-    {
-        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
-
-        await _redis.SortedSetIncrementAsync(rankingKey, participantKey, score);
     }
 
     public async Task UpdateScoreAsync(
@@ -43,6 +46,8 @@ public class RankingRepository : IRankingRepository
         int scoreChange
     )
     {
+        await InsureRankingStatus();
+
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
         string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
 
@@ -72,6 +77,28 @@ public class RankingRepository : IRankingRepository
         return higherScoresCount;
     }
 
+    public async Task<List<(Address AvatarAddress, int Score)>> GetScoresAsync(
+        int seasonId,
+        int roundId
+    )
+    {
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+
+        var scores = await _redis.SortedSetRangeByRankWithScoresAsync(rankingKey);
+
+        return scores
+            .Select(
+                (entry) =>
+                {
+                    var parts = entry.Element.ToString().Split(':');
+                    var avatarAddress = new Address(parts[1]!);
+
+                    return (AvatarAddress: avatarAddress, Score: (int)entry.Score);
+                }
+            )
+            .ToList();
+    }
+
     public async Task<int> GetScoreAsync(Address avatarAddress, int seasonId, int roundId)
     {
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
@@ -83,11 +110,52 @@ public class RankingRepository : IRankingRepository
             : throw new NotRankedException($"Participant {avatarAddress} not found.");
     }
 
-    public async Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId)
+    public async Task InitRankingAsync(
+        List<(Address AvatarAddress, int Score)> rankingData,
+        int seasonId,
+        int roundId,
+        int roundInterval
+    )
     {
+        await _redis.StringSetAsync(StatusKey, RankingStatus.INITIALIZING.ToString());
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+
+        foreach (var rankingEntry in rankingData)
+        {
+            string participantKey = string.Format(
+                ParticipantKeyFormat,
+                rankingEntry.AvatarAddress.ToHex()
+            );
+            await _redis.SortedSetAddAsync(rankingKey, participantKey, rankingEntry.Score);
+        }
+
+        await _redis.KeyExpireAsync(rankingKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
+        await _redis.StringSetAsync(StatusKey, RankingStatus.DONE.ToString());
+    }
+
+    public async Task CopyRoundDataAsync(
+        int seasonId,
+        int sourceRoundId,
+        int targetRoundId,
+        int roundInterval
+    )
+    {
+        await _redis.StringSetAsync(StatusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
+
         string sourceKey = string.Format(RankingKeyFormat, seasonId, sourceRoundId);
         string targetKey = string.Format(RankingKeyFormat, seasonId, targetRoundId);
 
         await _redis.SortedSetCombineAndStoreAsync(SetOperation.Union, targetKey, [sourceKey]);
+        await _redis.KeyExpireAsync(targetKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
+        await _redis.StringSetAsync(StatusKey, RankingStatus.DONE.ToString());
+    }
+
+    private async Task InsureRankingStatus()
+    {
+        var rankingStatus = await _redis.StringGetAsync(StatusKey);
+        if (rankingStatus != RankingStatus.DONE.ToString())
+        {
+            throw new CacheUnavailableException($"Ranking is {rankingStatus}");
+        }
     }
 }

@@ -137,6 +137,7 @@ public class Startup
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IMedalRepository, MedalRepository>();
         services.AddScoped<IClanRepository, ClanRepository>();
+        services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
 
         services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
         services.AddScoped<IGroupRankingRepository, GroupRankingRepository>();
@@ -173,8 +174,8 @@ public class Startup
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
         services
-            .AddSingleton<RoundSyncWorker>()
-            .AddHostedService(provider => provider.GetRequiredService<RoundSyncWorker>());
+            .AddSingleton<ArenaSupervisor>()
+            .AddHostedService(provider => provider.GetRequiredService<ArenaSupervisor>());
 
         services.AddHangfireServer();
         services.AddHealthChecks();
@@ -195,7 +196,6 @@ public class Startup
         app.UseAuthorization();
         app.UseHttpsRedirection();
         app.UseCors("AllowAllOrigins");
-        app.UseAuthorization();
 
         app.UseHangfireDashboard(
             "/hangfire",

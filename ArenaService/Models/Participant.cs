@@ -7,6 +7,7 @@ namespace ArenaService.Models;
 
 [Table("participants")]
 [PrimaryKey(nameof(AvatarAddress), nameof(SeasonId))]
+[Index(nameof(SeasonId))]
 public class Participant
 {
     [Required]

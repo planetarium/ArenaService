@@ -4,10 +4,13 @@ using ArenaService.Constants;
 using ArenaService.Models.BattleTicket;
 using ArenaService.Models.RefreshTicket;
 using ArenaService.Models.Ticket;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Models;
 
 [Table("seasons")]
+[Index(nameof(StartBlock), nameof(EndBlock))]
+[Index(nameof(StartBlock))]
 public class Season
 {
     [Key]

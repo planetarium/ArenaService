@@ -61,11 +61,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
 
     public async Task SetBlockIndexAsync(long blockIndex)
     {
-        await _redis.StringSetAsync(
-            $"{PREFIX}:{BlockIndexKey}",
-            blockIndex.ToString(),
-            TimeSpan.FromMinutes(1)
-        );
+        await _redis.StringSetAsync($"{PREFIX}:{BlockIndexKey}", blockIndex.ToString());
     }
 
     public async Task SetSeasonAsync(int seasonId, long startBlock, long endBlock)
@@ -79,7 +75,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
 
         var json = JsonSerializer.Serialize(seasonData);
 
-        await _redis.StringSetAsync($"{PREFIX}:{SeasonKey}", json, TimeSpan.FromDays(31));
+        await _redis.StringSetAsync($"{PREFIX}:{SeasonKey}", json);
     }
 
     public async Task SetRoundAsync(int roundId, long startBlock, long endBlock)
@@ -93,7 +89,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
 
         var json = JsonSerializer.Serialize(roundData);
 
-        await _redis.StringSetAsync($"{PREFIX}:{RoundKey}", json, TimeSpan.FromHours(12));
+        await _redis.StringSetAsync($"{PREFIX}:{RoundKey}", json);
     }
 
     private class CachedSeason

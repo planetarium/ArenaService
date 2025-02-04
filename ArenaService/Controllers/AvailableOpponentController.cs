@@ -197,6 +197,11 @@ public class AvailableOpponentController : ControllerBase
                 opponent.AvatarAddress,
                 query => query.Include(p => p.User)
             );
+            var opponentRank = await _rankingRepo.GetScoreAsync(
+                opponentParticipant!.AvatarAddress,
+                cachedSeason.Id,
+                cachedRound.Id
+            );
 
             availableOpponentsResponses.Add(
                 new AvailableOpponentResponse
@@ -209,7 +214,7 @@ public class AvailableOpponentController : ControllerBase
                     SeasonId = opponentParticipant.SeasonId,
                     Score = opponent.Score,
                     GroupId = opponent.GroupId,
-                    Rank = opponent.Rank,
+                    Rank = opponentRank,
                     IsAttacked = false,
                     ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,
                     ScoreLossOnLose = OpponentGroupConstants.Groups[opponent.GroupId].LoseScore,

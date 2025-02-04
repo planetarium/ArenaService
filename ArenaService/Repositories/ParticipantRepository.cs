@@ -8,9 +8,14 @@ using Microsoft.EntityFrameworkCore;
 public interface IParticipantRepository
 {
     Task<Participant> AddParticipantAsync(int seasonId, Address avatarAddress);
+    Task AddParticipantsAsync(List<User> users, int seasonId);
     Task<Participant?> GetParticipantAsync(
         int seasonId,
         Address avatarAddress,
+        Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
+    );
+    Task<List<Participant>> GetParticipantsAsync(
+        int seasonId,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     );
     Task<Participant> UpdateParticipantAsync(
@@ -42,6 +47,37 @@ public class ParticipantRepository : IParticipantRepository
         return participant.Entity;
     }
 
+    public async Task AddParticipantsAsync(List<User> users, int seasonId)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
+        try
+        {
+            var participants = new List<Participant>();
+            foreach (var user in users)
+            {
+                var participant = new Participant
+                {
+                    SeasonId = seasonId,
+                    AvatarAddress = user.AvatarAddress,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                };
+
+                participants.Add(participant);
+            }
+
+            await _context.Participants.AddRangeAsync(participants);
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+
     public async Task<Participant?> GetParticipantAsync(
         int seasonId,
         Address avatarAddress,
@@ -58,6 +94,21 @@ public class ParticipantRepository : IParticipantRepository
         return await query.SingleOrDefaultAsync(p =>
             p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
         );
+    }
+
+    public async Task<List<Participant>> GetParticipantsAsync(
+        int seasonId,
+        Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
+    )
+    {
+        var query = _context.Participants.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.Where(p => p.SeasonId == seasonId).ToListAsync();
     }
 
     public async Task<Participant> UpdateParticipantAsync(

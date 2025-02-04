@@ -9,6 +9,12 @@ public interface ISeasonRepository
     Task<List<Season>> GetAllSeasonsAsync(
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
     );
+
+    Task<Season?> GetSeasonByBlockIndexAsync(
+        long blockIndex,
+        Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
+    );
+
     Task<Season> GetSeasonAsync(
         int id,
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
@@ -36,6 +42,23 @@ public class SeasonRepository : ISeasonRepository
         }
 
         return await query.OrderByDescending(s => s.StartBlock).ToListAsync();
+    }
+
+    public async Task<Season?> GetSeasonByBlockIndexAsync(
+        long blockIndex,
+        Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
+    )
+    {
+        var query = _context.Seasons.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query
+            .Where(s => s.StartBlock <= blockIndex && s.EndBlock >= blockIndex)
+            .SingleOrDefaultAsync();
     }
 
     public async Task<Season> GetSeasonAsync(

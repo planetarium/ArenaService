@@ -18,6 +18,8 @@ public class ArenaDbContext : DbContext
     public required DbSet<Round> Rounds { get; set; }
     public required DbSet<Medal> Medals { get; set; }
     public required DbSet<Participant> Participants { get; set; }
+    public required DbSet<RankingSnapshot> RankingSnapshots { get; set; }
+    public required DbSet<ClanRankingSnapshot> ClanRankingSnapshots { get; set; }
     public required DbSet<BattleTicketPolicy> BattleTicketPolicies { get; set; }
     public required DbSet<BattleTicketPurchaseLog> BattleTicketPurchaseLogs { get; set; }
     public required DbSet<BattleTicketUsageLog> BattleTicketUsageLogs { get; set; }

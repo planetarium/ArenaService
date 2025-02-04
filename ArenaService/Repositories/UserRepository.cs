@@ -29,6 +29,8 @@ public interface IUserRepository
         Address avatarAddress,
         Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
     );
+
+    Task<List<User>> GetAllUserAsync(Func<IQueryable<User>, IQueryable<User>>? includeQuery = null);
 }
 
 public class UserRepository : IUserRepository
@@ -81,6 +83,20 @@ public class UserRepository : IUserRepository
         }
 
         return await query.SingleOrDefaultAsync(u => u.AvatarAddress == avatarAddress);
+    }
+
+    public async Task<List<User>> GetAllUserAsync(
+        Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
+    )
+    {
+        var query = _context.Users.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.ToListAsync();
     }
 
     public async Task<User> AddUserAsync(

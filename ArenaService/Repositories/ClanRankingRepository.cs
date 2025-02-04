@@ -11,7 +11,16 @@ public interface IClanRankingRepository
 
     Task<int> GetScoreAsync(int clanId, int seasonId, int roundId);
 
-    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId);
+    Task<List<(int ClanId, int Score)>> GetScoresAsync(int seasonId, int roundId);
+
+    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId, int roundInterval);
+
+    Task InitRankingAsync(
+        List<(int ClanId, int Score)> rankingData,
+        int seasonId,
+        int roundId,
+        int roundInterval
+    );
 
     Task<List<(int ClanId, int Score, int Rank)>> GetTopClansAsync(
         int seasonId,
@@ -74,12 +83,56 @@ public class ClanRankingRepository : IClanRankingRepository
             : throw new NotRankedException($"Clan {clanId} not found.");
     }
 
-    public async Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId)
+    public async Task<List<(int ClanId, int Score)>> GetScoresAsync(int seasonId, int roundId)
+    {
+        string clanRankingKey = string.Format(ClanRankingKeyFormat, seasonId, roundId);
+
+        var scores = await _redis.SortedSetRangeByRankWithScoresAsync(clanRankingKey);
+
+        return scores
+            .Select(
+                (entry) =>
+                {
+                    var parts = entry.Element.ToString().Split(':');
+                    var clanId = int.Parse(parts[1]!);
+
+                    return (ClanId: clanId, Score: (int)entry.Score);
+                }
+            )
+            .ToList();
+    }
+
+    public async Task InitRankingAsync(
+        List<(int ClanId, int Score)> rankingData,
+        int seasonId,
+        int roundId,
+        int roundInterval
+    )
+    {
+        string clanRankingKey = string.Format(ClanRankingKeyFormat, seasonId, roundId);
+
+        foreach (var rankingEntry in rankingData)
+        {
+            string clanKey = string.Format(ClanKeyFormat, rankingEntry.ClanId);
+
+            await _redis.SortedSetIncrementAsync(clanRankingKey, clanKey, rankingEntry.Score);
+        }
+
+        await _redis.KeyExpireAsync(clanRankingKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
+    }
+
+    public async Task CopyRoundDataAsync(
+        int seasonId,
+        int sourceRoundId,
+        int targetRoundId,
+        int roundInterval
+    )
     {
         string sourceKey = string.Format(ClanRankingKeyFormat, seasonId, sourceRoundId);
         string targetKey = string.Format(ClanRankingKeyFormat, seasonId, targetRoundId);
 
         await _redis.SortedSetCombineAndStoreAsync(SetOperation.Union, targetKey, [sourceKey]);
+        await _redis.KeyExpireAsync(targetKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
     }
 
     public async Task<List<(int ClanId, int Score, int Rank)>> GetTopClansAsync(

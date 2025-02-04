@@ -7,6 +7,7 @@ namespace ArenaService.Models;
 
 [Table("medals")]
 [PrimaryKey(nameof(AvatarAddress), nameof(SeasonId))]
+[Index(nameof(MedalCount), nameof(SeasonId))]
 public class Medal
 {
     [Required]

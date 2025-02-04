@@ -13,13 +13,11 @@ public interface IRankingService
         int? clanId
     );
 
-    Task<List<(Address AvatarAddress, int GroupId, int Score, int Rank)>> SpecifyOpponentsAsync(
+    Task<List<(Address AvatarAddress, int GroupId, int Score)>> SpecifyOpponentsAsync(
         Address avatarAddress,
         int seasonId,
         int roundId
     );
-
-    Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId);
 }
 
 public class RankingService : IRankingService
@@ -63,9 +61,11 @@ public class RankingService : IRankingService
         }
     }
 
-    public async Task<
-        List<(Address AvatarAddress, int GroupId, int Score, int Rank)>
-    > SpecifyOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
+    public async Task<List<(Address AvatarAddress, int GroupId, int Score)>> SpecifyOpponentsAsync(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    )
     {
         var score = await _rankingRepo.GetScoreAsync(avatarAddress, seasonId, roundId);
 
@@ -76,7 +76,7 @@ public class RankingService : IRankingService
             roundId
         );
 
-        var result = new List<(Address AvatarAddress, int GroupId, int Score, int Rank)>();
+        var result = new List<(Address AvatarAddress, int GroupId, int Score)>();
 
         foreach (var opponent in opponents)
         {
@@ -95,45 +95,21 @@ public class RankingService : IRankingService
                     && lowerOpponent.HasValue
                 )
                 {
-                    result.Add(
-                        (
-                            lowerOpponent.Value.AvatarAddress,
-                            3,
-                            lowerOpponent.Value.Score,
-                            lowerGroupId
-                        )
-                    );
+                    result.Add((lowerOpponent.Value.AvatarAddress, 3, lowerOpponent.Value.Score));
                 }
                 else
                 {
-                    result.Add((default, opponent.Key, 0, opponent.Key));
+                    result.Add((default, opponent.Key, 0));
                 }
             }
             else
             {
                 result.Add(
-                    (
-                        opponent.Value.Value.AvatarAddress,
-                        opponent.Key,
-                        opponent.Value.Value.Score,
-                        opponent.Key
-                    )
+                    (opponent.Value.Value.AvatarAddress, opponent.Key, opponent.Value.Value.Score)
                 );
             }
         }
 
         return result;
-    }
-
-    public async Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId)
-    {
-        var copyTasks = new List<Task>
-        {
-            _rankingRepo.CopyRoundDataAsync(seasonId, sourceRoundId, targetRoundId),
-            _groupRankingRepo.CopyRoundDataAsync(seasonId, sourceRoundId, targetRoundId),
-            _clanRankingRepo.CopyRoundDataAsync(seasonId, sourceRoundId, targetRoundId)
-        };
-
-        await Task.WhenAll(copyTasks);
     }
 }
