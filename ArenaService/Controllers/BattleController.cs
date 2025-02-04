@@ -40,7 +40,7 @@ public class BattleController : ControllerBase
         _participateService = participateService;
     }
 
-    [HttpGet("token")]
+    [HttpPost("token")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status201Created)]
     [ProducesResponseType(typeof(UnauthorizedHttpResult), StatusCodes.Status401Unauthorized)]
