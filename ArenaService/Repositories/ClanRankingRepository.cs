@@ -121,13 +121,7 @@ public class ClanRankingRepository : IClanRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
-        await _redis.StringSetAsync(
-            statusKey,
-            RankingStatus.INITIALIZING.ToString(),
-            TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
-            )
-        );
+        await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
         string clanRankingKey = string.Format(ClanRankingKeyFormat, seasonId, roundId);
 
         foreach (var rankingEntry in rankingData)
@@ -143,7 +137,13 @@ public class ClanRankingRepository : IClanRankingRepository
                 roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
-        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.DONE.ToString(),
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
     }
 
     public async Task CopyRoundDataAsync(
@@ -154,13 +154,7 @@ public class ClanRankingRepository : IClanRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundId);
-        await _redis.StringSetAsync(
-            statusKey,
-            RankingStatus.COPYING_IN_PROGRESS.ToString(),
-            TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
-            )
-        );
+        await _redis.StringSetAsync(statusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
         string sourceKey = string.Format(ClanRankingKeyFormat, seasonId, sourceRoundId);
         string targetKey = string.Format(ClanRankingKeyFormat, seasonId, targetRoundId);
 
@@ -171,7 +165,13 @@ public class ClanRankingRepository : IClanRankingRepository
                 roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
-        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.DONE.ToString(),
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
     }
 
     public async Task<List<(int ClanId, int Score, int Rank)>> GetTopClansAsync(

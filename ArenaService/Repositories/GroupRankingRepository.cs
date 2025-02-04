@@ -188,13 +188,7 @@ public class GroupRankingRepository : IGroupRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
-        await _redis.StringSetAsync(
-            statusKey,
-            RankingStatus.INITIALIZING.ToString(),
-            TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
-            )
-        );
+        await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
         string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
 
         foreach (var rankingEntry in rankingData)
@@ -233,7 +227,13 @@ public class GroupRankingRepository : IGroupRankingRepository
                 )
             );
         }
-        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.DONE.ToString(),
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
     }
 
     public async Task CopyRoundDataAsync(
@@ -244,13 +244,7 @@ public class GroupRankingRepository : IGroupRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundId);
-        await _redis.StringSetAsync(
-            statusKey,
-            RankingStatus.COPYING_IN_PROGRESS.ToString(),
-            TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
-            )
-        );
+        await _redis.StringSetAsync(statusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
 
         string sourceGroupRankingKey = string.Format(
             GroupedRankingKeyFormat,
@@ -295,7 +289,13 @@ public class GroupRankingRepository : IGroupRankingRepository
                 );
             }
         }
-        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.DONE.ToString(),
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
     }
 
     private async Task InsureRankingStatus(int seasonId, int roundId)
