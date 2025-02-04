@@ -28,6 +28,7 @@ public interface IRankingRepository
 
 public class RankingRepository : IRankingRepository
 {
+    public const int CacheRoundCount = 3;
     public const string RankingKeyFormat = "season:{0}:round:{1}:ranking";
     public const string ParticipantKeyFormat = "participant:{0}";
     public const string StatusKeyFormat = "season:{0}:round:{1}:ranking:status";
@@ -124,7 +125,13 @@ public class RankingRepository : IRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
-        await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.INITIALIZING.ToString(),
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
 
         foreach (var rankingEntry in rankingData)
@@ -136,7 +143,12 @@ public class RankingRepository : IRankingRepository
             await _redis.SortedSetAddAsync(rankingKey, participantKey, rankingEntry.Score);
         }
 
-        await _redis.KeyExpireAsync(rankingKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
+        await _redis.KeyExpireAsync(
+            rankingKey,
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
         await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
     }
 
@@ -148,13 +160,24 @@ public class RankingRepository : IRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundId);
-        await _redis.StringSetAsync(statusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.COPYING_IN_PROGRESS.ToString(),
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
 
         string sourceKey = string.Format(RankingKeyFormat, seasonId, sourceRoundId);
         string targetKey = string.Format(RankingKeyFormat, seasonId, targetRoundId);
 
         await _redis.SortedSetCombineAndStoreAsync(SetOperation.Union, targetKey, [sourceKey]);
-        await _redis.KeyExpireAsync(targetKey, TimeSpan.FromSeconds(roundInterval * 10 * 2));
+        await _redis.KeyExpireAsync(
+            targetKey,
+            TimeSpan.FromSeconds(
+                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+            )
+        );
         await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
     }
 
