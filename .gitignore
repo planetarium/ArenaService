@@ -92,3 +92,4 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/rider,dotnetcore
 
 ArenaService/appsettings.Local.json
+ArenaService.IntegrationTests/**/*.received.*

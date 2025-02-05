@@ -1,3 +1,4 @@
+using ArenaService.Constants;
 using ArenaService.IntegrationTests.Fixtures;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
@@ -17,6 +18,9 @@ public class UpdateScoreTests : BaseTest
     {
         var seasonId = 1;
         var roundId = 1;
+
+        string statusKey = string.Format(GroupRankingRepository.StatusKeyFormat, seasonId, roundId);
+        await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
 
         string groupRankingKey = string.Format(
             GroupRankingRepository.GroupedRankingKeyFormat,
@@ -43,7 +47,14 @@ public class UpdateScoreTests : BaseTest
         foreach (var (address, initialScore, newScore) in scores)
         {
             // 점수 업데이트
-            await Repository.UpdateScoreAsync(address, seasonId, roundId, initialScore, newScore, 100);
+            await Repository.UpdateScoreAsync(
+                address,
+                seasonId,
+                roundId,
+                initialScore,
+                newScore,
+                100
+            );
         }
 
         foreach (var (address, _, newScore) in scores)
@@ -58,6 +69,10 @@ public class UpdateScoreTests : BaseTest
                 roundId,
                 newScore
             );
+            string memberKey = string.Format(
+                GroupRankingRepository.GroupRankingMemberKeyFormat,
+                newScore
+            );
 
             // 새 점수 그룹에 참가자 데이터가 정확히 저장되었는지 확인
             var groupData = await Database.HashGetAsync(groupKey, participantKey);
@@ -66,7 +81,7 @@ public class UpdateScoreTests : BaseTest
             // 새 점수 그룹이 랭킹에 정확히 반영되었는지 확인
             double? groupRankingScore = await Database.SortedSetScoreAsync(
                 groupRankingKey,
-                groupKey
+                memberKey
             );
             Assert.Equal(newScore, groupRankingScore);
 

@@ -17,7 +17,7 @@ def calculate_group_range(group_ranges, total_ranking, my_ranking):
 
 # 예제 데이터
 group_ranges = {
-    1: (0.2, 0.2),
+    1: (0.2, 0.4),
     2: (0.4, 0.8),
     3: (0.8, 1.2), 
     4: (1.2, 1.8),

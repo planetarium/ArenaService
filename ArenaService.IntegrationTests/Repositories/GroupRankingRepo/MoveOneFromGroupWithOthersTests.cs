@@ -1,3 +1,4 @@
+using ArenaService.Constants;
 using ArenaService.IntegrationTests.Fixtures;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
@@ -14,6 +15,10 @@ public class MoveOneFromGroupWithOthersTests : BaseTest
     {
         var seasonId = 1;
         var roundId = 1;
+        
+        string statusKey = string.Format(GroupRankingRepository.StatusKeyFormat, seasonId, roundId);
+        await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+
         var address1 = new Address(TestUtils.GetRandomBytes(Address.Size));
         var address2 = new Address(TestUtils.GetRandomBytes(Address.Size));
         var address3 = new Address(TestUtils.GetRandomBytes(Address.Size));

@@ -17,11 +17,17 @@ public interface IGroupRankingRepository
         int roundInterval
     );
 
-    Task<Dictionary<int, (Address AvatarAddress, int Score)?>> SelectBattleOpponentsAsync(
-        Address avatarAddress,
-        int score,
+    Task<Dictionary<int, (Address AvatarAddress, int Score)>> SelectBattleOpponentsAsync(
         int seasonId,
-        int roundId
+        int roundId,
+        Address avatarAddress,
+        int score
+    );
+
+    Task<Dictionary<int, (long Min, long Max)>> CalcGroupRankRange(
+        int seasonId,
+        int roundId,
+        long rank
     );
 
     Task InitRankingAsync(
@@ -42,6 +48,30 @@ public class GroupRankingRepository : IGroupRankingRepository
     public const string GroupRankingMemberKeyFormat = "group:{0}";
     public const string GroupKeyFormat = "season:{0}:round:{1}:group:{2}";
     public const string StatusKeyFormat = "season:{0}:round:{1}:ranking-group:status";
+
+    public readonly Dictionary<int, List<int>> FallbackGroups = new Dictionary<int, List<int>>
+    {
+        {
+            1,
+            new List<int> { 2, 3, 4, 5 }
+        },
+        {
+            2,
+            new List<int> { 3, 4, 5, 1 }
+        },
+        {
+            3,
+            new List<int> { 4, 5, 2, 1 }
+        },
+        {
+            4,
+            new List<int> { 5, 3, 2, 1 }
+        },
+        {
+            5,
+            new List<int> { 4, 3, 2, 1 }
+        },
+    };
 
     private readonly IDatabase _redis;
 
@@ -95,97 +125,205 @@ public class GroupRankingRepository : IGroupRankingRepository
     }
 
     public async Task<
-        Dictionary<int, (Address AvatarAddress, int Score)?>
-    > SelectBattleOpponentsAsync(Address avatarAddress, int score, int seasonId, int roundId)
+        Dictionary<int, (Address AvatarAddress, int Score)>
+    > SelectBattleOpponentsAsync(int seasonId, int roundId, Address avatarAddress, int score)
     {
         await InsureRankingStatus(seasonId, roundId);
 
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+        string myKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
         string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
 
-        long totalRankings = await _redis.SortedSetLengthAsync(groupRankingKey);
-        if (totalRankings == 0)
-        {
-            return new Dictionary<int, (Address AvatarAddress, int Score)?>();
-        }
+        var opponents = new Dictionary<int, (Address AvatarAddress, int Score)>();
+        var selectedAvatars = new HashSet<Address>();
+        var failedGroupIds = new List<int>();
 
-        var groupKey = string.Format(GroupKeyFormat, seasonId, roundId, score);
-        long? myRank = await _redis.SortedSetRankAsync(
+        long? myRankIndex = await _redis.SortedSetRankAsync(
             groupRankingKey,
-            string.Format(GroupRankingMemberKeyFormat, score)
+            string.Format(GroupRankingMemberKeyFormat, score),
+            Order.Descending
         );
 
-        if (!myRank.HasValue)
+        if (!myRankIndex.HasValue)
         {
-            throw new KeyNotFoundException("Current score group not found in ranking.");
+            throw new NotRankedException("Current score group not found in ranking.");
         }
-        myRank += 1;
 
-        var opponents = new Dictionary<int, (Address AvatarAddress, int Score)?>();
+        var adjustedRanking = myRankIndex + 1;
 
-        foreach (var (groupId, (minRange, maxRange, _, _)) in OpponentGroupConstants.Groups)
+        var groupRangeDict = await CalcGroupRankRange(seasonId, roundId, adjustedRanking.Value);
+
+        foreach (var (groupId, (minRange, maxRange)) in groupRangeDict)
         {
-            var (minRank, maxRank) = CalculateRange(
-                myRank.Value,
+            var foundOpponent = await TrySelectOpponentFromRanges(
+                groupRankingKey,
                 minRange,
                 maxRange,
-                totalRankings
+                selectedAvatars,
+                seasonId,
+                roundId,
+                myKey
             );
 
-            var groupKeys = await _redis.SortedSetRangeByRankAsync(
-                groupRankingKey,
-                totalRankings - maxRank,
-                totalRankings - minRank
-            );
-
-            if (!groupKeys.Any())
+            if (foundOpponent != null)
             {
-                opponents[groupId] = null;
-                continue;
+                opponents[groupId] = foundOpponent.Value;
+                selectedAvatars.Add(foundOpponent.Value.AvatarAddress);
             }
+            else
+            {
+                failedGroupIds.Add(groupId);
+            }
+        }
 
+        // 그룹이 나오지 않은 경우 그룹별로 정해져있는 fallback group에서 다시 탐색합니다.
+        foreach (var failedGroupId in failedGroupIds.ToList())
+        {
+            var fallbackGroupIds = FallbackGroups[failedGroupId];
+            foreach (var fallbackGroupId in fallbackGroupIds)
+            {
+                var (fallbackMin, fallbackMax) = groupRangeDict[fallbackGroupId];
+
+                var foundOpponent = await TrySelectOpponentFromRanges(
+                    groupRankingKey,
+                    fallbackMin,
+                    fallbackMax,
+                    selectedAvatars,
+                    seasonId,
+                    roundId,
+                    myKey
+                );
+
+                if (foundOpponent != null)
+                {
+                    opponents[failedGroupId] = foundOpponent.Value;
+                    selectedAvatars.Add(foundOpponent.Value.AvatarAddress);
+                    failedGroupIds.Remove(failedGroupId);
+                    break;
+                }
+            }
+        }
+
+        if (failedGroupIds.Any())
+        {
+            // fallback group에서도 찾지 못한 경우 등수를 낮춰 탐색합니다. (+30까지)
+            for (int i = 1; i <= 30; i++)
+            {
+                var nextRankGroupRangeDict = await CalcGroupRankRange(
+                    seasonId,
+                    roundId,
+                    adjustedRanking.Value + i
+                );
+
+                foreach (var failedGroupId in failedGroupIds.ToList())
+                {
+                    var (minRange, maxRange) = nextRankGroupRangeDict[failedGroupId];
+
+                    var foundOpponent = await TrySelectOpponentFromRanges(
+                        groupRankingKey,
+                        minRange,
+                        maxRange,
+                        selectedAvatars,
+                        seasonId,
+                        roundId,
+                        myKey
+                    );
+
+                    if (foundOpponent != null)
+                    {
+                        opponents[failedGroupId] = foundOpponent.Value;
+                        selectedAvatars.Add(foundOpponent.Value.AvatarAddress);
+                        failedGroupIds.Remove(failedGroupId);
+                    }
+                }
+
+                if (!failedGroupIds.Any())
+                {
+                    break;
+                }
+            }
+        }
+
+        return opponents;
+    }
+
+    private async Task<(Address AvatarAddress, int Score)?> TrySelectOpponentFromRanges(
+        string groupRankingKey,
+        long minRange,
+        long maxRange,
+        HashSet<Address> selectedAvatars,
+        int seasonId,
+        int roundId,
+        string myKey
+    )
+    {
+        var availableGroupKeys = (
+            await _redis.SortedSetRangeByRankAsync(
+                groupRankingKey,
+                minRange - 1,
+                maxRange - 1,
+                Order.Descending
+            )
+        ).ToList();
+
+        while (availableGroupKeys.Any())
+        {
             Random random = new Random();
-            int selectedGroupIndex = random.Next(groupKeys.Count());
-            var selectedGroupKey = groupKeys[selectedGroupIndex];
+            int selectedGroupIndex = random.Next(availableGroupKeys.Count);
+            var selectedGroupKey = availableGroupKeys[selectedGroupIndex];
 
             var groupParticipants = await _redis.HashGetAllAsync(
                 $"season:{seasonId}:round:{roundId}:{selectedGroupKey}"
             );
 
             var filteredParticipants = groupParticipants
-                .Where(p => !p.Name.Equals(participantKey))
+                .Where(p => !p.Name.Equals(myKey))
+                .Select(p =>
+                {
+                    var parts = p.ToString().Split(':');
+                    return (AvatarAddress: new Address(parts[1]), Score: int.Parse(p.Value!));
+                })
+                .Where(p => !selectedAvatars.Contains(p.AvatarAddress))
                 .ToArray();
 
-            if (!filteredParticipants.Any())
+            if (filteredParticipants.Any())
             {
-                opponents[groupId] = null;
-                continue;
+                int selectedParticipantIndex = random.Next(filteredParticipants.Length);
+                return filteredParticipants[selectedParticipantIndex];
             }
 
-            int selectedParticipantIndex = random.Next(filteredParticipants.Count());
-            var selectedParticipant = filteredParticipants[selectedParticipantIndex];
-
-            var parts = selectedParticipant.ToString().Split(':');
-
-            opponents[groupId] = (new Address(parts[1]), int.Parse(selectedParticipant.Value!));
+            availableGroupKeys.RemoveAt(selectedGroupIndex);
         }
 
-        return opponents;
+        return null;
     }
 
-    private static (long Min, long Max) CalculateRange(
-        long rank,
-        double minMultiplier,
-        double maxMultiplier,
-        long totalRankings
+    public async Task<Dictionary<int, (long Min, long Max)>> CalcGroupRankRange(
+        int seasonId,
+        int roundId,
+        long rank
     )
     {
-        var adjustedRanking = totalRankings - rank + 1;
+        await InsureRankingStatus(seasonId, roundId);
 
-        long min = Math.Max(1, (long)(adjustedRanking * minMultiplier));
-        long max = Math.Min(totalRankings, (long)(adjustedRanking * maxMultiplier));
+        string groupRankingKey = string.Format(GroupedRankingKeyFormat, seasonId, roundId);
 
-        return (min, max);
+        long totalRankings = await _redis.SortedSetLengthAsync(groupRankingKey);
+        if (totalRankings == 0)
+        {
+            throw new NotRankedException("TotalRankings is 0");
+        }
+
+        Dictionary<int, (long Min, long Max)> result = new Dictionary<int, (long Min, long Max)>();
+        foreach (var (groupId, (minRange, maxRange, _, _)) in OpponentGroupConstants.Groups)
+        {
+            long min = Math.Max(1, (long)Math.Ceiling(rank * minRange));
+            min = Math.Min(totalRankings, min);
+            long max = Math.Min(totalRankings, (long)Math.Ceiling(rank * maxRange));
+
+            result[groupId] = (min, max);
+        }
+
+        return result;
     }
 
     public async Task InitRankingAsync(

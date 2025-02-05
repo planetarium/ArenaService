@@ -35,7 +35,8 @@ public class Season
     public int TotalPrize { get; set; }
 
     [Required]
-    public required string PrizeDetailUrl { get; set; }
+    public string PrizeDetailUrl { get; set; } =
+        "https://discord.com/channels/539405872346955788/1027763804643262505";
 
     [Required]
     public int BattleTicketPolicyId { get; set; }
