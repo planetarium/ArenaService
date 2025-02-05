@@ -105,7 +105,7 @@ public class AvailableOpponentController : ControllerBase
             );
         }
 
-        return Ok(availableOpponentsResponses.OrderBy(ao => ao.Rank));
+        return Ok(availableOpponentsResponses.OrderBy(ao => ao.GroupId));
     }
 
     [HttpPost("refresh")]
@@ -245,6 +245,6 @@ public class AvailableOpponentController : ControllerBase
             );
         }
 
-        return Ok(availableOpponentsResponses.OrderBy(ao => ao.Rank));
+        return Ok(availableOpponentsResponses.OrderBy(ao => ao.GroupId));
     }
 }
