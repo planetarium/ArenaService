@@ -131,7 +131,7 @@ public class AvailableOpponentController : ControllerBase
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        if (cachedRound.EndBlock - ArenaServiceConfig.REQUEST_BLOCK_THRESHOLD <= cachedBlockIndex)
+        if (cachedRound.EndBlock - ArenaServiceConfig.USE_TICKET_BLOCK_THRESHOLD <= cachedBlockIndex)
         {
             return StatusCode(StatusCodes.Status423Locked);
         }
