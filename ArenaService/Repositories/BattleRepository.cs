@@ -25,6 +25,7 @@ public interface IBattleRepository
         Func<IQueryable<Battle>, IQueryable<Battle>>? includeQuery = null
     );
     Task<Battle?> GetBattleByTxId(TxId txId, int battleId);
+    Task<List<Battle>> GetInProgressBattles(Address avatarAddress, int seasonId, int roundId);
 }
 
 public class BattleRepository : IBattleRepository
@@ -104,5 +105,26 @@ public class BattleRepository : IBattleRepository
             b.TxId == txId && b.Id != battleId
         );
         return battle;
+    }
+
+    public async Task<List<Battle>> GetInProgressBattles(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    )
+    {
+        var battles = await _context
+            .Battles.Where(b =>
+                b.AvatarAddress == avatarAddress
+                && b.SeasonId == seasonId
+                && b.RoundId == roundId
+                && (
+                    b.BattleStatus == BattleStatus.TOKEN_ISSUED
+                    || b.BattleStatus == BattleStatus.TRACKING
+                )
+            )
+            .ToListAsync();
+
+        return battles;
     }
 }

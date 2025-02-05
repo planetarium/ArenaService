@@ -61,7 +61,19 @@ public class BattleController : ControllerBase
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        if (cachedRound.EndBlock - ArenaServiceConfig.USE_TICKET_BLOCK_THRESHOLD <= cachedBlockIndex)
+        if (
+            cachedRound.EndBlock - ArenaServiceConfig.USE_TICKET_BLOCK_THRESHOLD
+            <= cachedBlockIndex
+        )
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
+        var inProgressBattles = await _battleRepo.GetInProgressBattles(
+            avatarAddress,
+            cachedSeason.Id,
+            cachedRound.Id
+        );
+        if (inProgressBattles.Count > 0)
         {
             return StatusCode(StatusCodes.Status423Locked);
         }

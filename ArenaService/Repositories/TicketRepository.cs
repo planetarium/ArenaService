@@ -141,6 +141,18 @@ public interface ITicketRepository
         int battleTicketStatusPerSeasonId,
         int battleId
     );
+
+    Task<List<BattleTicketPurchaseLog>> GetInProgressBattleTicketPurchases(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    );
+
+    Task<List<RefreshTicketPurchaseLog>> GetInProgressRefreshTicketPurchases(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    );
 }
 
 public class TicketRepository : ITicketRepository
@@ -248,7 +260,7 @@ public class TicketRepository : ITicketRepository
         int? purchaseLogId
     )
     {
-        return await _context.BattleTicketPurchaseLogs.SingleOrDefaultAsync(btpl =>
+        return await _context.BattleTicketPurchaseLogs.FirstOrDefaultAsync(btpl =>
             btpl.TxId == txId && (purchaseLogId == null || btpl.Id != purchaseLogId)
         );
     }
@@ -258,7 +270,7 @@ public class TicketRepository : ITicketRepository
         int? purchaseLogId
     )
     {
-        return await _context.RefreshTicketPurchaseLogs.SingleOrDefaultAsync(rtpl =>
+        return await _context.RefreshTicketPurchaseLogs.FirstOrDefaultAsync(rtpl =>
             rtpl.TxId == txId && (purchaseLogId == null || rtpl.Id != purchaseLogId)
         );
     }
@@ -544,5 +556,47 @@ public class TicketRepository : ITicketRepository
         await _context.SaveChangesAsync();
 
         return battleTicketStatusPerSeason;
+    }
+
+    public async Task<List<BattleTicketPurchaseLog>> GetInProgressBattleTicketPurchases(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    )
+    {
+        var purchases = await _context
+            .BattleTicketPurchaseLogs.Where(b =>
+                b.AvatarAddress == avatarAddress
+                && b.SeasonId == seasonId
+                && b.RoundId == roundId
+                && (
+                    b.PurchaseStatus == PurchaseStatus.PENDING
+                    || b.PurchaseStatus == PurchaseStatus.TRACKING
+                )
+            )
+            .ToListAsync();
+
+        return purchases;
+    }
+
+    public async Task<List<RefreshTicketPurchaseLog>> GetInProgressRefreshTicketPurchases(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    )
+    {
+        var purchases = await _context
+            .RefreshTicketPurchaseLogs.Where(b =>
+                b.AvatarAddress == avatarAddress
+                && b.SeasonId == seasonId
+                && b.RoundId == roundId
+                && (
+                    b.PurchaseStatus == PurchaseStatus.PENDING
+                    || b.PurchaseStatus == PurchaseStatus.TRACKING
+                )
+            )
+            .ToListAsync();
+
+        return purchases;
     }
 }

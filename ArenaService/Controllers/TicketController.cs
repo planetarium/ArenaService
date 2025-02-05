@@ -132,6 +132,16 @@ public class TicketController : ControllerBase
             return StatusCode(StatusCodes.Status423Locked);
         }
 
+        var inProgressPurchases = await _ticketRepo.GetInProgressBattleTicketPurchases(
+            avatarAddress,
+            cachedSeason.Id,
+            cachedRound.Id
+        );
+        if (inProgressPurchases.Count > 0)
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
+
         var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
             cachedSeason.Id,
             avatarAddress
@@ -212,6 +222,16 @@ public class TicketController : ControllerBase
             cachedRound.EndBlock - ArenaServiceConfig.PURCHASE_TICKET_BLOCK_THRESHOLD
             <= cachedBlockIndex
         )
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
+
+        var inProgressPurchases = await _ticketRepo.GetInProgressRefreshTicketPurchases(
+            avatarAddress,
+            cachedSeason.Id,
+            cachedRound.Id
+        );
+        if (inProgressPurchases.Count > 0)
         {
             return StatusCode(StatusCodes.Status423Locked);
         }
