@@ -1,3 +1,4 @@
+using ArenaService.Constants;
 using ArenaService.IntegrationTests.Fixtures;
 using ArenaService.Repositories;
 using Libplanet.Crypto;
@@ -14,6 +15,10 @@ public class InsertFirstScoreTests : BaseTest
     {
         var seasonId = 1;
         var roundId = 1;
+
+        string statusKey = string.Format(GroupRankingRepository.StatusKeyFormat, seasonId, roundId);
+        await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
+
         var address = new Address(TestUtils.GetRandomBytes(Address.Size));
         var score = 1000;
 
@@ -32,13 +37,14 @@ public class InsertFirstScoreTests : BaseTest
             GroupRankingRepository.ParticipantKeyFormat,
             address.ToHex()
         );
+        string memberKey = string.Format(GroupRankingRepository.GroupRankingMemberKeyFormat, score);
 
         await Repository.UpdateScoreAsync(address, seasonId, roundId, 0, score, 100);
 
         var groupData = await Database.HashGetAsync(groupKey, participantKey);
         Assert.Equal(score.ToString(), groupData);
 
-        double? groupRankingScore = await Database.SortedSetScoreAsync(groupRankingKey, groupKey);
+        double? groupRankingScore = await Database.SortedSetScoreAsync(groupRankingKey, memberKey);
         Assert.Equal(score, groupRankingScore);
     }
 }
