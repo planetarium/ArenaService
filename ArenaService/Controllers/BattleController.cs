@@ -82,6 +82,10 @@ public class BattleController : ControllerBase
             cachedRound.Id,
             avatarAddress
         );
+        var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
+            cachedSeason.Id,
+            avatarAddress
+        );
 
         if (battleTicketStatusPerRound is null)
         {
@@ -94,6 +98,9 @@ public class BattleController : ControllerBase
                 0,
                 0
             );
+        }
+        if (battleTicketStatusPerSeason is null)
+        {
             await _ticketRepo.AddBattleTicketStatusPerSeason(
                 cachedSeason.Id,
                 avatarAddress,
