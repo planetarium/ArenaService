@@ -17,6 +17,9 @@ public class Season
     public int Id { get; set; }
 
     [Required]
+    public int SeasonGroupId { get; set; } = 0;
+
+    [Required]
     public long StartBlock { get; set; }
 
     [Required]
