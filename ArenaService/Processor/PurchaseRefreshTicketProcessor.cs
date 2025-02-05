@@ -300,7 +300,7 @@ public class PurchaseRefreshTicketProcessor
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
                 season.RefreshTicketPolicyId,
-                season.RefreshTicketPolicy.DefaultTicketsPerRound += purchaseLog.PurchaseCount,
+                season.RefreshTicketPolicy.DefaultTicketsPerRound + purchaseLog.PurchaseCount,
                 0,
                 purchaseLog.PurchaseCount
             );

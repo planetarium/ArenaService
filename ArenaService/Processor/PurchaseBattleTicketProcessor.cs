@@ -298,7 +298,7 @@ public class PurchaseBattleTicketProcessor
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
                 season.BattleTicketPolicyId,
-                season.BattleTicketPolicy.DefaultTicketsPerRound += purchaseLog.PurchaseCount,
+                season.BattleTicketPolicy.DefaultTicketsPerRound + purchaseLog.PurchaseCount,
                 0,
                 purchaseLog.PurchaseCount
             );
