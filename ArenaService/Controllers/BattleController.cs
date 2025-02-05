@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Constants;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
