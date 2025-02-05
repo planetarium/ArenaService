@@ -25,6 +25,10 @@ public interface IUserRepository
         int level
     );
 
+    Task<User> UpdateUserAsync(Address avatarAddress, Action<User> updateFields);
+
+    Task<User> UpdateUserAsync(User user, Action<User> updateFields);
+
     Task<User?> GetUserAsync(
         Address avatarAddress,
         Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
@@ -121,5 +125,29 @@ public class UserRepository : IUserRepository
         );
         _context.SaveChanges();
         return user.Entity;
+    }
+
+    public async Task<User> UpdateUserAsync(Address avatarAddress, Action<User> updateFields)
+    {
+        var user = await GetUserAsync(avatarAddress);
+
+        if (user is null)
+        {
+            throw new ArgumentException($"User not found for {avatarAddress}");
+        }
+
+        return await UpdateUserAsync(user, updateFields);
+    }
+
+    public async Task<User> UpdateUserAsync(User user, Action<User> updateFields)
+    {
+        updateFields(user);
+
+        user.UpdatedAt = DateTime.UtcNow;
+
+        _context.Users.Update(user);
+        await _context.SaveChangesAsync();
+
+        return user;
     }
 }

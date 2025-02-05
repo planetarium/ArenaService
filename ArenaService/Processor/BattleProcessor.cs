@@ -26,6 +26,7 @@ public class BattleProcessor
     private readonly ILogger<BattleProcessor> _logger;
     private readonly IHeadlessClient _client;
     private readonly IBattleRepository _battleRepo;
+    private readonly IUserRepository _userRepo;
     private readonly IRankingService _rankingService;
     private readonly IMedalRepository _medalRepo;
     private readonly IAvailableOpponentRepository _availableOpponentRepo;
@@ -37,6 +38,7 @@ public class BattleProcessor
         ILogger<BattleProcessor> logger,
         IHeadlessClient client,
         IBattleRepository battleRepo,
+        IUserRepository userRepo,
         IRankingService rankingService,
         IMedalRepository medalRepo,
         IAvailableOpponentRepository availableOpponentRepo,
@@ -49,6 +51,7 @@ public class BattleProcessor
         _logger = logger;
         _client = client;
         _battleRepo = battleRepo;
+        _userRepo = userRepo;
         _rankingService = rankingService;
         _ticketRepo = ticketRepo;
         _medalRepo = medalRepo;
@@ -416,6 +419,16 @@ public class BattleProcessor
                 ao.SuccessBattleId = battle.Id;
             }
         );
+        await _userRepo.UpdateUserAsync(
+            battle.Participant.User,
+            u =>
+            {
+                u.PortraitId = battleResult.PortraitId;
+                u.Cp = battleResult.Cp;
+                u.Level = battleResult.Level;
+            }
+        );
+
         if (battle.Season.ArenaType == ArenaType.SEASON && battleResult.IsVictory)
         {
             var medal = await _medalRepo.GetMedalAsync(battle.SeasonId, battle.AvatarAddress);
