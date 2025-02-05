@@ -331,7 +331,6 @@ public class BattleProcessor
     )
     {
         var scoreDict = OpponentGroupConstants.Groups[battle.AvailableOpponent.GroupId];
-        battleResult.IsVictory = true;
 
         var myScoreChange = battleResult.IsVictory ? scoreDict.WinScore : scoreDict.LoseScore;
         var opponentScoreChange = battleResult.IsVictory ? -1 : 0;
