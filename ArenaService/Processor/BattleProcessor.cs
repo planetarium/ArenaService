@@ -331,6 +331,7 @@ public class BattleProcessor
     )
     {
         var scoreDict = OpponentGroupConstants.Groups[battle.AvailableOpponent.GroupId];
+        battleResult.IsVictory = true;
 
         var myScoreChange = battleResult.IsVictory ? scoreDict.WinScore : scoreDict.LoseScore;
         var opponentScoreChange = battleResult.IsVictory ? -1 : 0;
@@ -357,7 +358,7 @@ public class BattleProcessor
         if (opponentScoreChange != 0)
         {
             await _rankingService.UpdateScoreAsync(
-                battle.AvailableOpponent.AvatarAddress,
+                battle.AvailableOpponent.OpponentAvatarAddress,
                 battle.SeasonId,
                 battle.RoundId + 1,
                 battle.AvailableOpponent.Opponent.Score,

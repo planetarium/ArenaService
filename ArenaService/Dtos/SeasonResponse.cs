@@ -7,6 +7,7 @@ namespace ArenaService.Dtos;
 public class SeasonResponse
 {
     public required int Id { get; set; }
+    public required int SeasonGroupId { get; set; }
 
     [JsonConverter(typeof(StringEnumConverter))]
     public required ArenaType ArenaType { get; set; }

@@ -10,6 +10,7 @@ public static class SeasonExtensions
         return new SeasonResponse
         {
             Id = season.Id,
+            SeasonGroupId = season.Id,
             StartBlockIndex = season.StartBlock,
             EndBlockIndex = season.EndBlock,
             ArenaType = season.ArenaType,

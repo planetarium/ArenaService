@@ -1,4 +1,7 @@
 id,round,arena_type,start_block_index,end_block_index,required_medal_count,entrance_fee,ticket_price,additional_ticket_price,max_purchase_count,max_purchase_count_during_interval,medal_id
+0,1,Championship,1,77629,0,0,5,2,40,8,0
+0,2,OffSeason,1,77629,0,0,5,2,40,8,0
+0,3,Season,1,77629,0,0,5,2,40,8,0
 0,4,OffSeason,1,77629,0,0,5,2,40,8,0
 0,5,Season,77630,228829,0,1,50,20,40,8,700002
 0,6,OffSeason,228830,455629,0,0,5,2,40,8,0
