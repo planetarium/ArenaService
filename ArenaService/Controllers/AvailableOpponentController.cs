@@ -2,6 +2,7 @@ namespace ArenaService.Controllers;
 
 using ArenaService.Constants;
 using ArenaService.Dtos;
+using ArenaService.Exceptions;
 using ArenaService.Extensions;
 using ArenaService.Repositories;
 using ArenaService.Services;
@@ -20,7 +21,7 @@ public class AvailableOpponentController : ControllerBase
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IParticipateService _participateService;
     private readonly IRankingRepository _rankingRepo;
-    private readonly IRankingService _rankingService;
+    private readonly IGroupRankingRepository _groupRankingRepo;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
@@ -28,7 +29,7 @@ public class AvailableOpponentController : ControllerBase
         ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
-        IRankingService rankingService,
+        IGroupRankingRepository groupRankingRepo,
         IRankingRepository rankingRepo
     )
     {
@@ -37,7 +38,7 @@ public class AvailableOpponentController : ControllerBase
         _participantRepo = participantRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
-        _rankingService = rankingService;
+        _groupRankingRepo = groupRankingRepo;
         _rankingRepo = rankingRepo;
     }
 
@@ -170,17 +171,28 @@ public class AvailableOpponentController : ControllerBase
             return BadRequest("RemainingCount 0");
         }
 
-        var opponents = await _rankingService.SpecifyOpponentsAsync(
+        var myScore = await _rankingRepo.GetScoreAsync(
             avatarAddress,
             cachedSeason.Id,
             cachedRound.Id
         );
+        var opponents = await _groupRankingRepo.SelectBattleOpponentsAsync(
+            cachedSeason.Id,
+            cachedRound.Id,
+            avatarAddress,
+            myScore
+        );
+
+        if (opponents.Count != 5)
+        {
+            throw new CalcAOFailedException($"AO Count is {opponents.Count}");
+        }
 
         var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
             cachedSeason.Id,
             cachedRound.Id,
             avatarAddress,
-            opponents.Select(o => (o.AvatarAddress, o.GroupId)).ToList()
+            opponents.Select(o => (o.Value.AvatarAddress, o.Key)).ToList()
         );
 
         await _ticketRepo.UpdateRefreshTicketStatusPerRound(
@@ -199,7 +211,7 @@ public class AvailableOpponentController : ControllerBase
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
 
-        foreach (var opponent in opponents)
+        foreach (var (groupId, opponent) in opponents)
         {
             var opponentParticipant = await _participantRepo.GetParticipantAsync(
                 cachedSeason.Id,
@@ -222,11 +234,11 @@ public class AvailableOpponentController : ControllerBase
                     Level = opponentParticipant.User.Level,
                     SeasonId = opponentParticipant.SeasonId,
                     Score = opponent.Score,
-                    GroupId = opponent.GroupId,
+                    GroupId = groupId,
                     Rank = opponentRank,
                     IsAttacked = false,
-                    ScoreGainOnWin = OpponentGroupConstants.Groups[opponent.GroupId].WinScore,
-                    ScoreLossOnLose = OpponentGroupConstants.Groups[opponent.GroupId].LoseScore,
+                    ScoreGainOnWin = OpponentGroupConstants.Groups[groupId].WinScore,
+                    ScoreLossOnLose = OpponentGroupConstants.Groups[groupId].LoseScore,
                     IsVictory = null,
                     ClanInfo = null
                 }
