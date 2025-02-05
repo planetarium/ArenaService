@@ -19,7 +19,7 @@ public static class SeasonExtensions
             BattleTicketPolicy = season.BattleTicketPolicy.ToResponse(),
             RefreshTicketPolicy = season.RefreshTicketPolicy.ToResponse(),
             TotalPrize = season.TotalPrize,
-            PrizeDetailSiteURL = "https://github.com/orgs/planetarium/projects/97/views/12",
+            PrizeDetailSiteURL = season.PrizeDetailUrl,
             Rounds = season.Rounds.OrderBy(r => r.StartBlock).Select(r => r.ToResponse()).ToList(),
         };
     }
