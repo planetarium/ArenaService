@@ -6,6 +6,7 @@ using ArenaService.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.Annotations;
 
 [Route("clans")]
 [ApiController]
@@ -31,8 +32,11 @@ public class ClanController : ControllerBase
 
     [HttpGet("leaderboard")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(ClanLeaderboardResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [SwaggerResponse(
+        StatusCodes.Status200OK,
+        "ClanLeaderboardResponse",
+        typeof(ClanLeaderboardResponse)
+    )]
     public async Task<ActionResult<ClanLeaderboardResponse>> GetClanLeaderboard()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -42,13 +46,8 @@ public class ClanController : ControllerBase
 
         var user = await _userRepo.GetUserAsync(avatarAddress, q => q.Include(u => u.Clan));
 
-        if (user is null)
-        {
-            return NotFound($"Not found {avatarAddress}");
-        }
-
         ClanResponse? myClanResponse = null;
-        if (user.Clan is not null)
+        if (user is not null & user!.Clan is not null)
         {
             var myClanRank = await _clanRankingRepository.GetRankAsync(
                 user.ClanId!.Value,

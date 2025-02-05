@@ -157,8 +157,12 @@ public class ArenaInfoController : ControllerBase
             CurrentRoundRankChange = nextRank - rank,
             TotalWin = participant.TotalWin,
             TotalLose = participant.TotalLose,
-            CurrentRoundWinChange = 0,
-            CurrentRoundLoseChange = 0,
+            CurrentRoundWinChange = battleTicketStatusPerRound is null
+                ? 0
+                : battleTicketStatusPerRound.WinCount,
+            CurrentRoundLoseChange = battleTicketStatusPerRound is null
+                ? 0
+                : battleTicketStatusPerRound.LoseCount,
             BattleTicketStatus = battleTicketStatus,
             RefreshTicketStatus = refreshTicketStatus
         };

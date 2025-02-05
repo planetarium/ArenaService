@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Swashbuckle.AspNetCore.Annotations;
 
 [Route("seasons")]
 [ApiController]
@@ -32,8 +33,8 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet("by-block/{blockIndex}")]
-    [ProducesResponseType(typeof(SeasonResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [SwaggerResponse(StatusCodes.Status200OK, "SeasonResponse", typeof(SeasonResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     public async Task<IActionResult> GetSeasonByBlock(long blockIndex)
     {
         var seasons = await _seasonRepo.GetAllSeasonsAsync();
@@ -50,7 +51,7 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet("classify-by-championship/{blockIndex}")]
-    [ProducesResponseType(typeof(SeasonsResponse), StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status200OK, "SeasonResponse", typeof(SeasonsResponse))]
     public async Task<IActionResult> GetSeasons(long blockIndex)
     {
         var classifiedSeasons = await _seasonService.ClassifyByChampionship(

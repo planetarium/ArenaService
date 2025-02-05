@@ -195,6 +195,7 @@ public class TicketController : ControllerBase
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status201Created, "Purchase Log Id", typeof(int))]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
+    [SwaggerResponse(StatusCodes.Status423Locked, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<IActionResult> PurchaseRefreshTicket([FromBody] PurchaseTicketRequest request)
     {

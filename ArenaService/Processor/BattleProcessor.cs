@@ -194,12 +194,12 @@ public class BattleProcessor
                     }
                     else
                     {
-                        var isVictory = await GetBattleResultState(battle, battle.TxId.Value);
+                        var battleResult = await GetBattleResultState(battle, battle.TxId.Value);
                         await UpdateModels(
                             battle,
                             battleTicketStatusPerRound,
                             battleTicketStatusPerSeason,
-                            isVictory
+                            battleResult
                         );
                         processResult = "success";
                     }
@@ -290,7 +290,7 @@ public class BattleProcessor
         return true;
     }
 
-    private async Task<bool> GetBattleResultState(Battle battle, TxId txId)
+    private async Task<BattleResultState> GetBattleResultState(Battle battle, TxId txId)
     {
         var accountAddress = BattleAccountAddress.Derive(_arenaProviderName);
         var stateAddress = battle.AvailableOpponent.AvatarAddress.Derive(txId.ToString());
@@ -318,29 +318,28 @@ public class BattleProcessor
                 _logger.LogDebug($"Retry attempt {attempt}: State is null, retrying...");
             }
         );
+        var battleResult = new BattleResultState(state!);
 
-        var isVictory = (Integer)state == 1;
-
-        return isVictory;
+        return battleResult;
     }
 
     private async Task UpdateModels(
         Battle battle,
         BattleTicketStatusPerRound battleTicketStatusPerRound,
         BattleTicketStatusPerSeason battleTicketStatusPerSeason,
-        bool isVictory
+        BattleResultState battleResult
     )
     {
         var scoreDict = OpponentGroupConstants.Groups[battle.AvailableOpponent.GroupId];
 
-        var myScoreChange = isVictory ? scoreDict.WinScore : scoreDict.LoseScore;
-        var opponentScoreChange = isVictory ? -1 : 0;
+        var myScoreChange = battleResult.IsVictory ? scoreDict.WinScore : scoreDict.LoseScore;
+        var opponentScoreChange = battleResult.IsVictory ? -1 : 0;
 
         await _battleRepo.UpdateBattle(
             battle,
             b =>
             {
-                b.IsVictory = isVictory;
+                b.IsVictory = battleResult.IsVictory;
                 b.BattleStatus = BattleStatus.SUCCESS;
                 b.MyScoreChange = myScoreChange;
                 b.OpponentScoreChange = opponentScoreChange;
@@ -374,8 +373,8 @@ public class BattleProcessor
             p =>
             {
                 p.Score += myScoreChange;
-                p.TotalWin += isVictory ? 1 : 0;
-                p.TotalLose += isVictory ? 0 : 1;
+                p.TotalWin += battleResult.IsVictory ? 1 : 0;
+                p.TotalLose += battleResult.IsVictory ? 0 : 1;
             }
         );
         await _participantRepo.UpdateParticipantAsync(
@@ -392,6 +391,8 @@ public class BattleProcessor
             {
                 rts.RemainingCount -= 1;
                 rts.UsedCount += 1;
+                rts.WinCount += battleResult.IsVictory ? 1 : 0;
+                rts.LoseCount += battleResult.IsVictory ? 0 : 1;
             }
         );
         await _ticketRepo.UpdateBattleTicketStatusPerSeason(
@@ -415,7 +416,7 @@ public class BattleProcessor
                 ao.SuccessBattleId = battle.Id;
             }
         );
-        if (battle.Season.ArenaType == ArenaType.SEASON && isVictory)
+        if (battle.Season.ArenaType == ArenaType.SEASON && battleResult.IsVictory)
         {
             var medal = await _medalRepo.GetMedalAsync(battle.SeasonId, battle.AvatarAddress);
             if (medal is null)

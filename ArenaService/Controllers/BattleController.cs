@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Swashbuckle.AspNetCore.Annotations;
 
 [Route("battle")]
 [ApiController]
@@ -43,10 +44,15 @@ public class BattleController : ControllerBase
 
     [HttpPost("token")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(BattleTokenResponse), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status423Locked)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status503ServiceUnavailable)]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(
+        StatusCodes.Status201Created,
+        "BattleTokenResponse",
+        typeof(BattleTokenResponse)
+    )]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
     public async Task<IActionResult> CreateBattleToken(Address opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -130,10 +136,11 @@ public class BattleController : ControllerBase
 
     [HttpPost("{battleId}/request")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Ok")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     public async Task<IActionResult> RequestBattle(int battleId, [FromBody] BattleRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -165,10 +172,11 @@ public class BattleController : ControllerBase
 
     [HttpGet("{battleId}")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(BattleResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(StatusCodes.Status403Forbidden)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [SwaggerOperation(Summary = "", Description = "")]
+    [SwaggerResponse(StatusCodes.Status200OK, "BattleResponse", typeof(BattleResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     public async Task<IActionResult> GetBattle(int battleId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();

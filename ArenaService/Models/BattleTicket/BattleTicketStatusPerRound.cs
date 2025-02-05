@@ -24,4 +24,8 @@ public class BattleTicketStatusPerRound : TicketStatus
 
     [Required]
     public int RemainingCount { get; set; }
+
+    public int WinCount { get; set; } = 0;
+
+    public int LoseCount { get; set; } = 0;
 }

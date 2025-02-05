@@ -8,6 +8,7 @@ using ArenaService.Services;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Swashbuckle.AspNetCore.Annotations;
 
 [Route("users")]
 [ApiController]
@@ -39,9 +40,9 @@ public class UserController : ControllerBase
 
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(string), StatusCodes.Status201Created)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
+    [SwaggerResponse(StatusCodes.Status201Created, "Ok")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Status409Conflict")]
     public async Task<ActionResult<string>> Register(
         [FromBody] UserRegisterRequest userRegisterRequest
     )
@@ -84,8 +85,8 @@ public class UserController : ControllerBase
 
     [HttpGet("{avatarAddress}")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(UserResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    [SwaggerResponse(StatusCodes.Status200OK, "UserResponse", typeof(UserResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
     public async Task<ActionResult<UserResponse>> GetUser(Address avatarAddress)
     {
         return Ok();
@@ -93,9 +94,13 @@ public class UserController : ControllerBase
 
     [HttpGet("classify-by-championship/medals/{blockIndex}")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
-    [ProducesResponseType(typeof(ClassifyByBlockMedalsResponse), StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
-    [ProducesResponseType(typeof(string), StatusCodes.Status404NotFound)]
+    [SwaggerResponse(
+        StatusCodes.Status200OK,
+        "ClassifyByBlockMedalsResponse",
+        typeof(ClassifyByBlockMedalsResponse)
+    )]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     public async Task<IActionResult> GetMedals(long blockIndex)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();

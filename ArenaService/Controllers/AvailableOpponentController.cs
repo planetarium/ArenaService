@@ -120,6 +120,7 @@ public class AvailableOpponentController : ControllerBase
         "Free refresh is not available at this time. Additional cost is required."
     )]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
+    [SwaggerResponse(StatusCodes.Status423Locked, "")]
     [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
     public async Task<IActionResult> RequestFreeRefresh()
     {
