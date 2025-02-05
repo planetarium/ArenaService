@@ -65,6 +65,11 @@ public class ArenaSupervisor : BackgroundService
                     );
                 }
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogError(ex, $"An error occurred in Headless.");
+                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
+            }
             catch (RedisException ex)
             {
                 _logger.LogError(ex, $"An error occurred in Redis.");
