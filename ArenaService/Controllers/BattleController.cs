@@ -54,7 +54,7 @@ public class BattleController : ControllerBase
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-        if (cachedRound.EndBlock - 5 <= cachedBlockIndex)
+        if (cachedRound.EndBlock - ArenaServiceConfig.REQUEST_BLOCK_THRESHOLD <= cachedBlockIndex)
         {
             return StatusCode(StatusCodes.Status423Locked);
         }

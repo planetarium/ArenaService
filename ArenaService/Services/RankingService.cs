@@ -117,4 +117,6 @@ public class RankingService : IRankingService
 
         return result;
     }
+
+    // 그룹 1~4
 }

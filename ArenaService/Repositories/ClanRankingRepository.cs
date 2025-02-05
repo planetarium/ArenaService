@@ -32,7 +32,7 @@ public interface IClanRankingRepository
 
 public class ClanRankingRepository : IClanRankingRepository
 {
-    public const int CacheRoundCount = 3;
+    public const int CacheRoundCount = 5;
     public const string ClanRankingKeyFormat = "season:{0}:round:{1}:ranking-clan";
     public const string ClanKeyFormat = "clan:{0}";
     public const string StatusKeyFormat = "season:{0}:round:{1}:ranking-clan:status";
@@ -134,14 +134,14 @@ public class ClanRankingRepository : IClanRankingRepository
         await _redis.KeyExpireAsync(
             clanRankingKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
         await _redis.StringSetAsync(
             statusKey,
             RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
     }
@@ -162,14 +162,14 @@ public class ClanRankingRepository : IClanRankingRepository
         await _redis.KeyExpireAsync(
             targetKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
         await _redis.StringSetAsync(
             statusKey,
             RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
     }

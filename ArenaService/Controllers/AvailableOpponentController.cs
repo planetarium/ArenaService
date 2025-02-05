@@ -125,8 +125,14 @@ public class AvailableOpponentController : ControllerBase
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
+        var cachedBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
         var cachedRound = await _seasonCacheRepo.GetRoundAsync();
+
+        if (cachedRound.EndBlock - ArenaServiceConfig.REQUEST_BLOCK_THRESHOLD <= cachedBlockIndex)
+        {
+            return StatusCode(StatusCodes.Status423Locked);
+        }
 
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,

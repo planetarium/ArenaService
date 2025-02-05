@@ -28,7 +28,7 @@ public interface IRankingRepository
 
 public class RankingRepository : IRankingRepository
 {
-    public const int CacheRoundCount = 3;
+    public const int CacheRoundCount = 5;
     public const string RankingKeyFormat = "season:{0}:round:{1}:ranking";
     public const string ParticipantKeyFormat = "participant:{0}";
     public const string StatusKeyFormat = "season:{0}:round:{1}:ranking:status";
@@ -143,12 +143,12 @@ public class RankingRepository : IRankingRepository
         await _redis.KeyExpireAsync(
             rankingKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
         await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             ));
     }
 
@@ -169,14 +169,14 @@ public class RankingRepository : IRankingRepository
         await _redis.KeyExpireAsync(
             targetKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
         await _redis.StringSetAsync(
             statusKey,
             RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
     }

@@ -36,7 +36,7 @@ public interface IGroupRankingRepository
 
 public class GroupRankingRepository : IGroupRankingRepository
 {
-    public const int CacheRoundCount = 3;
+    public const int CacheRoundCount = 5;
     public const string ParticipantKeyFormat = "participant:{0}";
     public const string GroupedRankingKeyFormat = "season:{0}:round:{1}:ranking-group";
     public const string GroupRankingMemberKeyFormat = "group:{0}";
@@ -82,7 +82,7 @@ public class GroupRankingRepository : IGroupRankingRepository
         await _redis.KeyExpireAsync(
             changedGroupKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
         await _redis.SortedSetAddAsync(groupRankingKey, changedGroupRankingMemberKey, nextScore);
@@ -149,7 +149,7 @@ public class GroupRankingRepository : IGroupRankingRepository
             var selectedGroupKey = groupKeys[selectedGroupIndex];
 
             var groupParticipants = await _redis.HashGetAllAsync(
-                $"season:{seasonId}:round:{roundId}:" + selectedGroupKey.ToString()
+                $"season:{seasonId}:round:{roundId}:{selectedGroupKey}"
             );
 
             var filteredParticipants = groupParticipants
@@ -215,7 +215,7 @@ public class GroupRankingRepository : IGroupRankingRepository
         await _redis.KeyExpireAsync(
             groupRankingKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
 
@@ -231,7 +231,7 @@ public class GroupRankingRepository : IGroupRankingRepository
             await _redis.KeyExpireAsync(
                 groupKey,
                 TimeSpan.FromSeconds(
-                    roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                    roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
                 )
             );
         }
@@ -239,7 +239,7 @@ public class GroupRankingRepository : IGroupRankingRepository
             statusKey,
             RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
     }
@@ -273,7 +273,7 @@ public class GroupRankingRepository : IGroupRankingRepository
         await _redis.KeyExpireAsync(
             targetGroupRankingKey,
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
 
@@ -292,7 +292,7 @@ public class GroupRankingRepository : IGroupRankingRepository
                 await _redis.KeyExpireAsync(
                     targetGroupKey,
                     TimeSpan.FromSeconds(
-                        roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                        roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
                     )
                 );
             }
@@ -301,7 +301,7 @@ public class GroupRankingRepository : IGroupRankingRepository
             statusKey,
             RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
-                roundInterval * ChainConstants.BLOCK_INTERVAL_SECONDS * CacheRoundCount
+                roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
     }
