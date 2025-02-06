@@ -36,9 +36,18 @@ def insert_policy():
                         VALUES (%s, %s, %s, %s, now(), now())
                         RETURNING id
                     """),
-                    ("battle-ticket-normal-season-policy", 5, 4, [1.0, 1.2, 1.4, 1.6, 1.8, 2.0, 2.2, 2.4, 2.6, 2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0])
+                    ("battle-ticket-season-policy", 5, 4, [1.0,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8,3.0,3.2,3.4,3.6,3.8,4.0,4.2,4.4,4.6,4.8,5.0,5.2,5.4,5.6,5.8,6.0,6.2,6.4,6.6,6.8,7.0,7.2,7.4,7.6,7.8,8.0,8.2,8.4,8.6,8.8])
                 )
-                battle_policy_id = cursor.fetchone()[0]
+                conn.commit()
+
+                cursor.execute(
+                    sql.SQL("""
+                        INSERT INTO battle_ticket_policies (name, default_tickets_per_round, max_purchasable_tickets_per_round, purchase_prices, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, now(), now())
+                        RETURNING id
+                    """),
+                    ("battle-ticket-off-season-policy", 5, 4, [1.0,1.2,1.4,1.6,1.8,2.0,2.2,2.4,2.6,2.8])
+                )
                 conn.commit()
 
                 cursor.execute(
@@ -47,22 +56,26 @@ def insert_policy():
                         VALUES (%s, %s, %s, %s, now(), now())
                         RETURNING id
                     """),
-                    ("refresh-ticket-normal-season-policy", 2, 4, [0.5, 1.5, 3, 4.5])
+                    ("refresh-ticket-season-policy", 2, 4, [0.5, 1.5, 3, 4.5])
                 )
-                refresh_policy_id = cursor.fetchone()[0]
                 conn.commit()
 
-                print(f"✅ 배틀 티켓 정책 ID: {battle_policy_id}, 리프레시 티켓 정책 ID: {refresh_policy_id}")
-                return battle_policy_id, refresh_policy_id
+                cursor.execute(
+                    sql.SQL("""
+                        INSERT INTO refresh_ticket_policies (name, default_tickets_per_round, max_purchasable_tickets_per_round, purchase_prices, created_at, updated_at)
+                        VALUES (%s, %s, %s, %s, now(), now())
+                        RETURNING id
+                    """),
+                    ("refresh-ticket-off-season-policy", 2, 4, [0.5, 1.5, 3, 4.5])
+                )
+                conn.commit()
+
     except Exception as e:
         print(f"❌ 정책 삽입 중 오류 발생: {e}")
-        return None, None
+        
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="배틀 및 리프레시 티켓 정책을 삽입하는 스크립트")
-    parser.add_argument("--auto", action="store_true", help="자동 실행 플래그 (ID 입력 없이 실행)")
     args = parser.parse_args()
 
-    battle_policy_id, refresh_policy_id = insert_policy()
-    if args.auto:
-        print(f"--auto 플래그 적용: {battle_policy_id} {refresh_policy_id}")
+    insert_policy()
