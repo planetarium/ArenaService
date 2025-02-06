@@ -97,15 +97,22 @@ public class ArenaInfoController : ControllerBase
         );
 
         TicketStatusResponse battleTicketStatus;
-        if (battleTicketStatusPerSeason is null || battleTicketStatusPerRound is null)
+        if (battleTicketStatusPerSeason is null && battleTicketStatusPerRound is null)
         {
             battleTicketStatus = TicketStatusResponse.CreateBattleTicketDefault(participant.Season);
+        }
+        else if (battleTicketStatusPerRound is null && battleTicketStatusPerSeason is not null)
+        {
+            battleTicketStatus = TicketStatusResponse.CreateBattleTicketDefault(
+                participant.Season,
+                battleTicketStatusPerSeason
+            );
         }
         else
         {
             battleTicketStatus = TicketStatusResponse.FromBattleStatusModels(
-                battleTicketStatusPerSeason,
-                battleTicketStatusPerRound
+                battleTicketStatusPerSeason!,
+                battleTicketStatusPerRound!
             );
         }
 

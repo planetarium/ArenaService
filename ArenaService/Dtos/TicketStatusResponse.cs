@@ -79,6 +79,26 @@ public class TicketStatusResponse
         };
     }
 
+    public static TicketStatusResponse CreateBattleTicketDefault(
+        Season season,
+        BattleTicketStatusPerSeason seasonStatus
+    )
+    {
+        return new TicketStatusResponse
+        {
+            TicketsPurchasedPerRound = 0,
+            TicketsUsedPerRound = 0,
+            RemainingTicketsPerRound = season.BattleTicketPolicy.DefaultTicketsPerRound,
+            RemainingPurchasableTicketsPerRound = season
+                .BattleTicketPolicy
+                .MaxPurchasableTicketsPerRound,
+            IsUnused = true,
+            NextNCGCosts = seasonStatus
+                .BattleTicketPolicy.PurchasePrices.Skip(seasonStatus.PurchaseCount)
+                .ToList(),
+        };
+    }
+
     public static TicketStatusResponse CreateRefreshTicketDefault(Season season)
     {
         return new TicketStatusResponse
