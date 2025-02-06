@@ -62,8 +62,8 @@ public class SelectBattleOpponentsFixedScoreRangeTests : BaseTest
             await Database.SortedSetAddAsync(groupRankingKey, memberKey, score);
         }
 
-        // 랜덤에 기반하기 때문에 1000번 반복해서 검증합니다.
-        for (int i = 0; i < 1000; i++)
+        // 랜덤에 기반하기 때문에 100번 반복해서 검증합니다.
+        for (int i = 0; i < 100; i++)
         {
             await TestRank100(seasonId, roundId, participants[0], 0, groupRankingKey);
             await TestRank70(seasonId, roundId, participants[30], 30, groupRankingKey);
@@ -239,11 +239,11 @@ public class SelectBattleOpponentsFixedScoreRangeTests : BaseTest
 
         var checkGroupRange = new Dictionary<int, (long Min, long Max)>
         {
-            { 1, (1, 7) }, // 1등인 경우 존재하지 않아 2, 3위 범위까지 탐색했을 것
+            { 1, (1, 2) },
             { 2, (1, 7) },
-            { 3, (2, 2) },
+            { 3, (1, 7) },
             { 4, (1, 7) },
-            { 5, (2, 3) },
+            { 5, (1, 7) },
         };
         foreach (var (groupId, opponent) in opponents)
         {

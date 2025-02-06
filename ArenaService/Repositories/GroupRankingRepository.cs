@@ -135,7 +135,6 @@ public class GroupRankingRepository : IGroupRankingRepository
 
         var opponents = new Dictionary<int, (Address AvatarAddress, int Score)>();
         var selectedAvatars = new HashSet<Address>();
-        var failedGroupIds = new List<int>();
 
         long? myRankIndex = await _redis.SortedSetRankAsync(
             groupRankingKey,
@@ -171,57 +170,15 @@ public class GroupRankingRepository : IGroupRankingRepository
             }
             else
             {
-                failedGroupIds.Add(groupId);
-            }
-        }
-
-        // 그룹이 나오지 않은 경우 그룹별로 정해져있는 fallback group에서 다시 탐색합니다.
-        foreach (var failedGroupId in failedGroupIds.ToList())
-        {
-            var fallbackGroupIds = FallbackGroups[failedGroupId];
-            foreach (var fallbackGroupId in fallbackGroupIds)
-            {
-                var (fallbackMin, fallbackMax) = groupRangeDict[fallbackGroupId];
-
-                var foundOpponent = await TrySelectOpponentFromRanges(
-                    groupRankingKey,
-                    fallbackMin,
-                    fallbackMax,
-                    selectedAvatars,
-                    seasonId,
-                    roundId,
-                    myKey
-                );
-
-                if (foundOpponent != null)
+                var fallbackGroupIds = FallbackGroups[groupId];
+                foreach (var fallbackGroupId in fallbackGroupIds)
                 {
-                    opponents[failedGroupId] = foundOpponent.Value;
-                    selectedAvatars.Add(foundOpponent.Value.AvatarAddress);
-                    failedGroupIds.Remove(failedGroupId);
-                    break;
-                }
-            }
-        }
+                    var (fallbackMin, fallbackMax) = groupRangeDict[fallbackGroupId];
 
-        if (failedGroupIds.Any())
-        {
-            // fallback group에서도 찾지 못한 경우 등수를 낮춰 탐색합니다. (+30까지)
-            for (int i = 1; i <= 30; i++)
-            {
-                var nextRankGroupRangeDict = await CalcGroupRankRange(
-                    seasonId,
-                    roundId,
-                    adjustedRanking.Value + i
-                );
-
-                foreach (var failedGroupId in failedGroupIds.ToList())
-                {
-                    var (minRange, maxRange) = nextRankGroupRangeDict[failedGroupId];
-
-                    var foundOpponent = await TrySelectOpponentFromRanges(
+                    foundOpponent = await TrySelectOpponentFromRanges(
                         groupRankingKey,
-                        minRange,
-                        maxRange,
+                        fallbackMin,
+                        fallbackMax,
                         selectedAvatars,
                         seasonId,
                         roundId,
@@ -230,15 +187,49 @@ public class GroupRankingRepository : IGroupRankingRepository
 
                     if (foundOpponent != null)
                     {
-                        opponents[failedGroupId] = foundOpponent.Value;
+                        opponents[groupId] = foundOpponent.Value;
                         selectedAvatars.Add(foundOpponent.Value.AvatarAddress);
-                        failedGroupIds.Remove(failedGroupId);
+                        break;
                     }
                 }
 
-                if (!failedGroupIds.Any())
+                if (foundOpponent == null)
                 {
-                    break;
+                    // fallback group에서도 찾지 못한 경우 등수를 낮춰 탐색합니다. (+100까지)
+                    for (int i = 1; i <= 100; i++)
+                    {
+                        var nextRankGroupRangeDict = await CalcGroupRankRange(
+                            seasonId,
+                            roundId,
+                            adjustedRanking.Value + i
+                        );
+
+                        var (nextRankGroupMinRange, nextRankGroupMaxRange) = nextRankGroupRangeDict[
+                            groupId
+                        ];
+
+                        if (nextRankGroupMinRange == minRange || nextRankGroupMaxRange == maxRange)
+                        {
+                            continue;
+                        }
+
+                        foundOpponent = await TrySelectOpponentFromRanges(
+                            groupRankingKey,
+                            nextRankGroupMinRange,
+                            nextRankGroupMaxRange,
+                            selectedAvatars,
+                            seasonId,
+                            roundId,
+                            myKey
+                        );
+
+                        if (foundOpponent != null)
+                        {
+                            opponents[groupId] = foundOpponent.Value;
+                            selectedAvatars.Add(foundOpponent.Value.AvatarAddress);
+                            break;
+                        }
+                    }
                 }
             }
         }
