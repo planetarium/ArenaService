@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using System.Globalization;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Models;
@@ -41,6 +42,7 @@ public class UserController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerResponse(StatusCodes.Status201Created, "Ok")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest")]
     [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
     [SwaggerResponse(StatusCodes.Status409Conflict, "Status409Conflict")]
     public async Task<ActionResult<string>> Register(
@@ -49,6 +51,11 @@ public class UserController : ControllerBase
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
         var agentAddress = HttpContext.User.RequireAgentAddress();
+
+        if (!CheckSignerContainsAvatar(agentAddress, avatarAddress))
+        {
+            return BadRequest("invalid address.");
+        }
 
         var user = await _userRepo.GetUserAsync(avatarAddress);
         if (user == null)
@@ -137,5 +144,32 @@ public class UserController : ControllerBase
                 TotalMedalCountForThisChampionship = totalMedalCount
             }
         );
+    }
+
+    private static bool CheckSignerContainsAvatar(Address signer, Address avatarAddress)
+    {
+        const string deriveFormat = "avatar-state-{0}";
+        const int slotCount = 3;
+
+        return Enumerable.Range(0, 3)
+            .Select(index => GetAvatarAddress(signer, index))
+            .Contains(avatarAddress);
+
+        Address GetAvatarAddress(Address agentAddress, int index)
+        {
+            if (index < 0 ||
+                index >= slotCount)
+            {
+                throw new ArgumentOutOfRangeException(
+                    nameof(index),
+                    $"Index must be between 0 and 2.");
+            }
+
+            var deriveKey = string.Format(
+                CultureInfo.InvariantCulture,
+                deriveFormat,
+                index);
+            return agentAddress.Derive(deriveKey);
+        }
     }
 }
