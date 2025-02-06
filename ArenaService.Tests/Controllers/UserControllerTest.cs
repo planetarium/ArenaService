@@ -63,8 +63,8 @@ public class UserControllerTest
 
         _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
         {
-            new Claim("avatarAddress", new PrivateKey().Address.ToString()), // Different address to simulate invalid case
-            new Claim("agentAddress", new PrivateKey().Address.ToString())
+            new Claim("avatar_address", new PrivateKey().Address.ToString()), // Different address to simulate invalid case
+            new Claim("address", new PrivateKey().Address.ToString())
         }));
 
         // Act
