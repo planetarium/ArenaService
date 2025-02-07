@@ -1,8 +1,10 @@
+namespace ArenaService.Tests.Controllers;
+
 using System.Security.Claims;
 using ArenaService.Controllers;
 using ArenaService.Dtos;
-using ArenaService.Shared.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Repositories;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -38,15 +40,12 @@ public class UserControllerTest
 
         // Mock HttpContext for the controller
         var httpContext = new DefaultHttpContext();
-        httpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim("avatarAddress", "0x123"),
-            new Claim("agentAddress", "0x456")
-        }));
-        _controller.ControllerContext = new ControllerContext
-        {
-            HttpContext = httpContext
-        };
+        httpContext.User = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[] { new Claim("avatarAddress", "0x123"), new Claim("agentAddress", "0x456") }
+            )
+        );
+        _controller.ControllerContext = new ControllerContext { HttpContext = httpContext };
     }
 
     [Fact]
@@ -61,11 +60,15 @@ public class UserControllerTest
             Level = 10
         };
 
-        _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(new ClaimsIdentity(new[]
-        {
-            new Claim("avatar_address", new PrivateKey().Address.ToString()), // Different address to simulate invalid case
-            new Claim("address", new PrivateKey().Address.ToString())
-        }));
+        _controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(
+            new ClaimsIdentity(
+                new[]
+                {
+                    new Claim("avatar_address", new PrivateKey().Address.ToString()), // Different address to simulate invalid case
+                    new Claim("address", new PrivateKey().Address.ToString())
+                }
+            )
+        );
 
         // Act
         var result = await _controller.Register(userRequest);
