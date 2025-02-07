@@ -5,6 +5,7 @@ using ArenaService.Dtos;
 using ArenaService.Extensions;
 using ArenaService.Services;
 using ArenaService.Shared.Constants;
+using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Repositories;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
@@ -77,12 +78,16 @@ public class UserController : ControllerBase
             var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
             var cachedRound = await _seasonCacheRepo.GetRoundAsync();
 
-            var participant = await _participateService.ParticipateAsync(
-                cachedSeason.Id,
-                cachedRound.Id,
-                avatarAddress,
-                (int)(cachedRound.EndBlock - cachedRound.StartBlock)
-            );
+            try
+            {
+                var participant = await _participateService.ParticipateAsync(
+                    cachedSeason.Id,
+                    cachedRound.Id,
+                    avatarAddress,
+                    (int)(cachedRound.EndBlock - cachedRound.StartBlock)
+                );
+            }
+            catch (NotEnoughMedalException) { }
 
             return Created(locationUri, user.AvatarAddress);
         }
@@ -150,6 +155,10 @@ public class UserController : ControllerBase
     {
         const string deriveFormat = "avatar-state-{0}";
         const int slotCount = 3;
+
+        var a = GetAvatarAddress(signer, 0);
+        var b = GetAvatarAddress(signer, 1);
+        var c = GetAvatarAddress(signer, 2);
 
         return Enumerable
             .Range(0, 3)

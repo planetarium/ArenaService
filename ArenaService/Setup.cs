@@ -174,8 +174,14 @@ public class Startup
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
         services
-            .AddSingleton<ArenaSupervisor>()
-            .AddHostedService(provider => provider.GetRequiredService<ArenaSupervisor>());
+            .AddSingleton<CacheBlockTipWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<CacheBlockTipWorker>());
+        services
+            .AddSingleton<PrepareRankingWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<PrepareRankingWorker>());
+        services
+            .AddSingleton<RankingCopyWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<RankingCopyWorker>());
 
         services.AddHangfireServer();
         services.AddHealthChecks();

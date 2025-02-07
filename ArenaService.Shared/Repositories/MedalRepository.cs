@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 public interface IMedalRepository
 {
     Task<Medal?> GetMedalAsync(int seasonId, Address avatarAddress);
+    Task<Dictionary<Address, int>> GetMedalsBySeasonsAsync(List<int> seasons);
     Task<Medal> UpdateMedalAsync(Medal medal, Action<Medal> updateFields);
     Task<Medal> AddMedalAsync(int seasonId, Address avatarAddress);
 }
@@ -26,6 +27,17 @@ public class MedalRepository : IMedalRepository
         return await _context.Medals.SingleOrDefaultAsync(m =>
             m.SeasonId == seasonId && m.AvatarAddress == avatarAddress
         );
+    }
+
+    public async Task<Dictionary<Address, int>> GetMedalsBySeasonsAsync(List<int> seasons)
+    {
+        var medalCounts = await _context
+            .Medals.Where(m => seasons.Contains(m.SeasonId))
+            .GroupBy(m => m.AvatarAddress)
+            .Select(g => new { AvatarAddress = g.Key, TotalMedals = g.Sum(m => m.MedalCount) })
+            .ToDictionaryAsync(m => m.AvatarAddress, m => m.TotalMedals);
+
+        return medalCounts;
     }
 
     public async Task<Medal> UpdateMedalAsync(

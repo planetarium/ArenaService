@@ -6,7 +6,7 @@ namespace ArenaService.Shared.Repositories;
 
 public interface ISeasonCacheRepository
 {
-    Task<long?> GetBlockIndexAsync();
+    Task<long> GetBlockIndexAsync();
     Task<(int Id, long StartBlock, long EndBlock)> GetSeasonAsync();
     Task<(int Id, long StartBlock, long EndBlock)> GetRoundAsync();
     Task SetBlockIndexAsync(long blockIndex);
@@ -27,10 +27,16 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         _redis = redis.GetDatabase();
     }
 
-    public async Task<long?> GetBlockIndexAsync()
+    public async Task<long> GetBlockIndexAsync()
     {
         var value = await _redis.StringGetAsync($"{PREFIX}:{BlockIndexKey}");
-        return value.HasValue ? long.Parse(value) : null;
+
+        if (!value.HasValue)
+        {
+            throw new CacheUnavailableException("Cache is unavailable.");
+        }
+
+        return long.Parse(value!);
     }
 
     public async Task<(int Id, long StartBlock, long EndBlock)> GetSeasonAsync()
