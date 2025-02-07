@@ -1,12 +1,12 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Constants;
+using ArenaService.Shared.Constants;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
-using ArenaService.Models.BattleTicket;
-using ArenaService.Models.Enums;
-using ArenaService.Models.RefreshTicket;
-using ArenaService.Repositories;
+using ArenaService.Shared.Models.BattleTicket;
+using ArenaService.Shared.Models.Enums;
+using ArenaService.Shared.Models.RefreshTicket;
+using ArenaService.Shared.Repositories;
 using ArenaService.Worker;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;

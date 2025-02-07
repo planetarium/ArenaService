@@ -1,12 +1,12 @@
 using ArenaService.ActionValues;
 using ArenaService.Client;
-using ArenaService.Constants;
+using ArenaService.Shared.Constants;
 using ArenaService.Extensions;
-using ArenaService.Models;
-using ArenaService.Models.BattleTicket;
-using ArenaService.Models.Enums;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.BattleTicket;
+using ArenaService.Shared.Models.Enums;
 using ArenaService.Options;
-using ArenaService.Repositories;
+using ArenaService.Shared.Repositories;
 using ArenaService.Services;
 using ArenaService.Utils;
 using Bencodex;

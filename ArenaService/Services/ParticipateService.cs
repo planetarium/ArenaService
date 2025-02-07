@@ -1,9 +1,9 @@
 namespace ArenaService.Services;
 
 using System.Threading.Tasks;
-using ArenaService.Exceptions;
-using ArenaService.Models;
-using ArenaService.Repositories;
+using ArenaService.Shared.Exceptions;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Repositories;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 

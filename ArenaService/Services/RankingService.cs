@@ -1,6 +1,6 @@
 using Libplanet.Crypto;
 
-namespace ArenaService.Repositories;
+namespace ArenaService.Shared.Repositories;
 
 public interface IRankingService
 {

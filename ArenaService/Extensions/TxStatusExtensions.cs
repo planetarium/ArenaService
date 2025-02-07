@@ -1,6 +1,6 @@
 namespace ArenaService.Extensions;
 
-using ArenaService.Models.Enums;
+using ArenaService.Shared.Models.Enums;
 
 public static class TxStatusExtensions
 {
