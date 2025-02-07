@@ -1,4 +1,4 @@
-using ArenaService.Constants;
+using ArenaService.Shared.Constants;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 

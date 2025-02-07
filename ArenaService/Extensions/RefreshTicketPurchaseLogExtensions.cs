@@ -1,7 +1,7 @@
 namespace ArenaService.Extensions;
 
 using ArenaService.Dtos;
-using ArenaService.Models.RefreshTicket;
+using ArenaService.Shared.Models.RefreshTicket;
 
 public static class RefreshTicketPurchaseLogExtensions
 {

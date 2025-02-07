@@ -1,4 +1,4 @@
-using ArenaService.Constants;
+using ArenaService.Shared.Constants;
 using Newtonsoft.Json;
 
 namespace ArenaService.Dtos;

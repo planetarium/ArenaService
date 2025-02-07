@@ -1,4 +1,4 @@
-using ArenaService.Models.Enums;
+using ArenaService.Shared.Models.Enums;
 using Libplanet.Types.Tx;
 using Swashbuckle.AspNetCore.Annotations;
 

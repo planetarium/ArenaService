@@ -2,11 +2,11 @@ namespace ArenaService;
 
 using System.Text.Json.Serialization;
 using ArenaService.Auth;
-using ArenaService.Data;
+using ArenaService.Shared.Data;
 using ArenaService.Filter;
 using ArenaService.JsonConverters;
 using ArenaService.Options;
-using ArenaService.Repositories;
+using ArenaService.Shared.Repositories;
 using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
