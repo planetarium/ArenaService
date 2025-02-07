@@ -16,6 +16,8 @@ public interface IParticipantRepository
     );
     Task<List<Participant>> GetParticipantsAsync(
         int seasonId,
+        int skip = 0,
+        int take = 100,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     );
     Task<Participant> UpdateParticipantAsync(
@@ -98,6 +100,8 @@ public class ParticipantRepository : IParticipantRepository
 
     public async Task<List<Participant>> GetParticipantsAsync(
         int seasonId,
+        int skip = 0,
+        int take = 100,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     )
     {
@@ -108,7 +112,8 @@ public class ParticipantRepository : IParticipantRepository
             query = includeQuery(query);
         }
 
-        return await query.Where(p => p.SeasonId == seasonId).ToListAsync();
+        return await query.Where(p => p.SeasonId == seasonId).Skip(skip).Take(take).ToListAsync();
+        ;
     }
 
     public async Task<Participant> UpdateParticipantAsync(

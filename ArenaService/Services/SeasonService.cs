@@ -2,6 +2,7 @@ namespace ArenaService.Services;
 
 using System.Threading.Tasks;
 using ArenaService.Shared.Constants;
+using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Repositories;
 using Libplanet.Crypto;
@@ -13,6 +14,8 @@ public interface ISeasonService
         long blockIndex,
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
     );
+
+    Task<(Season Season, Round Round)> GetSeasonAndRoundByBlock(long blockIndex);
 }
 
 public class SeasonService : ISeasonService
@@ -78,5 +81,33 @@ public class SeasonService : ISeasonService
             )
             .OrderBy(s => s.StartBlock)
             .ToList();
+    }
+
+    public async Task<(Season Season, Round Round)> GetSeasonAndRoundByBlock(long blockIndex)
+    {
+        var season = await _seasonRepo.GetSeasonByBlockIndexAsync(
+            blockIndex,
+            q => q.Include(s => s.Rounds)
+        );
+
+        if (season == null)
+        {
+            throw new NotFoundSeasonException(
+                $"No matching season found for the current block index ({blockIndex})."
+            );
+        }
+
+        var round = season.Rounds.SingleOrDefault(ai =>
+            ai.StartBlock <= blockIndex && ai.EndBlock >= blockIndex
+        );
+
+        if (round == null)
+        {
+            throw new NotFoundSeasonException(
+                $"No matching round found for the current block index ({blockIndex})."
+            );
+        }
+
+        return (season, round);
     }
 }

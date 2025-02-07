@@ -1,6 +1,7 @@
 namespace ArenaService.Services;
 
 using System.Threading.Tasks;
+using ArenaService.Shared.Constants;
 using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Repositories;
@@ -23,21 +24,27 @@ public class ParticipateService : IParticipateService
     private readonly IParticipantRepository _participantRepo;
     private readonly IUserRepository _userRepo;
     private readonly IRankingRepository _rankingRepo;
-    private readonly IGroupRankingRepository _groupRankingRepo;
+    private readonly ISeasonService _seasonService;
+    private readonly ISeasonCacheRepository _seasonCache;
+    private readonly IMedalRepository _medalRepo;
     private readonly IClanRankingRepository _clanRankingRepo;
 
     public ParticipateService(
         IParticipantRepository participantRepo,
         IUserRepository userRepo,
         IRankingRepository rankingRepo,
-        IGroupRankingRepository groupRankingRepo,
+        ISeasonService seasonService,
+        IMedalRepository medalRepo,
+        ISeasonCacheRepository seasonCache,
         IClanRankingRepository clanRankingRepo
     )
     {
         _participantRepo = participantRepo;
         _userRepo = userRepo;
         _rankingRepo = rankingRepo;
-        _groupRankingRepo = groupRankingRepo;
+        _seasonService = seasonService;
+        _seasonCache = seasonCache;
+        _medalRepo = medalRepo;
         _clanRankingRepo = clanRankingRepo;
     }
 
@@ -69,6 +76,36 @@ public class ParticipateService : IParticipateService
             throw new NotRegisteredUserException("Register first");
         }
 
+        var currentSeason = await _seasonService.GetSeasonAndRoundByBlock(
+            await _seasonCache.GetBlockIndexAsync()
+        );
+        if (currentSeason.Season.ArenaType == ArenaType.CHAMPIONSHIP)
+        {
+            var totalMedalCount = 0;
+            var seasons = await _seasonService.ClassifyByChampionship(
+                currentSeason.Season.StartBlock
+            );
+            var onlySeasons = seasons.Where(s => s.ArenaType == ArenaType.SEASON).ToList();
+            if (!onlySeasons.Any())
+            {
+                throw new NotFoundSeasonException("Not found seasons for check medals");
+            }
+
+            foreach (var season in onlySeasons)
+            {
+                var medal = await _medalRepo.GetMedalAsync(season.Id, avatarAddress);
+                if (medal is not null)
+                {
+                    totalMedalCount += medal.MedalCount;
+                }
+            }
+
+            if (totalMedalCount < currentSeason.Season.RequiredMedalCount)
+            {
+                throw new NotEnoughMedalException($"{totalMedalCount} is not enough");
+            }
+        }
+
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 
         await _rankingRepo.UpdateScoreAsync(
@@ -82,23 +119,6 @@ public class ParticipateService : IParticipateService
             seasonId,
             roundId + 1,
             participant.Score
-        );
-
-        await _groupRankingRepo.UpdateScoreAsync(
-            participant.AvatarAddress,
-            seasonId,
-            roundId,
-            0,
-            participant.Score,
-            roundInterval
-        );
-        await _groupRankingRepo.UpdateScoreAsync(
-            participant.AvatarAddress,
-            seasonId,
-            roundId + 1,
-            0,
-            participant.Score,
-            roundInterval
         );
 
         if (participant.User.ClanId is not null)

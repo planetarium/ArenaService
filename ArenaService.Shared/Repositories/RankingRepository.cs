@@ -7,6 +7,8 @@ namespace ArenaService.Shared.Repositories;
 
 public interface IRankingRepository
 {
+    Task<string?> GetRankingStatus(int seasonId, int roundId);
+
     Task UpdateScoreAsync(Address avatarAddress, int seasonId, int roundId, int scoreChange);
 
     Task<int> GetRankAsync(Address avatarAddress, int seasonId, int roundId);
@@ -37,6 +39,13 @@ public class RankingRepository : IRankingRepository
     public RankingRepository(IConnectionMultiplexer redis)
     {
         _redis = redis.GetDatabase();
+    }
+
+    public async Task<string?> GetRankingStatus(int seasonId, int roundId)
+    {
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
+        var rankingStatus = await _redis.StringGetAsync(statusKey);
+        return rankingStatus;
     }
 
     public async Task UpdateScoreAsync(
@@ -124,10 +133,7 @@ public class RankingRepository : IRankingRepository
     )
     {
         string statusKey = string.Format(StatusKeyFormat, seasonId, roundId);
-        await _redis.StringSetAsync(
-            statusKey,
-            RankingStatus.INITIALIZING.ToString()
-        );
+        await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
 
         foreach (var rankingEntry in rankingData)
@@ -145,10 +151,13 @@ public class RankingRepository : IRankingRepository
                 roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
             )
         );
-        await _redis.StringSetAsync(statusKey, RankingStatus.DONE.ToString(),
+        await _redis.StringSetAsync(
+            statusKey,
+            RankingStatus.DONE.ToString(),
             TimeSpan.FromSeconds(
                 roundInterval * ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * CacheRoundCount
-            ));
+            )
+        );
     }
 
     public async Task CopyRoundDataAsync(
