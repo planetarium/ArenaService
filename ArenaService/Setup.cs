@@ -140,7 +140,6 @@ public class Startup
         services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
 
         services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
-        services.AddScoped<IGroupRankingRepository, GroupRankingRepository>();
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 

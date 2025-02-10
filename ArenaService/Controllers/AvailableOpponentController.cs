@@ -21,7 +21,6 @@ public class AvailableOpponentController : ControllerBase
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IParticipateService _participateService;
     private readonly IRankingRepository _rankingRepo;
-    private readonly IGroupRankingRepository _groupRankingRepo;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
@@ -29,7 +28,6 @@ public class AvailableOpponentController : ControllerBase
         ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
-        IGroupRankingRepository groupRankingRepo,
         IRankingRepository rankingRepo
     )
     {
@@ -38,7 +36,6 @@ public class AvailableOpponentController : ControllerBase
         _participantRepo = participantRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
-        _groupRankingRepo = groupRankingRepo;
         _rankingRepo = rankingRepo;
     }
 
@@ -179,17 +176,11 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id
         );
-        var opponents = await _groupRankingRepo.SelectBattleOpponentsAsync(
-            cachedSeason.Id,
-            cachedRound.Id,
+        var opponents = await _rankingRepo.SelectBattleOpponentsAsync(
             avatarAddress,
-            myScore
+            cachedSeason.Id,
+            cachedRound.Id
         );
-
-        if (opponents.Count != 5)
-        {
-            throw new CalcAOFailedException($"AO Count is {opponents.Count}");
-        }
 
         var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
             cachedSeason.Id,
