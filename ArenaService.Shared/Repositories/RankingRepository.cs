@@ -24,6 +24,12 @@ public interface IRankingRepository
         int roundInterval
     );
 
+    Task<Dictionary<int, (Address AvatarAddress, int Score)>> SelectBattleOpponentsAsync(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    );
+
     Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId, int roundInterval);
 }
 
@@ -36,9 +42,16 @@ public class RankingRepository : IRankingRepository
 
     private readonly IDatabase _redis;
 
-    public RankingRepository(IConnectionMultiplexer redis)
+    public RankingRepository(IConnectionMultiplexer redis, int? databaseNumber = null)
     {
-        _redis = redis.GetDatabase();
+        if (databaseNumber is null)
+        {
+            _redis = redis.GetDatabase();
+        }
+        else
+        {
+            _redis = redis.GetDatabase(databaseNumber.Value);
+        }
     }
 
     public async Task<string?> GetRankingStatus(int seasonId, int roundId)
@@ -123,6 +136,19 @@ public class RankingRepository : IRankingRepository
         return score.HasValue
             ? (int)score.Value
             : throw new NotRankedException($"Participant {avatarAddress} not found.");
+    }
+
+    public async Task<
+        Dictionary<int, (Address AvatarAddress, int Score)>
+    > SelectBattleOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
+    {
+        var temp = new Dictionary<int, (Address AvatarAddress, int Score)>();
+        temp[1] = (new Address(), 1);
+        temp[2] = (new Address(), 1);
+        temp[3] = (new Address(), 1);
+        temp[4] = (new Address(), 1);
+        temp[5] = (new Address(), 1);
+        return temp;
     }
 
     public async Task InitRankingAsync(
