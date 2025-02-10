@@ -24,11 +24,18 @@ public interface IRankingRepository
         int roundInterval
     );
 
+    Task<Dictionary<int, (Address AvatarAddress, int Score)>> SelectBattleOpponentsAsync(
+        Address avatarAddress,
+        int seasonId,
+        int roundId
+    );
+
     Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId, int roundInterval);
 }
 
 public class RankingRepository : IRankingRepository
 {
+    private readonly Random _random = new();
     public const int CacheRoundCount = 5;
     public const string RankingKeyFormat = "season:{0}:round:{1}:ranking";
     public const string ParticipantKeyFormat = "participant:{0}";
@@ -36,9 +43,16 @@ public class RankingRepository : IRankingRepository
 
     private readonly IDatabase _redis;
 
-    public RankingRepository(IConnectionMultiplexer redis)
+    public RankingRepository(IConnectionMultiplexer redis, int? databaseNumber = null)
     {
-        _redis = redis.GetDatabase();
+        if (databaseNumber is null)
+        {
+            _redis = redis.GetDatabase();
+        }
+        else
+        {
+            _redis = redis.GetDatabase(databaseNumber.Value);
+        }
     }
 
     public async Task<string?> GetRankingStatus(int seasonId, int roundId)
@@ -123,6 +137,91 @@ public class RankingRepository : IRankingRepository
         return score.HasValue
             ? (int)score.Value
             : throw new NotRankedException($"Participant {avatarAddress} not found.");
+    }
+
+    public async Task<
+        Dictionary<int, (Address AvatarAddress, int Score)>
+    > SelectBattleOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
+    {
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+
+        int totalRankingCount = (int)await _redis.SortedSetLengthAsync(rankingKey);
+
+        if (totalRankingCount <= 40)
+        {
+            throw new CalcAOFailedException(
+                $"Total ranking count is under 40 - {totalRankingCount}"
+            );
+        }
+
+        long? myRank = await _redis.SortedSetRankAsync(
+            rankingKey,
+            participantKey,
+            Order.Descending
+        );
+        if (myRank == null)
+        {
+            throw new CalcAOFailedException($"Player {avatarAddress} is not ranked.");
+        }
+
+        var selectedOpponents = new Dictionary<int, (Address AvatarAddress, int Score)>();
+        var usedIndices = new HashSet<int> { (int)myRank.Value };
+
+        foreach (var group in OpponentGroupConstants.Groups)
+        {
+            var minIndex = (int)Math.Floor(group.Value.MinRange * totalRankingCount);
+            var maxIndex = (int)Math.Floor(group.Value.MaxRange * totalRankingCount);
+
+            if (maxIndex >= totalRankingCount)
+            {
+                maxIndex = totalRankingCount - 1;
+            }
+            if (minIndex <= 0)
+            {
+                minIndex = 0;
+            }
+
+            var candidateIndices = Enumerable
+                .Range(minIndex, maxIndex - minIndex)
+                .Where(i => !usedIndices.Contains(i))
+                .ToList();
+
+            if (candidateIndices.Count > 0)
+            {
+                var selectedIndex = candidateIndices[_random.Next(candidateIndices.Count)];
+                usedIndices.Add(selectedIndex);
+
+                var opponentEntry = (
+                    await _redis.SortedSetRangeByRankWithScoresAsync(
+                        rankingKey,
+                        selectedIndex,
+                        selectedIndex,
+                        Order.Descending
+                    )
+                ).SingleOrDefault();
+
+                if (opponentEntry.Element.IsNull)
+                {
+                    throw new CalcAOFailedException(
+                        $"Failed to retrieve player at rank {selectedIndex + 1}."
+                    );
+                }
+
+                var parts = opponentEntry.ToString().Split(':');
+                var opponentAvatarAddress = new Address(parts[1]!);
+                int opponentScore = (int)opponentEntry.Score;
+
+                selectedOpponents[group.Key] = (opponentAvatarAddress, opponentScore);
+            }
+        }
+
+        if (selectedOpponents.Count != 5)
+        {
+            throw new CalcAOFailedException($"AO Count is {selectedOpponents.Count}");
+        }
+
+        return selectedOpponents;
     }
 
     public async Task InitRankingAsync(
