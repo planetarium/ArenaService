@@ -136,10 +136,6 @@ public class BattleController : ControllerBase
         {
             return BadRequest($"{opponentAvatarAddress} is not available opponent");
         }
-        if (availableOpponent.SuccessBattleId is not null)
-        {
-            return BadRequest($"Battled address {opponentAvatarAddress}");
-        }
 
         var battle = await _battleRepo.AddBattleAsync(
             avatarAddress,

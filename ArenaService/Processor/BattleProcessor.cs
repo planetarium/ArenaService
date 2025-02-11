@@ -187,7 +187,7 @@ public class BattleProcessor
                 }
                 else
                 {
-                    if (!ValidateToken(battleActionValue))
+                    if (!ValidateToken(battle, battleActionValue))
                     {
                         await _battleRepo.UpdateBattle(
                             battle,
@@ -293,7 +293,8 @@ public class BattleProcessor
 
     private bool ValidateToken(Battle battle, BattleActionValue battleActionValue)
     {
-        return _battleTokenValidator.ValidateBattleToken(battleActionValue.Memo, battle.Id);
+        return battleActionValue.ArenaProvider == _arenaProviderName
+            && _battleTokenValidator.ValidateBattleToken(battleActionValue.Memo, battle.Id);
     }
 
     private async Task<BattleResultState> GetBattleResultState(Battle battle, TxId txId)

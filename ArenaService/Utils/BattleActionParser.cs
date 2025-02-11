@@ -41,8 +41,8 @@ public class BattleActionParser
     {
         var myAvatarAddress = plainValue["maa"].ToAddress();
         var enemyAvatarAddress = plainValue["eaa"].ToAddress();
-        var memo = plainValue["m"].ToString();
-        var arenaProvider = plainValue["arp"].ToString();
+        var memo = plainValue["m"].ToDotnetString();
+        var arenaProvider = plainValue["arp"].ToDotnetString();
         var chargeAp = plainValue["cha"].ToBoolean();
         var costumes = ((List)plainValue["cs"]).Select(e => e.ToGuid()).ToList();
         var equipments = ((List)plainValue["es"]).Select(e => e.ToGuid()).ToList();
