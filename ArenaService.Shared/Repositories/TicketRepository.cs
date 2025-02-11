@@ -220,7 +220,7 @@ public class TicketRepository : ITicketRepository
                 PurchaseCount = purchaseCount,
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return battleTicketPurchaseLog.Entity;
     }
 
@@ -244,7 +244,7 @@ public class TicketRepository : ITicketRepository
                 PurchaseCount = purchaseCount,
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return refreshTicketPurchaseLog.Entity;
     }
 
@@ -357,7 +357,7 @@ public class TicketRepository : ITicketRepository
                 PurchaseCount = purchaseCount
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return refreshTicketStatusPerRound.Entity;
     }
 
@@ -383,7 +383,7 @@ public class TicketRepository : ITicketRepository
                 PurchaseCount = purchaseCount
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return battleTicketStatusPerRound.Entity;
     }
 
@@ -405,7 +405,7 @@ public class TicketRepository : ITicketRepository
                 PurchaseCount = purchaseCount
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return battleTicketStatusPerSeason.Entity;
     }
 
@@ -506,7 +506,7 @@ public class TicketRepository : ITicketRepository
                 SpecifiedOpponentIds = specifiedOpponentIds
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return refreshTicketUsageLog.Entity;
     }
 
@@ -524,7 +524,7 @@ public class TicketRepository : ITicketRepository
                 BattleId = battleId
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return battleTicketUsageLog.Entity;
     }
 

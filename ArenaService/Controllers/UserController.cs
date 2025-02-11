@@ -7,6 +7,7 @@ using ArenaService.Services;
 using ArenaService.Shared.Constants;
 using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Repositories;
+using ArenaService.Utils;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -53,7 +54,7 @@ public class UserController : ControllerBase
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
         var agentAddress = HttpContext.User.RequireAgentAddress();
 
-        if (!CheckSignerContainsAvatar(agentAddress, avatarAddress))
+        if (!AvatarAddressValidator.CheckSignerContainsAvatar(agentAddress, avatarAddress))
         {
             return BadRequest("invalid address.");
         }
@@ -149,34 +150,5 @@ public class UserController : ControllerBase
                 TotalMedalCountForThisChampionship = totalMedalCount
             }
         );
-    }
-
-    private static bool CheckSignerContainsAvatar(Address signer, Address avatarAddress)
-    {
-        const string deriveFormat = "avatar-state-{0}";
-        const int slotCount = 3;
-
-        var a = GetAvatarAddress(signer, 0);
-        var b = GetAvatarAddress(signer, 1);
-        var c = GetAvatarAddress(signer, 2);
-
-        return Enumerable
-            .Range(0, 3)
-            .Select(index => GetAvatarAddress(signer, index))
-            .Contains(avatarAddress);
-
-        Address GetAvatarAddress(Address agentAddress, int index)
-        {
-            if (index < 0 || index >= slotCount)
-            {
-                throw new ArgumentOutOfRangeException(
-                    nameof(index),
-                    $"Index must be between 0 and 2."
-                );
-            }
-
-            var deriveKey = string.Format(CultureInfo.InvariantCulture, deriveFormat, index);
-            return agentAddress.Derive(deriveKey);
-        }
     }
 }

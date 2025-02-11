@@ -2,6 +2,7 @@ namespace ArenaService.Shared.Repositories;
 
 using ArenaService.Shared.Constants;
 using ArenaService.Shared.Data;
+using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.Enums;
 using Libplanet.Crypto;
@@ -14,8 +15,7 @@ public interface IBattleRepository
         Address avatarAddress,
         int seasonId,
         int roundId,
-        int availableOpponentId,
-        string token
+        int availableOpponentId
     );
     Task<Battle> UpdateBattle(int battleId, Action<Battle> updateFields);
 
@@ -31,24 +31,27 @@ public interface IBattleRepository
 public class BattleRepository : IBattleRepository
 {
     private readonly ArenaDbContext _context;
+    private readonly BattleTokenGenerator _battleTokenGenerator;
 
-    public BattleRepository(ArenaDbContext context)
+    public BattleRepository(ArenaDbContext context, BattleTokenGenerator battleTokenGenerator)
     {
         _context = context;
+        _battleTokenGenerator = battleTokenGenerator;
     }
 
     public async Task<Battle> AddBattleAsync(
         Address avatarAddress,
         int seasonId,
         int roundId,
-        int availableOpponentId,
-        string token
+        int availableOpponentId
     )
     {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+
         var battle = await _context.Battles.AddAsync(
             new Battle
             {
-                Token = token,
+                Token = "temp token",
                 SeasonId = seasonId,
                 RoundId = roundId,
                 AvatarAddress = avatarAddress,
@@ -56,7 +59,14 @@ public class BattleRepository : IBattleRepository
                 BattleStatus = BattleStatus.TOKEN_ISSUED
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
+
+        battle.Entity.Token = _battleTokenGenerator.GenerateBattleToken(battle.Entity.Id);
+        _context.Battles.Update(battle.Entity);
+
+        await _context.SaveChangesAsync();
+        await transaction.CommitAsync();
+
         return battle.Entity;
     }
 

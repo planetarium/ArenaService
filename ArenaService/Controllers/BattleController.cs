@@ -1,10 +1,10 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Shared.Constants;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
-using ArenaService.Shared.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Repositories;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;
@@ -136,13 +136,16 @@ public class BattleController : ControllerBase
         {
             return BadRequest($"{opponentAvatarAddress} is not available opponent");
         }
+        if (availableOpponent.SuccessBattleId is not null)
+        {
+            return BadRequest($"Battled address {opponentAvatarAddress}");
+        }
 
         var battle = await _battleRepo.AddBattleAsync(
             avatarAddress,
             cachedSeason.Id,
             cachedRound.Id,
-            availableOpponent.Id,
-            "token"
+            availableOpponent.Id
         );
 
         var locationUri = Url.Action(nameof(GetBattle), new { battleId = battle.Id });

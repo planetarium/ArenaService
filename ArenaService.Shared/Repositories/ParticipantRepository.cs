@@ -45,7 +45,7 @@ public class ParticipantRepository : IParticipantRepository
         var participant = await _context.Participants.AddAsync(
             new Participant { AvatarAddress = avatarAddress, SeasonId = seasonId }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return participant.Entity;
     }
 

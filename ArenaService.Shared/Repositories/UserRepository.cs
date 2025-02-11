@@ -123,7 +123,7 @@ public class UserRepository : IUserRepository
                 Level = level
             }
         );
-        _context.SaveChanges();
+        await _context.SaveChangesAsync();
         return user.Entity;
     }
 
