@@ -165,6 +165,13 @@ public class TicketController : ControllerBase
                 return BadRequest("[Round] Max purchaseable ticket reached");
             }
         }
+        else
+        {
+            if (request.TicketCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound)
+            {
+                return BadRequest("[Round] Max purchaseable ticket reached");
+            }
+        }
         if (battleTicketStatusPerSeason is not null)
         {
             if (
@@ -173,6 +180,13 @@ public class TicketController : ControllerBase
             )
             {
                 return BadRequest("[Season] Max purchaseable ticket reached");
+            }
+        }
+        else
+        {
+            if (request.TicketCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason)
+            {
+                return BadRequest("[Round] Max purchaseable ticket reached");
             }
         }
 
