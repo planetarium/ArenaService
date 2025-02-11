@@ -1,24 +1,26 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using System.Text;
 using Microsoft.IdentityModel.Tokens;
 
 namespace ArenaService.Shared.Jwt;
 
 public class BattleTokenGenerator
 {
-    private readonly string _privateKey;
+    private readonly RSA _rsa;
 
-    public BattleTokenGenerator(string privateKeyPem)
+    public BattleTokenGenerator(string privateKeyBase64)
     {
-        _privateKey = privateKeyPem;
+        byte[] privateKeyBytes = Convert.FromBase64String(privateKeyBase64);
+        string privateKeyPem = Encoding.UTF8.GetString(privateKeyBytes);
+
+        _rsa = RSA.Create();
+        _rsa.ImportFromPem(privateKeyPem.ToCharArray());
     }
 
     public string GenerateBattleToken(int battleId)
     {
-        var rsa = RSA.Create();
-        rsa.ImportFromPem(_privateKey.ToCharArray());
-
-        var securityKey = new RsaSecurityKey(rsa);
+        var securityKey = new RsaSecurityKey(_rsa);
         var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.RsaSha256);
 
         var payload = new JwtPayload

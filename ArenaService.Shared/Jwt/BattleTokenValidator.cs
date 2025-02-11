@@ -1,6 +1,7 @@
 using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
+using System.Text;
 using Libplanet.Crypto;
 using Microsoft.IdentityModel.Tokens;
 
@@ -8,20 +9,21 @@ namespace ArenaService.Shared.Jwt;
 
 public class BattleTokenValidator
 {
-    private readonly string _publicKey;
+    private readonly RSA _rsa;
 
-    public BattleTokenValidator(string publicKeyPem)
+    public BattleTokenValidator(string publicKeyBase64)
     {
-        _publicKey = publicKeyPem;
+        byte[] publicKeyBytes = Convert.FromBase64String(publicKeyBase64);
+        string publicKeyPem = Encoding.UTF8.GetString(publicKeyBytes);
+
+        _rsa = RSA.Create();
+        _rsa.ImportFromPem(publicKeyPem.ToCharArray());
     }
 
     public bool ValidateBattleToken(string token, int battleId)
     {
         try
         {
-            var rsa = RSA.Create();
-            rsa.ImportFromPem(_publicKey.ToCharArray());
-
             var validationParameters = new TokenValidationParameters
             {
                 ValidateIssuer = true,
@@ -34,7 +36,7 @@ public class BattleTokenValidator
                 ClockSkew = TimeSpan.Zero,
 
                 ValidateIssuerSigningKey = true,
-                IssuerSigningKey = new RsaSecurityKey(rsa)
+                IssuerSigningKey = new RsaSecurityKey(_rsa)
             };
 
             var handler = new JwtSecurityTokenHandler();

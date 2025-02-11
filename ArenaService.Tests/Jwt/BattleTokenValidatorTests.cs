@@ -1,4 +1,4 @@
-using ArenaService.Jwt;
+using ArenaService.Shared.Jwt;
 
 namespace ArenaService.Tests.Jwt;
 
@@ -9,16 +9,8 @@ public class BattleTokenValidatorTests
 
     public BattleTokenValidatorTests()
     {
-        _publicKey = """
------BEGIN RSA PUBLIC KEY-----
-MIIBCgKCAQEA1czxlR7Pzxxfx/B1QdWgbT7LYJ8d9mMhccJs7JU72vxYlXLm8QNr
-LYLZl6y9fLLHQ93OWfrXb00yM+FeZNl4VSF3dmvpX7te9gXlfOyRpfTGdNlP2heC
-o64ZR1/JJq+osj8GYBb+LxGxa5Cp81igUqIz0byyVZfrIgDoRnYuCiBZkQFh776a
-2pqI0FiyBO9Z/R8qbYtuai+HsxXyucmxYtz+81C7glY81uH/ojoewaE/W5BwU6Op
-wtIMZIL0D77KwSwro46DMGSroS9E41GnBJoCYgAEyVOKysiYDZzmI+GgFEJjgQmL
-jdIUBF7if90pUawnmpjXL+v4iGWZerlv5QIDAQAB
------END RSA PUBLIC KEY-----
-""";
+        _publicKey =
+            "LS0tLS1CRUdJTiBSU0EgUFVCTElDIEtFWS0tLS0tCk1JSUJDZ0tDQVFFQTFjenhsUjdQenh4ZngvQjFRZFdnYlQ3TFlKOGQ5bU1oY2NKczdKVTcydnhZbFhMbThRTnIKTFlMWmw2eTlmTExIUTkzT1dmclhiMDB5TStGZVpObDRWU0YzZG12cFg3dGU5Z1hsZk95UnBmVEdkTmxQMmhlQwpvNjRaUjEvSkpxK29zajhHWUJiK0x4R3hhNUNwODFpZ1VxSXowYnl5VlpmcklnRG9Sbll1Q2lCWmtRRmg3NzZhCjJwcUkwRml5Qk85Wi9SOHFiWXR1YWkrSHN4WHl1Y214WXR6KzgxQzdnbFk4MXVIL29qb2V3YUUvVzVCd1U2T3AKd3RJTVpJTDBENzdLd1N3cm80NkRNR1Nyb1M5RTQxR25CSm9DWWdBRXlWT0t5c2lZRFp6bUkrR2dGRUpqZ1FtTApqZElVQkY3aWY5MHBVYXdubXBqWEwrdjRpR1daZXJsdjVRSURBUUFCCi0tLS0tRU5EIFJTQSBQVUJMSUMgS0VZLS0tLS0=";
         _validator = new BattleTokenValidator(_publicKey);
     }
 

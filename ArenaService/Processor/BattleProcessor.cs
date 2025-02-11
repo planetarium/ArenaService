@@ -1,13 +1,14 @@
 using ArenaService.ActionValues;
 using ArenaService.Client;
-using ArenaService.Shared.Constants;
 using ArenaService.Extensions;
+using ArenaService.Options;
+using ArenaService.Services;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.Enums;
-using ArenaService.Options;
 using ArenaService.Shared.Repositories;
-using ArenaService.Services;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -33,6 +34,7 @@ public class BattleProcessor
     private readonly IParticipantRepository _participantRepo;
     private readonly ITicketRepository _ticketRepo;
     private readonly ITxTrackingService _txTrackingService;
+    private readonly BattleTokenValidator _battleTokenValidator;
 
     public BattleProcessor(
         ILogger<BattleProcessor> logger,
@@ -59,6 +61,7 @@ public class BattleProcessor
         _availableOpponentRepo = availableOpponentRepo;
         _participantRepo = participantRepo;
         _arenaProviderName = options.Value.ArenaProviderName;
+        _battleTokenValidator = new BattleTokenValidator(options.Value.JwtPublicKey);
     }
 
     public async Task<string> ProcessAsync(int battleId)
@@ -288,9 +291,9 @@ public class BattleProcessor
         return null;
     }
 
-    private bool ValidateToken(BattleActionValue battleActionValue)
+    private bool ValidateToken(Battle battle, BattleActionValue battleActionValue)
     {
-        return true;
+        return _battleTokenValidator.ValidateBattleToken(battleActionValue.Memo, battle.Id);
     }
 
     private async Task<BattleResultState> GetBattleResultState(Battle battle, TxId txId)
