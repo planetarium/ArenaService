@@ -96,21 +96,21 @@ public class ArenaInfoController : ControllerBase
             avatarAddress
         );
 
-        TicketStatusResponse battleTicketStatus;
+        BattleTicketStatusResponse battleTicketStatus;
         if (battleTicketStatusPerSeason is null && battleTicketStatusPerRound is null)
         {
-            battleTicketStatus = TicketStatusResponse.CreateBattleTicketDefault(participant.Season);
+            battleTicketStatus = BattleTicketStatusResponse.CreateBattleTicketDefault(participant.Season);
         }
         else if (battleTicketStatusPerRound is null && battleTicketStatusPerSeason is not null)
         {
-            battleTicketStatus = TicketStatusResponse.CreateBattleTicketDefault(
+            battleTicketStatus = BattleTicketStatusResponse.CreateBattleTicketDefault(
                 participant.Season,
                 battleTicketStatusPerSeason
             );
         }
         else
         {
-            battleTicketStatus = TicketStatusResponse.FromBattleStatusModels(
+            battleTicketStatus = BattleTicketStatusResponse.FromBattleStatusModels(
                 battleTicketStatusPerSeason!,
                 battleTicketStatusPerRound!
             );
@@ -121,16 +121,16 @@ public class ArenaInfoController : ControllerBase
             avatarAddress
         );
 
-        TicketStatusResponse refreshTicketStatus;
+        RefreshTicketStatusResponse refreshTicketStatus;
         if (refreshTicketStatusPerRound is null)
         {
-            refreshTicketStatus = TicketStatusResponse.CreateRefreshTicketDefault(
+            refreshTicketStatus = RefreshTicketStatusResponse.CreateRefreshTicketDefault(
                 participant.Season
             );
         }
         else
         {
-            refreshTicketStatus = TicketStatusResponse.FromRefreshStatusModel(
+            refreshTicketStatus = RefreshTicketStatusResponse.FromRefreshStatusModel(
                 refreshTicketStatusPerRound
             );
         }

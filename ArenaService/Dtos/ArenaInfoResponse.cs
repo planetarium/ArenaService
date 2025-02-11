@@ -16,6 +16,6 @@ public class ArenaInfoResponse
     public required int TotalLose { get; set; }
     public required int CurrentRoundWinChange { get; set; }
     public required int CurrentRoundLoseChange { get; set; }
-    public required TicketStatusResponse BattleTicketStatus { get; set; }
-    public required TicketStatusResponse RefreshTicketStatus { get; set; }
+    public required BattleTicketStatusResponse BattleTicketStatus { get; set; }
+    public required RefreshTicketStatusResponse RefreshTicketStatus { get; set; }
 }
