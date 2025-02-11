@@ -1,5 +1,5 @@
-using ArenaService.Shared.Constants;
-using ArenaService.Shared.Models;
+using ArenaService.Constants;
+using ArenaService.Models;
 using Libplanet.Crypto;
 using Newtonsoft.Json;
 

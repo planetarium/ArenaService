@@ -1,8 +1,8 @@
 namespace ArenaService.Dtos;
 
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.BattleTicket;
-using ArenaService.Shared.Models.RefreshTicket;
+using ArenaService.Models;
+using ArenaService.Models.BattleTicket;
+using ArenaService.Models.RefreshTicket;
 using Swashbuckle.AspNetCore.Annotations;
 
 public class TicketStatusResponse

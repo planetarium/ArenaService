@@ -1,5 +1,5 @@
 using ArenaService.IntegrationTests.Fixtures;
-using ArenaService.Shared.Repositories;
+using ArenaService.Repositories;
 using StackExchange.Redis;
 
 namespace ArenaService.IntegrationTests.Repositories.RankingRepo;

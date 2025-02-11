@@ -1,9 +1,9 @@
 using ArenaService.Client;
 using ArenaService.Services;
-using ArenaService.Shared.Constants;
-using ArenaService.Shared.Exceptions;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Repositories;
+using ArenaService.Constants;
+using ArenaService.Exceptions;
+using ArenaService.Models;
+using ArenaService.Repositories;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;

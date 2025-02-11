@@ -1,4 +1,4 @@
-using ArenaService.Shared.Constants;
+using ArenaService.Constants;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace ArenaService.Dtos;

@@ -1,6 +1,6 @@
-using ArenaService.Shared.Constants;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.Enums;
+using ArenaService.Constants;
+using ArenaService.Models;
+using ArenaService.Models.Enums;
 using Libplanet.Types.Tx;
 
 namespace ArenaService.Dtos;

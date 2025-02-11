@@ -2,7 +2,7 @@ using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Cryptography;
 using System.Text;
-using ArenaService.Shared.Jwt;
+using ArenaService.Jwt;
 using Libplanet.Crypto;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
