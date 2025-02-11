@@ -1,7 +1,7 @@
 namespace ArenaService.Extensions;
 
 using ArenaService.Dtos;
-using ArenaService.Shared.Models;
+using ArenaService.Models;
 
 public static class SeasonExtensions
 {

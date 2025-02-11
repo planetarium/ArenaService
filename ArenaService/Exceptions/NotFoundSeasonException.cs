@@ -1,4 +1,4 @@
-namespace ArenaService.Shared.Exceptions;
+namespace ArenaService.Exceptions;
 
 public class NotFoundSeasonException : Exception
 {

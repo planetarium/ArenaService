@@ -9,8 +9,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.Tests", "Arena
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.IntegrationTests", "ArenaService.IntegrationTests\ArenaService.IntegrationTests.csproj", "{FB711D4F-1AF8-4304-B45E-5E7D5D4C2AF9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ArenaService.Shared", "ArenaService.Shared\ArenaService.Shared.csproj", "{FA31AAC5-F824-4484-AC4F-247773537B74}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

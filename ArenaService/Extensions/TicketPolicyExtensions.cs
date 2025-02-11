@@ -1,7 +1,7 @@
 namespace ArenaService.Extensions;
 
 using ArenaService.Dtos;
-using ArenaService.Shared.Models.Ticket;
+using ArenaService.Models.Ticket;
 
 public static class TicketPolicyExtensions
 {

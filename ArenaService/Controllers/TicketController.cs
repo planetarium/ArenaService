@@ -1,12 +1,12 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Shared.Constants;
+using ArenaService.Constants;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
-using ArenaService.Shared.Models.BattleTicket;
-using ArenaService.Shared.Models.Enums;
-using ArenaService.Shared.Models.RefreshTicket;
-using ArenaService.Shared.Repositories;
+using ArenaService.Models.BattleTicket;
+using ArenaService.Models.Enums;
+using ArenaService.Models.RefreshTicket;
+using ArenaService.Repositories;
 using ArenaService.Worker;
 using Hangfire;
 using Microsoft.AspNetCore.Authorization;
@@ -66,11 +66,11 @@ public class TicketController : ControllerBase
                 q => q.Include(s => s.BattleTicketPolicy)
             );
 
-            return Ok(TicketStatusResponse.CreateBattleTicketDefault(season));
+            return Ok(BattleTicketStatusResponse.CreateBattleTicketDefault(season));
         }
 
         return Ok(
-            TicketStatusResponse.FromBattleStatusModels(
+            BattleTicketStatusResponse.FromBattleStatusModels(
                 battleTicketStatusPerSeason,
                 battleTicketStatusPerRound
             )
@@ -102,10 +102,10 @@ public class TicketController : ControllerBase
                 q => q.Include(s => s.RefreshTicketPolicy)
             );
 
-            return Ok(TicketStatusResponse.CreateRefreshTicketDefault(season));
+            return Ok(RefreshTicketStatusResponse.CreateRefreshTicketDefault(season));
         }
 
-        return Ok(TicketStatusResponse.FromRefreshStatusModel(refreshTicketStatusPerRound));
+        return Ok(RefreshTicketStatusResponse.FromRefreshStatusModel(refreshTicketStatusPerRound));
     }
 
     [HttpPost("battle/purchase")]
@@ -155,7 +155,6 @@ public class TicketController : ControllerBase
             q => q.Include(s => s.BattleTicketPolicy)
         );
 
-        BattleTicketPurchaseLog purchaseLog;
         if (battleTicketStatusPerRound is not null)
         {
             if (
@@ -163,7 +162,31 @@ public class TicketController : ControllerBase
                 > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound
             )
             {
-                return BadRequest("Max purchaseable ticket reached");
+                return BadRequest("[Round] Max purchaseable ticket reached");
+            }
+        }
+        else
+        {
+            if (request.TicketCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound)
+            {
+                return BadRequest("[Round] Max purchaseable ticket reached");
+            }
+        }
+        if (battleTicketStatusPerSeason is not null)
+        {
+            if (
+                battleTicketStatusPerSeason!.PurchaseCount + request.TicketCount
+                > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
+            )
+            {
+                return BadRequest("[Season] Max purchaseable ticket reached");
+            }
+        }
+        else
+        {
+            if (request.TicketCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason)
+            {
+                return BadRequest("[Round] Max purchaseable ticket reached");
             }
         }
 
@@ -183,7 +206,7 @@ public class TicketController : ControllerBase
             return BadRequest($"{request.PurchasePrice} {requiredAmount}");
         }
 
-        purchaseLog = await _ticketRepo.AddBattleTicketPurchaseLog(
+        var purchaseLog = await _ticketRepo.AddBattleTicketPurchaseLog(
             cachedSeason.Id,
             cachedRound.Id,
             avatarAddress,

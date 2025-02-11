@@ -3,6 +3,7 @@ namespace ArenaService.Auth;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Encodings.Web;
+using ArenaService.Utils;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
@@ -114,6 +115,23 @@ public class ES256KAuthenticationHandler : AuthenticationHandler<AuthenticationS
 
             var pubKey = PublicKey.FromHex(publicKey);
             address = pubKey.Address.ToString();
+
+            try
+            {
+                if (
+                    !AvatarAddressValidator.CheckSignerContainsAvatar(
+                        pubKey.Address,
+                        new Address(avtAdr)
+                    )
+                )
+                {
+                    return false;
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
 
             return true;
         }

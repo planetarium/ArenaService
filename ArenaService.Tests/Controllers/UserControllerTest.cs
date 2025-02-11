@@ -4,7 +4,7 @@ using System.Security.Claims;
 using ArenaService.Controllers;
 using ArenaService.Dtos;
 using ArenaService.Services;
-using ArenaService.Shared.Repositories;
+using ArenaService.Repositories;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

@@ -1,10 +1,10 @@
 namespace ArenaService.Services;
 
 using System.Threading.Tasks;
-using ArenaService.Shared.Constants;
-using ArenaService.Shared.Exceptions;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Repositories;
+using ArenaService.Constants;
+using ArenaService.Exceptions;
+using ArenaService.Models;
+using ArenaService.Repositories;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,6 +24,7 @@ public class ParticipateService : IParticipateService
     private readonly IParticipantRepository _participantRepo;
     private readonly IUserRepository _userRepo;
     private readonly IRankingRepository _rankingRepo;
+    private readonly IRankingSnapshotRepository _rankingSnapshotRepo;
     private readonly ISeasonService _seasonService;
     private readonly ISeasonCacheRepository _seasonCache;
     private readonly IMedalRepository _medalRepo;
@@ -33,6 +34,7 @@ public class ParticipateService : IParticipateService
         IParticipantRepository participantRepo,
         IUserRepository userRepo,
         IRankingRepository rankingRepo,
+        IRankingSnapshotRepository rankingSnapshotRepo,
         ISeasonService seasonService,
         IMedalRepository medalRepo,
         ISeasonCacheRepository seasonCache,
@@ -42,6 +44,7 @@ public class ParticipateService : IParticipateService
         _participantRepo = participantRepo;
         _userRepo = userRepo;
         _rankingRepo = rankingRepo;
+        _rankingSnapshotRepo = rankingSnapshotRepo;
         _seasonService = seasonService;
         _seasonCache = seasonCache;
         _medalRepo = medalRepo;
@@ -108,6 +111,11 @@ public class ParticipateService : IParticipateService
 
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 
+        await _rankingSnapshotRepo.AddRankingsSnapshot(
+            [(avatarAddress, participant.Score)],
+            seasonId,
+            roundId
+        );
         await _rankingRepo.UpdateScoreAsync(
             participant.AvatarAddress,
             seasonId,

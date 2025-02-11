@@ -1,4 +1,4 @@
-using ArenaService.Shared.Constants;
+using ArenaService.Constants;
 
 namespace ArenaService.Dtos;
 

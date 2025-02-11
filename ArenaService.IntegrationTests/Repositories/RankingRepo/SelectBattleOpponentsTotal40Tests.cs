@@ -1,6 +1,6 @@
 using ArenaService.IntegrationTests.Fixtures;
-using ArenaService.Shared.Constants;
-using ArenaService.Shared.Repositories;
+using ArenaService.Constants;
+using ArenaService.Repositories;
 using Libplanet.Crypto;
 using StackExchange.Redis;
 using Xunit;
@@ -21,7 +21,7 @@ public class SelectBattleOpponentsTotal40Tests : BaseTest
         string statusKey = string.Format(RankingRepository.StatusKeyFormat, seasonId, roundId);
         await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
 
-        var totalParticipants = 40;
+        var totalParticipants = 41;
         var participants = new Dictionary<int, Address>();
         string rankingKey = string.Format(RankingRepository.RankingKeyFormat, seasonId, roundId);
 

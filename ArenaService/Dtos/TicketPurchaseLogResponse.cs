@@ -1,4 +1,4 @@
-using ArenaService.Shared.Models.Enums;
+using ArenaService.Models.Enums;
 using Libplanet.Types.Tx;
 
 namespace ArenaService.Dtos;

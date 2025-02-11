@@ -1,10 +1,10 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Shared.Constants;
 using ArenaService.Dtos;
 using ArenaService.Extensions;
-using ArenaService.Shared.Repositories;
 using ArenaService.Services;
+using ArenaService.Constants;
+using ArenaService.Repositories;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;
@@ -141,8 +141,7 @@ public class BattleController : ControllerBase
             avatarAddress,
             cachedSeason.Id,
             cachedRound.Id,
-            availableOpponent.Id,
-            "token"
+            availableOpponent.Id
         );
 
         var locationUri = Url.Action(nameof(GetBattle), new { battleId = battle.Id });

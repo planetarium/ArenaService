@@ -1,7 +1,7 @@
 ﻿// using ArenaService.Controllers;
 // using ArenaService.Dtos;
-// using ArenaService.Shared.Models;
-// using ArenaService.Shared.Repositories;
+// using ArenaService.Models;
+// using ArenaService.Repositories;
 // using Microsoft.AspNetCore.Http.HttpResults;
 // using Moq;
 
