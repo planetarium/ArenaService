@@ -2,12 +2,13 @@ namespace ArenaService;
 
 using System.Text.Json.Serialization;
 using ArenaService.Auth;
-using ArenaService.Shared.Data;
 using ArenaService.Filter;
 using ArenaService.JsonConverters;
 using ArenaService.Options;
-using ArenaService.Shared.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Data;
+using ArenaService.Shared.Jwt;
+using ArenaService.Shared.Repositories;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -42,28 +43,6 @@ public class Startup
                 {
                     var headlessOptions = provider.GetRequiredService<IOptions<HeadlessOptions>>();
                     client.BaseAddress = headlessOptions.Value.HeadlessEndpoint;
-
-                    // if (
-                    //     headlessStateServiceOption.Value.JwtSecretKey is not null
-                    //     && headlessStateServiceOption.Value.JwtIssuer is not null
-                    // )
-                    // {
-                    //     var key = new SymmetricSecurityKey(
-                    //         Encoding.UTF8.GetBytes(headlessStateServiceOption.Value.JwtSecretKey)
-                    //     );
-                    //     var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-                    //     var token = new JwtSecurityToken(
-                    //         issuer: headlessStateServiceOption.Value.JwtIssuer,
-                    //         expires: DateTime.UtcNow.AddMinutes(5),
-                    //         signingCredentials: creds
-                    //     );
-
-                    //     client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
-                    //         "Bearer",
-                    //         new JwtSecurityTokenHandler().WriteToken(token)
-                    //     );
-                    // }
                 }
             );
 
@@ -72,6 +51,7 @@ public class Startup
             {
                 options.Filters.Add<CacheExceptionFilter>();
                 options.Filters.Add<NotRegisteredUserExceptionFilter>();
+                options.Filters.Add<NotEnoughMedalExceptionFilter>();
             })
             .AddNewtonsoftJson(options =>
             {
@@ -172,6 +152,11 @@ public class Startup
         );
 
         services.AddSingleton<IBackgroundJobClient, BackgroundJobClient>();
+        var opsConfig = Configuration
+            .GetSection(OpsConfigOptions.SectionName)
+            .Get<OpsConfigOptions>();
+
+        services.AddSingleton(new BattleTokenGenerator(opsConfig!.JwtSecretKey));
         services
             .AddSingleton<CacheBlockTipWorker>()
             .AddHostedService(provider => provider.GetRequiredService<CacheBlockTipWorker>());
@@ -204,7 +189,15 @@ public class Startup
 
         app.UseHangfireDashboard(
             "/hangfire",
-            new DashboardOptions { Authorization = [new AllowAllDashboardAuthorizationFilter()] }
+            new DashboardOptions
+            {
+                Authorization =
+                [
+                    new BasicAuthDashboardAuthorizationFilter(
+                        serviceProvider.GetRequiredService<IOptions<OpsConfigOptions>>()
+                    )
+                ]
+            }
         );
 
         app.UseEndpoints(endpoints =>
@@ -213,13 +206,5 @@ public class Startup
             endpoints.MapSwagger();
             endpoints.MapHealthChecks("/ping");
         });
-    }
-}
-
-public class AllowAllDashboardAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
-{
-    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
-    {
-        return true;
     }
 }
