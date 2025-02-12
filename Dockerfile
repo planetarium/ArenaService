@@ -30,7 +30,7 @@ fi
 EOF
 
 # Build runtime image
-FROM mcr.microsoft.com/dotnet/aspnet:8.0-jammy
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/aspnet:8.0-bookworm-slim
 WORKDIR /app
 RUN apt-get update && apt-get install -y libc6-dev
 COPY --from=build-env /app/out .
