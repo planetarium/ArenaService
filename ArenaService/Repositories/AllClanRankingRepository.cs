@@ -196,17 +196,29 @@ public class AllClanRankingRepository : IAllClanRankingRepository
             Order.Descending
         );
 
-        return topClans
-            .Select(
-                (entry, i) =>
-                {
-                    var parts = entry.Element.ToString().Split(':');
-                    var clanId = int.Parse(parts[1]!);
+        var result = new List<(int ClanId, int Score, int Rank)>();
 
-                    return (ClanId: clanId, Score: (int)entry.Score, Rank: i + 1);
-                }
-            )
-            .ToList();
+        int processedCount = 0;
+
+        foreach (
+            var group in topClans
+                .Select(e => (Element: e.Element.ToString(), Score: (int)e.Score))
+                .GroupBy(e => e.Score)
+        )
+        {
+            int lastRank = processedCount + group.Count();
+
+            foreach (var clan in group)
+            {
+                var parts = clan.Element.Split(':');
+                var clanId = int.Parse(parts[1]!);
+                result.Add((ClanId: clanId, clan.Score, Rank: lastRank));
+            }
+
+            processedCount += group.Count();
+        }
+
+        return result;
     }
 
     private async Task InsureRankingStatus(int seasonId, int roundId)

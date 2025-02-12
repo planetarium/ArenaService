@@ -112,7 +112,7 @@ public class ParticipateService : IParticipateService
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 
         await _rankingSnapshotRepo.AddRankingsSnapshot(
-            [(avatarAddress, participant.User.ClanId, participant.Score)],
+            [(avatarAddress, user.ClanId, participant.Score)],
             seasonId,
             roundId
         );
@@ -129,17 +129,17 @@ public class ParticipateService : IParticipateService
             participant.Score
         );
 
-        if (participant.User.ClanId is not null)
+        if (user.ClanId is not null)
         {
             await _clanRankingRepo.UpdateScoreAsync(
-                participant.User.ClanId.Value,
+                user.ClanId.Value,
                 avatarAddress,
                 seasonId,
                 roundId,
                 participant.Score
             );
             await _clanRankingRepo.UpdateScoreAsync(
-                participant.User.ClanId.Value,
+                user.ClanId.Value,
                 avatarAddress,
                 seasonId,
                 roundId + 1,

@@ -31,13 +31,17 @@ public class BattleTicketStatusResponse : TicketStatusResponse
             TicketsUsedPerRound = roundStatus.UsedCount,
             RemainingTicketsPerRound = roundStatus.RemainingCount,
             RemainingPurchasableTicketsPerRound =
-                seasonStatus.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
-                    - seasonStatus.PurchaseCount
-                > roundStatus.BattleTicketPolicy.MaxPurchasableTicketsPerRound
-                    ? roundStatus.BattleTicketPolicy.MaxPurchasableTicketsPerRound
-                        - roundStatus.PurchaseCount
+                roundStatus.BattleTicketPolicy.MaxPurchasableTicketsPerRound
+                    - roundStatus.PurchaseCount
+                <= 0
+                    ? 0
                     : seasonStatus.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
-                        - seasonStatus.PurchaseCount,
+                        - seasonStatus.PurchaseCount
+                    > roundStatus.BattleTicketPolicy.MaxPurchasableTicketsPerRound
+                        ? roundStatus.BattleTicketPolicy.MaxPurchasableTicketsPerRound
+                            - roundStatus.PurchaseCount
+                        : seasonStatus.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
+                            - seasonStatus.PurchaseCount,
             IsUnused = roundStatus.UsedCount == 0,
             NextNCGCosts = seasonStatus
                 .BattleTicketPolicy.PurchasePrices.Skip(seasonStatus.PurchaseCount)
