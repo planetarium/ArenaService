@@ -46,7 +46,7 @@ public class UpdateScoreCorrectly : BaseTest
         {
             string participantKey = string.Format(
                 ClanRankingRepository.ParticipantKeyFormat,
-                address.ToHex()
+                address.ToHex().ToLower()
             );
             await ClanRankingRepository.UpdateScoreAsync(clanId, address, seasonId, roundId, score);
 

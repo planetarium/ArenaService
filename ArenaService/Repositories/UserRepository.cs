@@ -79,7 +79,7 @@ public class UserRepository : IUserRepository
         Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
     )
     {
-        var query = _context.Users.AsQueryable();
+        var query = _context.Users.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {
@@ -93,7 +93,7 @@ public class UserRepository : IUserRepository
         Func<IQueryable<User>, IQueryable<User>>? includeQuery = null
     )
     {
-        var query = _context.Users.AsQueryable();
+        var query = _context.Users.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {

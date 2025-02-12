@@ -53,7 +53,7 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
     )
     {
-        var query = _context.AvailableOpponents.AsQueryable();
+        var query = _context.AvailableOpponents.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {
@@ -74,7 +74,7 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         Func<IQueryable<AvailableOpponent>, IQueryable<AvailableOpponent>>? includeQuery = null
     )
     {
-        var query = _context.AvailableOpponents.AsQueryable();
+        var query = _context.AvailableOpponents.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {

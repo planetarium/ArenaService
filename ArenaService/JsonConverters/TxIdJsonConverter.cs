@@ -8,7 +8,7 @@ public class TxIdJsonConverter : JsonConverter<TxId>
 {
     public override void WriteJson(JsonWriter writer, TxId value, JsonSerializer serializer)
     {
-        writer.WriteValue(value.ToHex());
+        writer.WriteValue(value.ToHex().ToLower());
     }
 
     public override TxId ReadJson(

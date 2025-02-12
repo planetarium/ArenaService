@@ -133,7 +133,7 @@ public class AllClanRankingRepository : IAllClanRankingRepository
         {
             string clanKey = string.Format(ClanKeyFormat, rankingEntry.ClanId);
 
-            await _redis.SortedSetAddAsync(clanRankingKey, clanKey, rankingEntry.Score);
+            await _redis.SortedSetUpdateAsync(clanRankingKey, clanKey, rankingEntry.Score);
         }
 
         await _redis.KeyExpireAsync(

@@ -69,45 +69,23 @@ def insert_ranking_snapshots(season_id, round_id):
         with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
             with conn.cursor() as cursor:
                 cursor.execute("""
-                    SELECT avatar_address, score FROM participants
-                    WHERE season_id = %s
+                    SELECT p.avatar_address, p.score, u.clan_id
+                    FROM participants p
+                    JOIN users u ON p.avatar_address = u.avatar_address
+                    WHERE p.season_id = %s
                 """, (season_id,))
                 participants = cursor.fetchall()
 
                 cursor.executemany("""
-                    INSERT INTO ranking_snapshots (season_id, round_id, avatar_address, score, created_at)
-                    VALUES (%s, %s, %s, %s, now())
-                """, [(season_id, round_id, avatar_address, score) for avatar_address, score in participants])
+                    INSERT INTO ranking_snapshots (season_id, clan_id, round_id, avatar_address, score, created_at)
+                    VALUES (%s, %s, %s, %s, %s, now())
+                """, [(season_id, clan_id, round_id, avatar_address, score) 
+                      for avatar_address, score, clan_id in participants])
 
                 conn.commit()
                 print(f"✅ Ranking Snapshot {len(participants)}명 추가 완료")
     except Exception as e:
         print(f"❌ 참가자 추가 중 오류 발생: {e}")
-
-def insert_clan_ranking_snapshots(season_id, round_id):
-    try:
-        with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    SELECT u.clan_id, SUM(p.score) as total_score
-                    FROM participants p
-                    JOIN users u ON p.avatar_address = u.avatar_address
-                    WHERE p.season_id = %s AND u.clan_id IS NOT NULL
-                    GROUP BY u.clan_id
-                """, (season_id,))
-                
-                clan_rankings = cursor.fetchall()
-
-                cursor.executemany("""
-                    INSERT INTO clan_ranking_snapshots (season_id, round_id, clan_id, score, created_at)
-                    VALUES (%s, %s, %s, %s, now())
-                """, [(season_id, round_id, clan_id, total_score) for clan_id, total_score in clan_rankings])
-
-                conn.commit()
-                print(f"✅ Clan Ranking Snapshot {len(clan_rankings)}개 추가 완료")
-    except Exception as e:
-        print(f"❌ 클랜 랭킹 스냅샷 추가 중 오류 발생: {e}")
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="스냅샷 초기화 스크립트")
@@ -118,7 +96,6 @@ if __name__ == "__main__":
 
     if season_id and round_id:
         insert_ranking_snapshots(season_id, round_id)
-        insert_clan_ranking_snapshots(season_id, round_id)
 
     else:
         print("❌ 현재 블록 인덱스에 해당하는 시즌 및 라운드를 찾을 수 없습니다.")

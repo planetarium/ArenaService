@@ -36,7 +36,7 @@ public class SelectBattleOpponentsTotal100Tests : BaseTest
         {
             string participantKey = string.Format(
                 RankingRepository.ParticipantKeyFormat,
-                address.ToHex()
+                address.ToHex().ToLower()
             );
 
             await Database.SortedSetAddAsync(rankingKey, participantKey, score);
@@ -70,7 +70,7 @@ public class SelectBattleOpponentsTotal100Tests : BaseTest
             var (min, max, _, _) = OpponentGroupConstants.Groups[groupId];
             string participantKey = string.Format(
                 RankingRepository.ParticipantKeyFormat,
-                opponent.AvatarAddress.ToHex()
+                opponent.AvatarAddress.ToHex().ToLower()
             );
 
             long? opponentRank = await Database.SortedSetRankAsync(

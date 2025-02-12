@@ -306,8 +306,8 @@ public class BattleProcessor
             async () =>
             {
                 var stateResponse = await _client.GetState.ExecuteAsync(
-                    accountAddress.ToHex(),
-                    stateAddress.ToHex()
+                    accountAddress.ToHex().ToLower(),
+                    stateAddress.ToHex().ToLower()
                 );
 
                 if (stateResponse.Data?.State is null)

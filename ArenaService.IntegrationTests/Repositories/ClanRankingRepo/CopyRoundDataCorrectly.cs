@@ -71,7 +71,7 @@ public class CopyRoundDataCorrectly : BaseTest
         {
             string participantKey = string.Format(
                 ClanRankingRepository.ParticipantKeyFormat,
-                address.ToHex()
+                address.ToHex().ToLower()
             );
             await Database.SortedSetAddAsync(sourceRankingKey, participantKey, score);
         }
@@ -90,7 +90,7 @@ public class CopyRoundDataCorrectly : BaseTest
         {
             string participantKey = string.Format(
                 ClanRankingRepository.ParticipantKeyFormat,
-                address.ToHex()
+                address.ToHex().ToLower()
             );
 
             var resultScore = await Database.SortedSetScoreAsync(targetRankingKey, participantKey);

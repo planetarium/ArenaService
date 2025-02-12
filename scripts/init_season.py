@@ -42,7 +42,7 @@ def insert_season_and_rounds(file_path, start_block):
                         battle_ticket_policy_id = int(row["battle_ticket_policy_id"])
                         refresh_ticket_policy_id = int(row["refresh_ticket_policy_id"])
 
-                        round_count = 4 if arena_type == 1 else 1
+                        round_count = 1 if arena_type == 0 else 4
                         end_block = start_block + (round_interval * round_count) - 1
 
                         cursor.execute(

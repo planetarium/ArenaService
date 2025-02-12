@@ -34,7 +34,7 @@ public class SeasonRepository : ISeasonRepository
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
     )
     {
-        var query = _context.Seasons.AsQueryable();
+        var query = _context.Seasons.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {
@@ -49,7 +49,7 @@ public class SeasonRepository : ISeasonRepository
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
     )
     {
-        var query = _context.Seasons.AsQueryable();
+        var query = _context.Seasons.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {
@@ -66,7 +66,7 @@ public class SeasonRepository : ISeasonRepository
         Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
     )
     {
-        var query = _context.Seasons.AsQueryable();
+        var query = _context.Seasons.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {

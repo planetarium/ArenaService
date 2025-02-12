@@ -89,7 +89,7 @@ def insert_participants(season_id):
                     print("⚠️ 새로운 참가자가 없습니다.")
                     return
 
-                participants = [(u[0], season_id, 1000) for u in users]
+                participants = [(u[0], season_id, random.randint(1000, 1200)) for u in users]
 
                 cursor.executemany("""
                     INSERT INTO participants (avatar_address, season_id, initialized_score, score, total_win, total_lose, created_at, updated_at)

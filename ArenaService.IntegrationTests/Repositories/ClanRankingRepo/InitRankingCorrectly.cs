@@ -54,7 +54,7 @@ public class InitRankingCorrectly : BaseTest
         {
             string participantKey = string.Format(
                 ClanRankingRepository.ParticipantKeyFormat,
-                address.ToHex()
+                address.ToHex().ToLower()
             );
 
             var resultScore = await Database.SortedSetScoreAsync(rankingKey, participantKey);

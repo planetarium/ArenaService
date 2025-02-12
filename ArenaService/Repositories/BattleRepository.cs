@@ -99,7 +99,7 @@ public class BattleRepository : IBattleRepository
         Func<IQueryable<Battle>, IQueryable<Battle>>? includeQuery = null
     )
     {
-        var query = _context.Battles.AsQueryable();
+        var query = _context.Battles.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {

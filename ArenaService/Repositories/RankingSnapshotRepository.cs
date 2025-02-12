@@ -78,7 +78,7 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
         Func<IQueryable<RankingSnapshot>, IQueryable<RankingSnapshot>>? includeQuery = null
     )
     {
-        var query = _context.RankingSnapshots.AsQueryable();
+        var query = _context.RankingSnapshots.AsQueryable().AsNoTracking().AsNoTracking();
 
         if (includeQuery != null)
         {
@@ -94,7 +94,7 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
         Func<IQueryable<RankingSnapshot>, IQueryable<RankingSnapshot>>? includeQuery = null
     )
     {
-        var query = _context.RankingSnapshots.AsQueryable();
+        var query = _context.RankingSnapshots.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {

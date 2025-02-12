@@ -72,7 +72,7 @@ public class RankingRepository : IRankingRepository
         await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
 
         await _redis.SortedSetIncrementAsync(rankingKey, participantKey, scoreChange);
     }
@@ -82,7 +82,7 @@ public class RankingRepository : IRankingRepository
         await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
 
         var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
 
@@ -131,7 +131,7 @@ public class RankingRepository : IRankingRepository
         await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
 
         var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
         return score.HasValue
@@ -144,7 +144,7 @@ public class RankingRepository : IRankingRepository
     > SelectBattleOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
     {
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex());
+        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
 
         int totalRankingCount = (int)await _redis.SortedSetLengthAsync(rankingKey);
 
@@ -239,7 +239,7 @@ public class RankingRepository : IRankingRepository
         {
             string participantKey = string.Format(
                 ParticipantKeyFormat,
-                rankingEntry.AvatarAddress.ToHex()
+                rankingEntry.AvatarAddress.ToHex().ToLower()
             );
             await _redis.SortedSetAddAsync(rankingKey, participantKey, rankingEntry.Score);
         }

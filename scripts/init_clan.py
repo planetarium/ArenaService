@@ -52,23 +52,23 @@ def get_clan_id(clan_name, conn):
 def user_exists(avatar_address, conn):
     """ 유저 존재 여부 확인 """
     with conn.cursor() as cursor:
-        cursor.execute("SELECT COUNT(*) FROM users WHERE avatar_address = %s", (avatar_address,))
+        cursor.execute("SELECT COUNT(*) FROM users WHERE avatar_address = %s", (avatar_address.lower(),))
         return cursor.fetchone()[0] > 0
 
 def add_user(avatar_address, agent_address, conn):
     """ 유저 추가 (없을 경우만) """
-    if not user_exists(avatar_address, conn):
+    if not user_exists(avatar_address.lower(), conn):
         with conn.cursor() as cursor:
             cursor.execute("""
                 INSERT INTO users (avatar_address, agent_address, name_with_hash, portrait_id, cp, level, created_at, updated_at)
                 VALUES (%s, %s, %s, %s, %s, %s, now(), now())
-            """, (avatar_address, agent_address, "temp", 40100032, 1, 1))
+            """, (avatar_address.lower(), agent_address.lower(), "temp", 40100032, 1, 1))
         conn.commit()
 
 def assign_user_to_clan(avatar_address, clan_id, conn):
     """ 유저를 클랜에 배정 (이미 배정된 경우 유지) """
     with conn.cursor() as cursor:
-        cursor.execute("SELECT clan_id FROM users WHERE avatar_address = %s", (avatar_address,))
+        cursor.execute("SELECT clan_id FROM users WHERE avatar_address = %s", (avatar_address.lower(),))
         result = cursor.fetchone()
         if result and result[0]:  # 이미 클랜이 할당된 경우
             return
@@ -77,7 +77,7 @@ def assign_user_to_clan(avatar_address, clan_id, conn):
         cursor.execute("""
             UPDATE users SET clan_id = %s, updated_at = now()
             WHERE avatar_address = %s
-        """, (clan_id, avatar_address))
+        """, (clan_id, avatar_address.lower()))
         conn.commit()
 
 def process_csv():
@@ -103,8 +103,8 @@ def process_csv():
                         if not avatar_address:
                             continue  # 데이터가 없으면 건너뛰기
 
-                        add_user(avatar_address, agent_address, conn)
-                        assign_user_to_clan(avatar_address, clan_id, conn)
+                        add_user(avatar_address.lower(), agent_address.lower(), conn)
+                        assign_user_to_clan(avatar_address.lower(), clan_id, conn)
 
                 print("✅ CSV 데이터 처리 완료")
 

@@ -47,14 +47,14 @@ def insert_users(participants):
         with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
             with conn.cursor() as cursor:
                 for participant in participants:
-                    avatar_address = participant["avatarAddr"][2:]  # "0x" 제거
+                    avatar_address = participant["avatarAddr"][2:].lower()  # "0x" 제거
                     cursor.execute(
                         sql.SQL("""
                             INSERT INTO users (agent_address, avatar_address, name_with_hash, portrait_id, cp, level, created_at, updated_at)
                             VALUES (%s, %s, %s, %s, %s, %s, now(), now())
                             ON CONFLICT (avatar_address) DO NOTHING
                         """),
-                        (avatar_address, avatar_address, participant["nameWithHash"], int(participant["portraitId"]), int(participant["cp"]), int(participant["level"]))
+                        (avatar_address.lower(), avatar_address.lower(), participant["nameWithHash"], int(participant["portraitId"]), int(participant["cp"]), int(participant["level"]))
                     )
                 conn.commit()
                 print(f"✅ {len(participants)}명의 유저 삽입 완료")

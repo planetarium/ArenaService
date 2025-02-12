@@ -8,7 +8,7 @@ public class AddressJsonConverter : JsonConverter<Address>
 {
     public override void WriteJson(JsonWriter writer, Address value, JsonSerializer serializer)
     {
-        writer.WriteValue(value.ToHex());
+        writer.WriteValue(value.ToHex().ToLower());
     }
 
     public override Address ReadJson(

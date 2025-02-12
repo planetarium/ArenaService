@@ -1,3 +1,4 @@
+using System.Text.Json;
 using ArenaService.Client;
 using ArenaService.Constants;
 using ArenaService.Exceptions;
@@ -343,6 +344,7 @@ public class PrepareRankingWorker : BackgroundService
         var rankingData = rankingSnapshots
             .Select(r => (r.AvatarAddress, r.ClanId, r.Score))
             .ToList();
+
         var clanRankingsData = new Dictionary<int, List<(Address, int)>>();
         foreach (var (avatarAddress, clanId, score) in rankingData)
         {
@@ -406,7 +408,7 @@ public class PrepareRankingWorker : BackgroundService
                     try
                     {
                         nextRoundClanRankingsData[participant.User.ClanId.Value]
-                            .Add((participant.AvatarAddress, 1000));
+                            .Add((participant.AvatarAddress, participant.Score));
                     }
                     catch (KeyNotFoundException)
                     {
@@ -415,7 +417,7 @@ public class PrepareRankingWorker : BackgroundService
                             int
                         )>()
                         {
-                            (participant.AvatarAddress, 1000)
+                            (participant.AvatarAddress, participant.Score)
                         };
                     }
                 }

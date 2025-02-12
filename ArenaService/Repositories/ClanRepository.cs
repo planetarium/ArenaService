@@ -24,7 +24,7 @@ public class ClanRepository : IClanRepository
         Func<IQueryable<Clan>, IQueryable<Clan>>? includeQuery = null
     )
     {
-        var query = _context.Clans.AsQueryable();
+        var query = _context.Clans.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {

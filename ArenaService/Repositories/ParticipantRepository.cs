@@ -86,7 +86,7 @@ public class ParticipantRepository : IParticipantRepository
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     )
     {
-        var query = _context.Participants.AsQueryable();
+        var query = _context.Participants.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {
@@ -105,7 +105,7 @@ public class ParticipantRepository : IParticipantRepository
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     )
     {
-        var query = _context.Participants.AsQueryable();
+        var query = _context.Participants.AsQueryable().AsNoTracking();
 
         if (includeQuery != null)
         {
