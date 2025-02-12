@@ -193,15 +193,7 @@ public class Startup
 
         app.UseHangfireDashboard(
             "/hangfire",
-            new DashboardOptions
-            {
-                Authorization =
-                [
-                    new BasicAuthDashboardAuthorizationFilter(
-                        serviceProvider.GetRequiredService<IOptions<OpsConfigOptions>>()
-                    )
-                ]
-            }
+            new DashboardOptions { Authorization = [new AllowAllDashboardAuthorizationFilter()] }
         );
 
         app.UseEndpoints(endpoints =>
@@ -210,5 +202,13 @@ public class Startup
             endpoints.MapSwagger();
             endpoints.MapHealthChecks("/ping");
         });
+    }
+}
+
+public class AllowAllDashboardAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
+{
+    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
+    {
+        return true;
     }
 }
