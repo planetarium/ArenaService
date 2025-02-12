@@ -49,8 +49,11 @@ public class RankingCopyWorker : BackgroundService
                     var cachedRound = await seasonCacheRepo.GetRoundAsync();
                     var cachedSeason = await seasonCacheRepo.GetSeasonAsync();
 
-                    // 라운드가 끝나기 5 블록 전에 다음 라운드 랭킹을 준비합니다.
-                    if (cachedBlockIndex >= cachedRound.EndBlock - 5)
+                    _logger.LogInformation(
+                        $"Check prepare next round {cachedBlockIndex >= cachedRound.EndBlock - 9}"
+                    );
+                    // 라운드가 끝나기 9 블록 전에 다음 라운드 랭킹을 준비합니다.
+                    if (cachedBlockIndex >= cachedRound.EndBlock - 9)
                     {
                         await ProcessAsync(
                             cachedBlockIndex,
@@ -84,7 +87,7 @@ public class RankingCopyWorker : BackgroundService
                 break;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(4), stoppingToken);
         }
     }
 
@@ -98,7 +101,7 @@ public class RankingCopyWorker : BackgroundService
         IRankingService rankingService
     )
     {
-        var nextRoundInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 6);
+        var nextRoundInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 10);
 
         if (
             !prepareInProgress
