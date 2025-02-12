@@ -3,6 +3,7 @@ using ArenaService.Models;
 using ArenaService.Models.Enums;
 using Libplanet.Crypto;
 using Libplanet.Types.Tx;
+using Newtonsoft.Json;
 
 namespace ArenaService.Dtos;
 
@@ -17,6 +18,8 @@ public class BattleResponse
 
     public required BattleStatus BattleStatus { get; set; }
     public TxId? TxId { get; set; }
+
+    [JsonProperty(Required = Required.AllowNull)]
     public TxStatus? TxStatus { get; set; }
     public bool? IsVictory { get; set; }
     public int? MyScore { get; set; }
