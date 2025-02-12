@@ -16,14 +16,14 @@ public class ArenaInfoController : ControllerBase
     private readonly IParticipantRepository _participantRepo;
     private readonly ITicketRepository _ticketRepo;
     private readonly IRankingRepository _rankingRepo;
-    private readonly IClanRankingRepository _clanRankingRepo;
+    private readonly IAllClanRankingRepository _clanRankingRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public ArenaInfoController(
         IParticipantRepository participantRepo,
         ITicketRepository ticketRepo,
         IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo,
+        IAllClanRankingRepository clanRankingRepo,
         ISeasonCacheRepository seasonCacheRepo
     )
     {

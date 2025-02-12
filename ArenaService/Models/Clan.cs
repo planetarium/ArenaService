@@ -25,4 +25,6 @@ public class Clan
     [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    public ICollection<User> Users { get; set; } = null!;
 }

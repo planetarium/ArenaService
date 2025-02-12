@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 public interface IClanRepository
 {
-    Task<Clan?> GetClan(int clanId);
+    Task<Clan?> GetClan(int clanId, Func<IQueryable<Clan>, IQueryable<Clan>>? includeQuery = null);
 }
 
 public class ClanRepository : IClanRepository
@@ -19,8 +19,18 @@ public class ClanRepository : IClanRepository
         _context = context;
     }
 
-    public async Task<Clan?> GetClan(int clanId)
+    public async Task<Clan?> GetClan(
+        int clanId,
+        Func<IQueryable<Clan>, IQueryable<Clan>>? includeQuery = null
+    )
     {
-        return await _context.Clans.SingleOrDefaultAsync(c => c.Id == clanId);
+        var query = _context.Clans.AsQueryable();
+
+        if (includeQuery != null)
+        {
+            query = includeQuery(query);
+        }
+
+        return await query.SingleOrDefaultAsync(c => c.Id == clanId);
     }
 }

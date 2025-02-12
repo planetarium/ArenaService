@@ -12,13 +12,13 @@ using Swashbuckle.AspNetCore.Annotations;
 [ApiController]
 public class ClanController : ControllerBase
 {
-    private readonly IClanRankingRepository _clanRankingRepository;
+    private readonly IAllClanRankingRepository _clanRankingRepository;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IClanRepository _clanRepo;
     private readonly IUserRepository _userRepo;
 
     public ClanController(
-        IClanRankingRepository clanRankingRepository,
+        IAllClanRankingRepository clanRankingRepository,
         ISeasonCacheRepository seasonCacheRepo,
         IClanRepository clanRepo,
         IUserRepository userRepo

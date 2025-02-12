@@ -133,12 +133,14 @@ public class ParticipateService : IParticipateService
         {
             await _clanRankingRepo.UpdateScoreAsync(
                 participant.User.ClanId.Value,
+                avatarAddress,
                 seasonId,
                 roundId,
                 participant.Score
             );
             await _clanRankingRepo.UpdateScoreAsync(
                 participant.User.ClanId.Value,
+                avatarAddress,
                 seasonId,
                 roundId + 1,
                 participant.Score

@@ -1,9 +1,9 @@
 using ArenaService.Client;
-using ArenaService.Services;
 using ArenaService.Constants;
 using ArenaService.Exceptions;
 using ArenaService.Models;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -69,7 +69,8 @@ public class PrepareRankingWorker : BackgroundService
                             rankingSnapshotRepo,
                             rankingRepo,
                             clanRankingRepo,
-                            medalRepo
+                            medalRepo,
+                            rankingService
                         );
                         await Task.Delay(
                             TimeSpan.FromSeconds(ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * 5),
@@ -86,7 +87,8 @@ public class PrepareRankingWorker : BackgroundService
                             seasonService,
                             rankingSnapshotRepo,
                             rankingRepo,
-                            clanRankingRepo
+                            clanRankingRepo,
+                            rankingService
                         );
                     }
                 }
@@ -118,7 +120,8 @@ public class PrepareRankingWorker : BackgroundService
         IRankingSnapshotRepository rankingSnapshotRepo,
         IRankingRepository rankingRepo,
         IClanRankingRepository clanRankingRepo,
-        IMedalRepository medalRepo
+        IMedalRepository medalRepo,
+        IRankingService rankingService
     )
     {
         var nextSeason = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 51);
@@ -139,7 +142,8 @@ public class PrepareRankingWorker : BackgroundService
                 rankingRepo,
                 clanRankingRepo,
                 medalRepo,
-                seasonService
+                seasonService,
+                rankingService
             );
         }
         else
@@ -155,7 +159,8 @@ public class PrepareRankingWorker : BackgroundService
         IRankingRepository rankingRepo,
         IClanRankingRepository clanRankingRepo,
         IMedalRepository medalRepo,
-        ISeasonService seasonService
+        ISeasonService seasonService,
+        IRankingService rankingService
     )
     {
         prepareInProgress = true;
@@ -223,19 +228,25 @@ public class PrepareRankingWorker : BackgroundService
             );
 
             // 초기 랭킹 데이터를 만듭니다.
-            var rankingData = eligibleParticipants.Select(p => (p.AvatarAddress, 1000)).ToList();
-            var clanRankingData = new Dictionary<int, int>();
+            List<(Address AvatarAddress, int? ClanId, int Score)> rankingData = eligibleParticipants
+                .Select(p => (p.AvatarAddress, p.User.ClanId, 1000))
+                .ToList();
+            var clanRankingData = new Dictionary<int, List<(Address, int)>>();
             foreach (var participant in eligibleParticipants)
             {
                 if (participant.User.ClanId is not null)
                 {
                     try
                     {
-                        clanRankingData[participant.User.ClanId.Value] += 1000;
+                        clanRankingData[participant.User.ClanId.Value]
+                            .Add((participant.AvatarAddress, 1000));
                     }
                     catch (KeyNotFoundException)
                     {
-                        clanRankingData[participant.User.ClanId.Value] = 1000;
+                        clanRankingData[participant.User.ClanId.Value] = new List<(Address, int)>()
+                        {
+                            (participant.AvatarAddress, 1000)
+                        };
                     }
                 }
             }
@@ -247,18 +258,14 @@ public class PrepareRankingWorker : BackgroundService
                 nextSeason.Season.Id,
                 nextSeason.Round.Id
             );
-            await rankingSnapshotRepo.AddClanRankingsSnapshot(
-                clanRankingData.Select(x => (x.Key, x.Value)).ToList(),
-                nextSeason.Season.Id,
-                nextSeason.Round.Id
-            );
             await InitializeRankings(
-                rankingData,
-                clanRankingData.Select(x => (x.Key, x.Value)).ToList(),
+                rankingData.Select(r => (r.AvatarAddress, r.Score)).ToList(),
+                clanRankingData,
                 nextSeason.Season,
                 nextSeason.Round,
                 rankingRepo,
-                clanRankingRepo
+                clanRankingRepo,
+                rankingService
             );
 
             _logger.LogInformation($"Finish Init {eligibleParticipants.Count}");
@@ -272,29 +279,41 @@ public class PrepareRankingWorker : BackgroundService
 
     private async Task InitializeRankings(
         List<(Address, int)> rankingData,
-        List<(int, int)> clanRankingData,
+        Dictionary<int, List<(Address, int)>> clanRankingsData,
         Season season,
         Round round,
         IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo
+        IClanRankingRepository clanRankingRepo,
+        IRankingService rankingService
     )
     {
         await rankingRepo.InitRankingAsync(rankingData, season.Id, round.Id, season.RoundInterval);
-        await clanRankingRepo.InitRankingAsync(
-            clanRankingData,
-            season.Id,
-            round.Id,
-            season.RoundInterval
-        );
-
         await rankingRepo.InitRankingAsync(
             rankingData,
             season.Id,
             round.Id + 1,
             season.RoundInterval
         );
-        await clanRankingRepo.InitRankingAsync(
-            clanRankingData,
+
+        foreach (var (clanId, clanRankingData) in clanRankingsData)
+        {
+            await clanRankingRepo.InitRankingAsync(
+                clanRankingData,
+                clanId,
+                season.Id,
+                round.Id,
+                season.RoundInterval
+            );
+            await clanRankingRepo.InitRankingAsync(
+                clanRankingData,
+                clanId,
+                season.Id,
+                round.Id + 1,
+                season.RoundInterval
+            );
+        }
+        await rankingService.UpdateAllClanRankingAsync(season.Id, round.Id, season.RoundInterval);
+        await rankingService.UpdateAllClanRankingAsync(
             season.Id,
             round.Id + 1,
             season.RoundInterval
@@ -307,10 +326,11 @@ public class PrepareRankingWorker : BackgroundService
         ISeasonService seasonService,
         IRankingSnapshotRepository rankingSnapshotRepo,
         IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo
+        IClanRankingRepository clanRankingRepo,
+        IRankingService rankingService
     )
     {
-        //  지금 진행되고 있는 시즌 정보를 받아옵니다.
+        // 지금 진행되고 있는 시즌 정보를 받아옵니다.
         var seasonInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex);
         _logger.LogInformation($"Restore cache {seasonInfo.Season.Id} {seasonInfo.Round.Id}");
 
@@ -319,26 +339,45 @@ public class PrepareRankingWorker : BackgroundService
             seasonInfo.Season.Id,
             seasonInfo.Round.Id
         );
-        var clanRankingSnapshots = await rankingSnapshotRepo.GetClanRankingSnapshots(
-            seasonInfo.Season.Id,
-            seasonInfo.Round.Id
-        );
 
-        var rankingData = rankingSnapshots.Select(r => (r.AvatarAddress, r.Score)).ToList();
-        var clanRankingData = clanRankingSnapshots.Select(cr => (cr.ClanId, cr.Score)).ToList();
+        var rankingData = rankingSnapshots
+            .Select(r => (r.AvatarAddress, r.ClanId, r.Score))
+            .ToList();
+        var clanRankingsData = new Dictionary<int, List<(Address, int)>>();
+        foreach (var (avatarAddress, clanId, score) in rankingData)
+        {
+            if (clanId is not null)
+            {
+                try
+                {
+                    clanRankingsData[clanId.Value].Add((avatarAddress, score));
+                }
+                catch (KeyNotFoundException)
+                {
+                    clanRankingsData[clanId.Value] = new List<(Address, int)>()
+                    {
+                        (avatarAddress, score)
+                    };
+                }
+            }
+        }
 
         await rankingRepo.InitRankingAsync(
-            rankingData,
+            rankingData.Select(r => (r.AvatarAddress, r.Score)).ToList(),
             seasonInfo.Season.Id,
             seasonInfo.Round.Id,
             seasonInfo.Season.RoundInterval
         );
-        await clanRankingRepo.InitRankingAsync(
-            clanRankingData,
-            seasonInfo.Season.Id,
-            seasonInfo.Round.Id,
-            seasonInfo.Season.RoundInterval
-        );
+        foreach (var (clanId, clanRankingData) in clanRankingsData)
+        {
+            await clanRankingRepo.InitRankingAsync(
+                clanRankingData,
+                clanId,
+                seasonInfo.Season.Id,
+                seasonInfo.Round.Id + 1,
+                seasonInfo.Season.RoundInterval
+            );
+        }
 
         int skip = 0;
         while (true)
@@ -359,19 +398,25 @@ public class PrepareRankingWorker : BackgroundService
             var nextRoundRankingData = participants
                 .Select(r => (r.AvatarAddress, r.Score))
                 .ToList();
-            var nextRoundClanRankingData = new Dictionary<int, int>();
+            var nextRoundClanRankingsData = new Dictionary<int, List<(Address, int)>>();
             foreach (var participant in participants)
             {
                 if (participant.User.ClanId is not null)
                 {
                     try
                     {
-                        nextRoundClanRankingData[participant.User.ClanId.Value] +=
-                            participant.Score;
+                        nextRoundClanRankingsData[participant.User.ClanId.Value]
+                            .Add((participant.AvatarAddress, 1000));
                     }
                     catch (KeyNotFoundException)
                     {
-                        nextRoundClanRankingData[participant.User.ClanId.Value] = participant.Score;
+                        nextRoundClanRankingsData[participant.User.ClanId.Value] = new List<(
+                            Address,
+                            int
+                        )>()
+                        {
+                            (participant.AvatarAddress, 1000)
+                        };
                     }
                 }
             }
@@ -382,15 +427,30 @@ public class PrepareRankingWorker : BackgroundService
                 seasonInfo.Round.Id + 1,
                 seasonInfo.Season.RoundInterval
             );
-            await clanRankingRepo.InitRankingAsync(
-                nextRoundClanRankingData.Select(x => (x.Key, x.Value)).ToList(),
-                seasonInfo.Season.Id,
-                seasonInfo.Round.Id + 1,
-                seasonInfo.Season.RoundInterval
-            );
+
+            foreach (var (clanId, nextRoundClanRankingData) in nextRoundClanRankingsData)
+            {
+                await clanRankingRepo.InitRankingAsync(
+                    nextRoundClanRankingData,
+                    clanId,
+                    seasonInfo.Season.Id,
+                    seasonInfo.Round.Id + 1,
+                    seasonInfo.Season.RoundInterval
+                );
+            }
 
             skip += batchSize;
         }
+        await rankingService.UpdateAllClanRankingAsync(
+            seasonInfo.Season.Id,
+            seasonInfo.Round.Id,
+            seasonInfo.Season.RoundInterval
+        );
+        await rankingService.UpdateAllClanRankingAsync(
+            seasonInfo.Season.Id,
+            seasonInfo.Round.Id + 1,
+            seasonInfo.Season.RoundInterval
+        );
 
         _logger.LogInformation(
             $"Restore ranking {seasonInfo.Season.Id} {seasonInfo.Round.Id} Done"

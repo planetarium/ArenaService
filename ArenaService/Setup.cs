@@ -119,7 +119,7 @@ public class Startup
         services.AddScoped<IClanRepository, ClanRepository>();
         services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
 
-        services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
+        services.AddScoped<IAllClanRankingRepository, AllClanRankingRepository>();
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 
@@ -166,6 +166,9 @@ public class Startup
         services
             .AddSingleton<RankingCopyWorker>()
             .AddHostedService(provider => provider.GetRequiredService<RankingCopyWorker>());
+        services
+            .AddSingleton<AllClanRankingWorker>()
+            .AddHostedService(provider => provider.GetRequiredService<AllClanRankingWorker>());
 
         services.AddHangfireServer();
         services.AddHealthChecks();

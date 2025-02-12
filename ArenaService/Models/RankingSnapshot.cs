@@ -31,6 +31,8 @@ public class RankingSnapshot
     [Required]
     public int Score { get; set; }
 
+    public int? ClanId { get; set; }
+
     [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

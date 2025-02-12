@@ -183,5 +183,11 @@ public class ArenaDbContext : DbContext
             .HasForeignKey(b => new { b.AvatarAddress, b.SeasonId });
 
         modelBuilder.Entity<Battle>().Property(ts => ts.TxId).HasConversion(new TxIdConverter());
+
+        modelBuilder
+            .Entity<User>()
+            .HasOne(u => u.Clan)
+            .WithMany(c => c.Users)
+            .HasForeignKey(u => u.ClanId);
     }
 }

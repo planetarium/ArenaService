@@ -1,8 +1,9 @@
-using ArenaService.Services;
 using ArenaService.Constants;
 using ArenaService.Exceptions;
 using ArenaService.Models;
 using ArenaService.Repositories;
+using ArenaService.Services;
+using Libplanet.Crypto;
 using StackExchange.Redis;
 
 namespace ArenaService.Worker;
@@ -38,6 +39,7 @@ public class RankingCopyWorker : BackgroundService
                         scope.ServiceProvider.GetRequiredService<ISeasonCacheRepository>();
                     var rankingRepo =
                         scope.ServiceProvider.GetRequiredService<IRankingRepository>();
+                    var clanRepo = scope.ServiceProvider.GetRequiredService<IClanRepository>();
                     var clanRankingRepo =
                         scope.ServiceProvider.GetRequiredService<IClanRankingRepository>();
                     var seasonService = scope.ServiceProvider.GetRequiredService<ISeasonService>();
@@ -54,7 +56,9 @@ public class RankingCopyWorker : BackgroundService
                             rankingSnapshotRepo,
                             rankingRepo,
                             clanRankingRepo,
-                            seasonService
+                            seasonService,
+                            clanRepo,
+                            rankingService
                         );
                         await Task.Delay(
                             TimeSpan.FromSeconds(ArenaServiceConfig.BLOCK_INTERVAL_SECONDS),
@@ -88,7 +92,9 @@ public class RankingCopyWorker : BackgroundService
         IRankingSnapshotRepository rankingSnapshotRepo,
         IRankingRepository rankingRepo,
         IClanRankingRepository clanRankingRepo,
-        ISeasonService seasonService
+        ISeasonService seasonService,
+        IClanRepository clanRepo,
+        IRankingService rankingService
     )
     {
         var nextRoundInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 6);
@@ -105,7 +111,9 @@ public class RankingCopyWorker : BackgroundService
                 nextRoundInfo,
                 rankingSnapshotRepo,
                 rankingRepo,
-                clanRankingRepo
+                clanRankingRepo,
+                clanRepo,
+                rankingService
             );
         }
         else
@@ -118,7 +126,9 @@ public class RankingCopyWorker : BackgroundService
         (Season Season, Round Round) nextRoundInfo,
         IRankingSnapshotRepository rankingSnapshotRepo,
         IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo
+        IClanRankingRepository clanRankingRepo,
+        IClanRepository clanRepo,
+        IRankingService rankingService
     )
     {
         prepareInProgress = true;
@@ -131,30 +141,56 @@ public class RankingCopyWorker : BackgroundService
             nextRoundInfo.Round.Id + 1,
             nextRoundInfo.Season.RoundInterval
         );
-        await clanRankingRepo.CopyRoundDataAsync(
+        await rankingService.UpdateAllClanRankingAsync(
             nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id,
             nextRoundInfo.Round.Id + 1,
             nextRoundInfo.Season.RoundInterval
         );
 
-        // 다음 라운드의 랭킹 정보를 저장해둡니다.
+        var clanIds = await clanRankingRepo.GetClansAsync(
+            nextRoundInfo.Season.Id,
+            nextRoundInfo.Round.Id
+        );
         var rankingData = await rankingRepo.GetScoresAsync(
             nextRoundInfo.Season.Id,
             nextRoundInfo.Round.Id
         );
-        var clanRankingData = await clanRankingRepo.GetScoresAsync(
-            nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id
-        );
+        var clans = new Dictionary<Address, int>();
 
+        foreach (var clanId in clanIds)
+        {
+            await clanRankingRepo.CopyRoundDataAsync(
+                clanId,
+                nextRoundInfo.Season.Id,
+                nextRoundInfo.Round.Id,
+                nextRoundInfo.Round.Id + 1,
+                nextRoundInfo.Season.RoundInterval
+            );
+            var clan = await clanRepo.GetClan(clanId);
+            if (clan != null)
+            {
+                foreach (var user in clan.Users)
+                {
+                    clans.Add(user.AvatarAddress, clanId);
+                }
+            }
+        }
+
+        var rankingDataWithClan = new List<(Address AvatarAddress, int? ClanId, int Score)>();
+        foreach (var rankingEntry in rankingData)
+        {
+            rankingDataWithClan.Add(
+                (
+                    rankingEntry.AvatarAddress,
+                    clans.GetValueOrDefault(rankingEntry.AvatarAddress),
+                    rankingEntry.Score
+                )
+            );
+        }
+
+        // 다음 라운드의 랭킹 정보를 저장해둡니다.
         await rankingSnapshotRepo.AddRankingsSnapshot(
-            rankingData,
-            nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id
-        );
-        await rankingSnapshotRepo.AddClanRankingsSnapshot(
-            clanRankingData,
+            rankingDataWithClan,
             nextRoundInfo.Season.Id,
             nextRoundInfo.Round.Id
         );

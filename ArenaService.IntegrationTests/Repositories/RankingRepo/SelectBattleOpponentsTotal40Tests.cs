@@ -59,7 +59,7 @@ public class SelectBattleOpponentsTotal40Tests : BaseTest
         string rankingKey
     )
     {
-        var opponents = await Repository.SelectBattleOpponentsAsync(
+        var opponents = await RankingRepository.SelectBattleOpponentsAsync(
             avatarAddress,
             seasonId,
             roundId

@@ -10,7 +10,7 @@ namespace ArenaService.IntegrationTests.Repositories.RankingRepo;
 public class SelectBattleOpponentsTotal100Tests : BaseTest
 {
     public SelectBattleOpponentsTotal100Tests(RedisTestFixture fixture)
-        : base(fixture, databaseNumber: 0) { }
+        : base(fixture, databaseNumber: 1) { }
 
     [Fact]
     public async Task SelectBattleOpponentsTotal100Correctly()
@@ -59,7 +59,7 @@ public class SelectBattleOpponentsTotal100Tests : BaseTest
         string rankingKey
     )
     {
-        var opponents = await Repository.SelectBattleOpponentsAsync(
+        var opponents = await RankingRepository.SelectBattleOpponentsAsync(
             avatarAddress,
             seasonId,
             roundId
