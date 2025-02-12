@@ -2,15 +2,13 @@ import os
 import random
 import argparse
 import psycopg2
-import redis
 from psycopg2 import sql
+from psycopg2.errors import UniqueViolation
 from dotenv import load_dotenv
 
 load_dotenv()
 
-# 데이터베이스 및 Redis 연결 정보
 CONNECTION_STRING = os.getenv("DB_CONNECTION_STRING", "Host=localhost;Database=arena;Username=yourusername;Password=yourpassword")
-REDIS_CONFIG = os.getenv("REDIS_HOST", "localhost:6379:0")
 
 def convert_connection_string(dotnet_string):
     mapping = {
@@ -28,49 +26,7 @@ def convert_connection_string(dotnet_string):
             converted.append(f"{key}={value}")
     return " ".join(converted)
 
-def parse_redis_config(redis_config):
-    try:
-        host, port, db = redis_config.split(":")
-        return host, int(port), int(db)
-    except ValueError:
-        raise ValueError("REDIS_HOST format should be 'host:port:db'.")
-
 CONVERTED_CONNECTION_STRING = convert_connection_string(CONNECTION_STRING)
-
-def get_current_season_and_round(block_index):
-    """ 주어진 블록 인덱스로 현재 진행 중인 시즌과 라운드 찾기 """
-    try:
-        with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    SELECT id FROM seasons
-                    WHERE start_block <= %s AND end_block >= %s
-                    ORDER BY id DESC LIMIT 1
-                """, (block_index, block_index))
-                season_result = cursor.fetchone()
-
-                if not season_result:
-                    print("⚠️ 해당 블록 인덱스에 해당하는 시즌이 없습니다.")
-                    return None, None
-
-                season_id = season_result[0]
-
-                cursor.execute("""
-                    SELECT id FROM rounds
-                    WHERE season_id = %s AND start_block <= %s AND end_block >= %s
-                    ORDER BY id DESC LIMIT 1
-                """, (season_id, block_index, block_index))
-                round_result = cursor.fetchone()
-
-                if not round_result:
-                    print("⚠️ 해당 블록 인덱스에 해당하는 라운드가 없습니다.")
-                    return season_id, None
-
-                round_id = round_result[0]
-                return season_id, round_id
-    except Exception as e:
-        print(f"❌ 시즌 및 라운드 검색 오류: {e}")
-        return None, None
 
 def insert_participants(season_id):
     """ 현재 시즌에 참가하지 않은 유저들을 `participants` 테이블에 추가 (점수는 1000~1200 랜덤) """
@@ -89,26 +45,28 @@ def insert_participants(season_id):
                     print("⚠️ 새로운 참가자가 없습니다.")
                     return
 
-                participants = [(u[0], season_id, random.randint(1000, 1200)) for u in users]
-
-                cursor.executemany("""
-                    INSERT INTO participants (avatar_address, season_id, initialized_score, score, total_win, total_lose, created_at, updated_at)
-                    VALUES (%s, %s, %s, %s, 0, 0, now(), now())
-                """, [(p[0], p[1], p[2], p[2]) for p in participants])
+                success_count = 0
+                for user in users:
+                    avatar_address = user[0]
+                    score = random.randint(1000, 1200)
+                    try:
+                        cursor.execute("""
+                            INSERT INTO participants (avatar_address, season_id, initialized_score, score, total_win, total_lose, created_at, updated_at)
+                            VALUES (%s, %s, %s, %s, 0, 0, now(), now())
+                        """, (avatar_address, season_id, score, score))
+                        success_count += 1
+                    except UniqueViolation:
+                        print(f"⚠️ 참가자 {avatar_address} 는 이미 존재하여 건너뜀.")
+                        conn.rollback()  # 트랜잭션을 롤백하여 에러 상태 초기화
 
                 conn.commit()
-                print(f"✅ 시즌 {season_id} 참가자 {len(participants)}명 추가 완료")
+                print(f"✅ 시즌 {season_id} 참가자 {success_count}명 추가 완료")
     except Exception as e:
         print(f"❌ 참가자 추가 중 오류 발생: {e}")
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="시즌 참가자 추가 및 Redis 초기화 스크립트")
-    parser.add_argument("block_index", type=int, help="현재 블록 인덱스")
+    parser = argparse.ArgumentParser(description="시즌 참가자 추가 스크립트")
+    parser.add_argument("season_id", type=int, help="현재 시즌 ID")
     args = parser.parse_args()
 
-    season_id, round_id = get_current_season_and_round(args.block_index)
-
-    if season_id and round_id:
-        insert_participants(season_id)
-    else:
-        print("❌ 현재 블록 인덱스에 해당하는 시즌 및 라운드를 찾을 수 없습니다.")
+    insert_participants(args.season_id)

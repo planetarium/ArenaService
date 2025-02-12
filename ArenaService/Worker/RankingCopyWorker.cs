@@ -23,7 +23,7 @@ public class RankingCopyWorker : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Starting BlockIndexCachingWorker...");
+        _logger.LogInformation("Starting RankingCopyWorker...");
 
         while (!stoppingToken.IsCancellationRequested)
         {

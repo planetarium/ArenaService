@@ -189,34 +189,43 @@ public class PrepareRankingWorker : BackgroundService
             List<Participant> eligibleParticipants;
             if (nextSeason.Season.ArenaType == ArenaType.CHAMPIONSHIP)
             {
-                // 챔피언쉽이면 메달 개수를 충족했는지 확인합니다.
-                if (medalCounts is null)
+                if (nextSeason.Season.RequiredMedalCount <= 0)
                 {
-                    var seasons = await seasonService.ClassifyByChampionship(
-                        nextSeason.Season.StartBlock + 1
-                    );
-                    var onlySeasons = seasons.Where(s => s.ArenaType == ArenaType.SEASON).ToList();
-                    if (!onlySeasons.Any())
+                    eligibleParticipants = prevSeasonParticipants.ToList();
+                }
+                else
+                {
+                    // 챔피언쉽이면 메달 개수를 충족했는지 확인합니다.
+                    if (medalCounts is null)
                     {
-                        throw new NotFoundSeasonException("Not found seasons for check medals");
+                        var seasons = await seasonService.ClassifyByChampionship(
+                            nextSeason.Season.StartBlock + 1
+                        );
+                        var onlySeasons = seasons
+                            .Where(s => s.ArenaType == ArenaType.SEASON)
+                            .ToList();
+                        if (!onlySeasons.Any())
+                        {
+                            throw new NotFoundSeasonException("Not found seasons for check medals");
+                        }
+
+                        // 아바타 기준이 아닌 시즌별로 총합 메달 카운트가 들어있기 때문에 캐싱합니다.
+                        medalCounts = await medalRepo.GetMedalsBySeasonsAsync(
+                            onlySeasons.Select(s => s.Id).ToList()
+                        );
                     }
 
-                    // 아바타 기준이 아닌 시즌별로 총합 메달 카운트가 들어있기 때문에 캐싱합니다.
-                    medalCounts = await medalRepo.GetMedalsBySeasonsAsync(
-                        onlySeasons.Select(s => s.Id).ToList()
+                    // 자격이 있는 참가자만 정리합니다.
+                    eligibleParticipants = prevSeasonParticipants
+                        .Where(p =>
+                            medalCounts.TryGetValue(p.AvatarAddress, out var totalMedals)
+                            && totalMedals >= nextSeason.Season.RequiredMedalCount
+                        )
+                        .ToList();
+                    _logger.LogInformation(
+                        $"Filtered eligible participants {eligibleParticipants.Count}"
                     );
                 }
-
-                // 자격이 있는 참가자만 정리합니다.
-                eligibleParticipants = prevSeasonParticipants
-                    .Where(p =>
-                        medalCounts.TryGetValue(p.AvatarAddress, out var totalMedals)
-                        && totalMedals >= nextSeason.Season.RequiredMedalCount
-                    )
-                    .ToList();
-                _logger.LogInformation(
-                    $"Filtered eligible participants {eligibleParticipants.Count}"
-                );
             }
             else
             {
