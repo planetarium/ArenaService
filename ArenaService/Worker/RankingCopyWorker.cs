@@ -4,6 +4,7 @@ using ArenaService.Models;
 using ArenaService.Repositories;
 using ArenaService.Services;
 using Libplanet.Crypto;
+using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
 namespace ArenaService.Worker;
@@ -141,11 +142,6 @@ public class RankingCopyWorker : BackgroundService
             nextRoundInfo.Round.Id + 1,
             nextRoundInfo.Season.RoundInterval
         );
-        await rankingService.UpdateAllClanRankingAsync(
-            nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id + 1,
-            nextRoundInfo.Season.RoundInterval
-        );
 
         var clanIds = await clanRankingRepo.GetClansAsync(
             nextRoundInfo.Season.Id,
@@ -166,7 +162,7 @@ public class RankingCopyWorker : BackgroundService
                 nextRoundInfo.Round.Id + 1,
                 nextRoundInfo.Season.RoundInterval
             );
-            var clan = await clanRepo.GetClan(clanId);
+            var clan = await clanRepo.GetClan(clanId, q => q.Include(c => c.Users));
             if (clan != null)
             {
                 foreach (var user in clan.Users)
@@ -182,7 +178,7 @@ public class RankingCopyWorker : BackgroundService
             rankingDataWithClan.Add(
                 (
                     rankingEntry.AvatarAddress,
-                    clans.GetValueOrDefault(rankingEntry.AvatarAddress),
+                    clans.TryGetValue(rankingEntry.AvatarAddress, out var value) ? value : null,
                     rankingEntry.Score
                 )
             );
@@ -193,6 +189,12 @@ public class RankingCopyWorker : BackgroundService
             rankingDataWithClan,
             nextRoundInfo.Season.Id,
             nextRoundInfo.Round.Id
+        );
+
+        await rankingService.UpdateAllClanRankingAsync(
+            nextRoundInfo.Season.Id,
+            nextRoundInfo.Round.Id + 1,
+            nextRoundInfo.Season.RoundInterval
         );
 
         prepareInProgress = false;

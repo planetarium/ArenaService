@@ -16,21 +16,21 @@ public class ArenaInfoController : ControllerBase
     private readonly IParticipantRepository _participantRepo;
     private readonly ITicketRepository _ticketRepo;
     private readonly IRankingRepository _rankingRepo;
-    private readonly IAllClanRankingRepository _clanRankingRepo;
+    private readonly IAllClanRankingRepository _allClanRankingRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public ArenaInfoController(
         IParticipantRepository participantRepo,
         ITicketRepository ticketRepo,
         IRankingRepository rankingRepo,
-        IAllClanRankingRepository clanRankingRepo,
+        IAllClanRankingRepository allClanRankingRepo,
         ISeasonCacheRepository seasonCacheRepo
     )
     {
         _participantRepo = participantRepo;
         _ticketRepo = ticketRepo;
         _rankingRepo = rankingRepo;
-        _clanRankingRepo = clanRankingRepo;
+        _allClanRankingRepo = allClanRankingRepo;
         _seasonCacheRepo = seasonCacheRepo;
     }
 
@@ -68,12 +68,12 @@ public class ArenaInfoController : ControllerBase
         ClanResponse? myClanResponse = null;
         if (participant.User.Clan is not null)
         {
-            var myClanRank = await _clanRankingRepo.GetRankAsync(
+            var myClanRank = await _allClanRankingRepo.GetRankAsync(
                 participant.User.ClanId!.Value,
                 cachedSeason.Id,
                 cachedRound.Id
             );
-            var myClanScore = await _clanRankingRepo.GetScoreAsync(
+            var myClanScore = await _allClanRankingRepo.GetScoreAsync(
                 participant.User.ClanId!.Value,
                 cachedSeason.Id,
                 cachedRound.Id
@@ -99,7 +99,9 @@ public class ArenaInfoController : ControllerBase
         BattleTicketStatusResponse battleTicketStatus;
         if (battleTicketStatusPerSeason is null && battleTicketStatusPerRound is null)
         {
-            battleTicketStatus = BattleTicketStatusResponse.CreateBattleTicketDefault(participant.Season);
+            battleTicketStatus = BattleTicketStatusResponse.CreateBattleTicketDefault(
+                participant.Season
+            );
         }
         else if (battleTicketStatusPerRound is null && battleTicketStatusPerSeason is not null)
         {

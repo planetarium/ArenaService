@@ -12,19 +12,19 @@ using Swashbuckle.AspNetCore.Annotations;
 [ApiController]
 public class ClanController : ControllerBase
 {
-    private readonly IAllClanRankingRepository _clanRankingRepository;
+    private readonly IAllClanRankingRepository _allClanRankingRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IClanRepository _clanRepo;
     private readonly IUserRepository _userRepo;
 
     public ClanController(
-        IAllClanRankingRepository clanRankingRepository,
+        IAllClanRankingRepository allClanRankingRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IClanRepository clanRepo,
         IUserRepository userRepo
     )
     {
-        _clanRankingRepository = clanRankingRepository;
+        _allClanRankingRepo = allClanRankingRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _userRepo = userRepo;
         _clanRepo = clanRepo;
@@ -49,12 +49,12 @@ public class ClanController : ControllerBase
         ClanResponse? myClanResponse = null;
         if (user is not null & user!.Clan is not null)
         {
-            var myClanRank = await _clanRankingRepository.GetRankAsync(
+            var myClanRank = await _allClanRankingRepo.GetRankAsync(
                 user.ClanId!.Value,
                 cachedSeason.Id,
                 cachedRound.Id
             );
-            var myClanScore = await _clanRankingRepository.GetScoreAsync(
+            var myClanScore = await _allClanRankingRepo.GetScoreAsync(
                 user.ClanId!.Value,
                 cachedSeason.Id,
                 cachedRound.Id
@@ -68,7 +68,7 @@ public class ClanController : ControllerBase
             };
         }
 
-        var clans = await _clanRankingRepository.GetTopClansAsync(
+        var clans = await _allClanRankingRepo.GetTopClansAsync(
             cachedSeason.Id,
             cachedRound.Id,
             100

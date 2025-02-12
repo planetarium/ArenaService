@@ -1,5 +1,6 @@
 using ArenaService.Exceptions;
 using ArenaService.Repositories;
+using StackExchange.Redis;
 
 namespace ArenaService.Worker;
 
@@ -35,6 +36,11 @@ public class AllClanRankingWorker : BackgroundService
 
                     await ProcessAsync(rankingService, seasonCacheRepo);
                 }
+            }
+            catch (RedisException ex)
+            {
+                _logger.LogError(ex, $"An error occurred in Redis.");
+                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
             catch (CacheUnavailableException ex)
             {

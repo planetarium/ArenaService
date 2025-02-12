@@ -374,7 +374,7 @@ public class PrepareRankingWorker : BackgroundService
                 clanRankingData,
                 clanId,
                 seasonInfo.Season.Id,
-                seasonInfo.Round.Id + 1,
+                seasonInfo.Round.Id,
                 seasonInfo.Season.RoundInterval
             );
         }

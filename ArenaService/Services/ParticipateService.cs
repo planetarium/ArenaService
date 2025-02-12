@@ -112,7 +112,7 @@ public class ParticipateService : IParticipateService
         var participant = await _participantRepo.AddParticipantAsync(seasonId, avatarAddress);
 
         await _rankingSnapshotRepo.AddRankingsSnapshot(
-            [(avatarAddress, participant.Score)],
+            [(avatarAddress, participant.User.ClanId, participant.Score)],
             seasonId,
             roundId
         );
