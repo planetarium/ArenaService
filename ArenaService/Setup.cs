@@ -1,5 +1,8 @@
 namespace ArenaService;
 
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Text;
 using System.Text.Json.Serialization;
 using ArenaService.Auth;
 using ArenaService.Data;
@@ -15,6 +18,7 @@ using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
 using StackExchange.Redis;
@@ -43,6 +47,26 @@ public class Startup
                 {
                     var headlessOptions = provider.GetRequiredService<IOptions<HeadlessOptions>>();
                     client.BaseAddress = headlessOptions.Value.HeadlessEndpoint;
+
+                    if (
+                        headlessOptions.Value.JwtSecretKey is not null
+                        && headlessOptions.Value.JwtIssuer is not null
+                    )
+                    {
+                        var key = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(headlessOptions.Value.JwtSecretKey)
+                        );
+                        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                        var token = new JwtSecurityToken(
+                            issuer: headlessOptions.Value.JwtIssuer,
+                            expires: DateTime.UtcNow.AddMinutes(5),
+                            signingCredentials: creds
+                        );
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                            "Bearer",
+                            new JwtSecurityTokenHandler().WriteToken(token)
+                        );
+                    }
                 }
             );
 
