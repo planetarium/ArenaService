@@ -28,7 +28,8 @@ public class AvailableOpponentResponse
     public static AvailableOpponentResponse FromAvailableOpponent(
         AvailableOpponent availableOpponent,
         int opponentRank,
-        int opponentScore
+        int opponentScore,
+        ClanResponse? clanResponse
     )
     {
         return new AvailableOpponentResponse
@@ -46,7 +47,7 @@ public class AvailableOpponentResponse
             ScoreGainOnWin = OpponentGroupConstants.Groups[availableOpponent.GroupId].WinScore,
             ScoreLossOnLose = OpponentGroupConstants.Groups[availableOpponent.GroupId].LoseScore,
             IsVictory = availableOpponent.SuccessBattle?.IsVictory,
-            ClanInfo = null
+            ClanInfo = clanResponse
         };
     }
 }

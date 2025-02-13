@@ -75,6 +75,7 @@ public class AvailableOpponentController : ControllerBase
                 query
                     .Include(ao => ao.Opponent)
                     .ThenInclude(p => p.User)
+                    .ThenInclude(u => u.Clan)
                     .Include(ao => ao.SuccessBattle)
         );
 
@@ -96,11 +97,32 @@ public class AvailableOpponentController : ControllerBase
                 cachedSeason.Id,
                 cachedRound.Id
             );
+
+            ClanResponse? clanResponse = null;
+            if (availableOpponent.Opponent.User.ClanId is not null)
+            {
+                var clanRank = await _allClanRankingRepo.GetRankAsync(
+                    availableOpponent.Opponent.User.ClanId!.Value,
+                    cachedSeason.Id,
+                    cachedRound.Id
+                );
+                var clanScore = await _allClanRankingRepo.GetScoreAsync(
+                    availableOpponent.Opponent.User.ClanId!.Value,
+                    cachedSeason.Id,
+                    cachedRound.Id
+                );
+                clanResponse = availableOpponent.Opponent.User.Clan!.ToResponse(
+                    clanRank,
+                    clanScore
+                );
+            }
+
             availableOpponentsResponses.Add(
                 AvailableOpponentResponse.FromAvailableOpponent(
                     availableOpponent,
                     opponentRank,
-                    opponentScore
+                    opponentScore,
+                    clanResponse
                 )
             );
         }
@@ -224,12 +246,12 @@ public class AvailableOpponentController : ControllerBase
             if (opponentParticipant.User.ClanId is not null)
             {
                 var clanRank = await _allClanRankingRepo.GetRankAsync(
-                    participant.User.ClanId!.Value,
+                    opponentParticipant.User.ClanId!.Value,
                     cachedSeason.Id,
                     cachedRound.Id
                 );
                 var clanScore = await _allClanRankingRepo.GetScoreAsync(
-                    participant.User.ClanId!.Value,
+                    opponentParticipant.User.ClanId!.Value,
                     cachedSeason.Id,
                     cachedRound.Id
                 );
