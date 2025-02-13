@@ -2,13 +2,13 @@ namespace ArenaService;
 
 using System.Text.Json.Serialization;
 using ArenaService.Auth;
+using ArenaService.Data;
 using ArenaService.Filter;
 using ArenaService.JsonConverters;
-using ArenaService.Options;
-using ArenaService.Services;
-using ArenaService.Data;
 using ArenaService.Jwt;
+using ArenaService.Options;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -193,7 +193,15 @@ public class Startup
 
         app.UseHangfireDashboard(
             "/hangfire",
-            new DashboardOptions { Authorization = [new AllowAllDashboardAuthorizationFilter()] }
+            new DashboardOptions
+            {
+                Authorization = new[]
+                {
+                    new BasicAuthDashboardAuthorizationFilter(
+                        serviceProvider.GetRequiredService<IOptions<OpsConfigOptions>>()
+                    )
+                }
+            }
         );
 
         app.UseEndpoints(endpoints =>
@@ -202,13 +210,5 @@ public class Startup
             endpoints.MapSwagger();
             endpoints.MapHealthChecks("/ping");
         });
-    }
-}
-
-public class AllowAllDashboardAuthorizationFilter : Hangfire.Dashboard.IDashboardAuthorizationFilter
-{
-    public bool Authorize(Hangfire.Dashboard.DashboardContext context)
-    {
-        return true;
     }
 }
