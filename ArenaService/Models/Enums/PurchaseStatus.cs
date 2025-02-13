@@ -1,0 +1,13 @@
+namespace ArenaService.Models.Enums;
+
+public enum PurchaseStatus
+{
+    PENDING,
+    TRACKING,
+    NOT_FOUND_TRANSFER_ASSETS_ACTION,
+    INSUFFICIENT_PAYMENT,
+    INVALID_RECIPIENT,
+    DUPLICATE_TRANSACTION,
+    TX_FAILED,
+    SUCCESS
+}

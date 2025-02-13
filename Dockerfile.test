@@ -1,0 +1,18 @@
+FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-jammy AS build-env
+ARG TARGETPLATFORM
+WORKDIR /app
+
+# Copy everything for building
+COPY . ./
+RUN dotnet restore
+RUN dotnet build ArenaService.IntegrationTests/ArenaService.IntegrationTests.csproj -c Release
+
+# Build runtime environment
+FROM --platform=$TARGETPLATFORM mcr.microsoft.com/dotnet/sdk:8.0-jammy
+WORKDIR /app
+
+# Copy build artifacts
+COPY --from=build-env /app /app
+
+# Run tests
+ENTRYPOINT ["dotnet", "test"]
