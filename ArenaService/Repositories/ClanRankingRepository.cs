@@ -82,7 +82,10 @@ public class ClanRankingRepository : IClanRankingRepository
         await InsureRankingStatus(seasonId, roundId, clanId);
 
         string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
+        string participantKey = string.Format(
+            ParticipantKeyFormat,
+            avatarAddress.ToHex().ToLower()
+        );
 
         await _redis.SortedSetIncrementAsync(clanRankingKey, participantKey, scoreChange);
     }
@@ -97,7 +100,10 @@ public class ClanRankingRepository : IClanRankingRepository
         await InsureRankingStatus(seasonId, roundId, clanId);
 
         string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
+        string participantKey = string.Format(
+            ParticipantKeyFormat,
+            avatarAddress.ToHex().ToLower()
+        );
 
         var rank = await _redis.SortedSetRankAsync(
             clanRankingKey,

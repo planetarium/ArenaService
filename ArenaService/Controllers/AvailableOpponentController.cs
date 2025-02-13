@@ -1,11 +1,11 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Dtos;
-using ArenaService.Extensions;
-using ArenaService.Services;
 using ArenaService.Constants;
+using ArenaService.Dtos;
 using ArenaService.Exceptions;
+using ArenaService.Extensions;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +21,7 @@ public class AvailableOpponentController : ControllerBase
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly IParticipateService _participateService;
     private readonly IRankingRepository _rankingRepo;
+    private readonly IAllClanRankingRepository _allClanRankingRepo;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
@@ -28,6 +29,7 @@ public class AvailableOpponentController : ControllerBase
         ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
+        IAllClanRankingRepository allClanRankingRepo,
         IRankingRepository rankingRepo
     )
     {
@@ -36,6 +38,7 @@ public class AvailableOpponentController : ControllerBase
         _participantRepo = participantRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _participateService = participateService;
+        _allClanRankingRepo = allClanRankingRepo;
         _rankingRepo = rankingRepo;
     }
 
@@ -210,13 +213,28 @@ public class AvailableOpponentController : ControllerBase
             var opponentParticipant = await _participantRepo.GetParticipantAsync(
                 cachedSeason.Id,
                 opponent.AvatarAddress,
-                query => query.Include(p => p.User)
+                query => query.Include(p => p.User).ThenInclude(u => u.Clan)
             );
             var opponentRank = await _rankingRepo.GetRankAsync(
                 opponentParticipant!.AvatarAddress,
                 cachedSeason.Id,
                 cachedRound.Id
             );
+            ClanResponse? clanResponse = null;
+            if (opponentParticipant.User.ClanId is not null)
+            {
+                var clanRank = await _allClanRankingRepo.GetRankAsync(
+                    participant.User.ClanId!.Value,
+                    cachedSeason.Id,
+                    cachedRound.Id
+                );
+                var clanScore = await _allClanRankingRepo.GetScoreAsync(
+                    participant.User.ClanId!.Value,
+                    cachedSeason.Id,
+                    cachedRound.Id
+                );
+                clanResponse = opponentParticipant.User.Clan!.ToResponse(clanRank, clanScore);
+            }
 
             availableOpponentsResponses.Add(
                 new AvailableOpponentResponse
@@ -234,7 +252,7 @@ public class AvailableOpponentController : ControllerBase
                     ScoreGainOnWin = OpponentGroupConstants.Groups[groupId].WinScore,
                     ScoreLossOnLose = OpponentGroupConstants.Groups[groupId].LoseScore,
                     IsVictory = null,
-                    ClanInfo = null
+                    ClanInfo = clanResponse
                 }
             );
         }

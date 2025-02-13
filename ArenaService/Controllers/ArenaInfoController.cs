@@ -78,13 +78,7 @@ public class ArenaInfoController : ControllerBase
                 cachedSeason.Id,
                 cachedRound.Id
             );
-            myClanResponse = new ClanResponse
-            {
-                ImageURL = participant.User!.Clan!.ImageURL,
-                Name = participant.User!.Clan!.Name,
-                Rank = myClanRank,
-                Score = myClanScore,
-            };
+            myClanResponse = participant.User.Clan!.ToResponse(myClanRank, myClanScore);
         }
 
         var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
