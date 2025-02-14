@@ -19,18 +19,21 @@ using Swashbuckle.AspNetCore.Annotations;
 [ApiController]
 public class TicketController : ControllerBase
 {
+    private readonly ILogger<TicketController> _logger;
     private readonly IBackgroundJobClient _jobClient;
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
     private readonly ISeasonRepository _seasonRepo;
 
     public TicketController(
+        ILogger<TicketController> logger,
         IBackgroundJobClient jobClient,
         ITicketRepository ticketRepo,
         ISeasonCacheRepository seasonCacheRepo,
         ISeasonRepository seasonRepo
     )
     {
+        _logger = logger;
         _ticketRepo = ticketRepo;
         _seasonCacheRepo = seasonCacheRepo;
         _seasonRepo = seasonRepo;
@@ -119,6 +122,10 @@ public class TicketController : ControllerBase
     public async Task<IActionResult> PurchaseBattleTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
+
+        _logger.LogInformation(
+            $"Purchase Battle Ticket - From: {avatarAddress}, {request.TicketCount} {request.PurchasePrice} {request.TxId}"
+        );
 
         var cachedBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
@@ -236,6 +243,10 @@ public class TicketController : ControllerBase
     public async Task<IActionResult> PurchaseRefreshTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
+
+        _logger.LogInformation(
+            $"Purchase Refresh Ticket - From: {avatarAddress}, {request.TicketCount} {request.PurchasePrice} {request.TxId}"
+        );
 
         var cachedBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();

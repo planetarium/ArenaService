@@ -48,7 +48,7 @@ def insert_participants(season_id):
                 success_count = 0
                 for user in users:
                     avatar_address = user[0]
-                    score = random.randint(1000, 1200)
+                    score = 1000
                     try:
                         cursor.execute("""
                             INSERT INTO participants (avatar_address, season_id, initialized_score, score, total_win, total_lose, created_at, updated_at)

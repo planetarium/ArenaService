@@ -28,41 +28,6 @@ def convert_connection_string(dotnet_string):
 
 CONVERTED_CONNECTION_STRING = convert_connection_string(CONNECTION_STRING)
 
-def get_current_season_and_round(block_index):
-    """ 주어진 블록 인덱스로 현재 진행 중인 시즌과 라운드 찾기 """
-    try:
-        with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
-            with conn.cursor() as cursor:
-                cursor.execute("""
-                    SELECT id FROM seasons
-                    WHERE start_block <= %s AND end_block >= %s
-                    ORDER BY id DESC LIMIT 1
-                """, (block_index, block_index))
-                season_result = cursor.fetchone()
-
-                if not season_result:
-                    print("⚠️ 해당 블록 인덱스에 해당하는 시즌이 없습니다.")
-                    return None, None
-
-                season_id = season_result[0]
-
-                cursor.execute("""
-                    SELECT id FROM rounds
-                    WHERE season_id = %s AND start_block <= %s AND end_block >= %s
-                    ORDER BY id DESC LIMIT 1
-                """, (season_id, block_index, block_index))
-                round_result = cursor.fetchone()
-
-                if not round_result:
-                    print("⚠️ 해당 블록 인덱스에 해당하는 라운드가 없습니다.")
-                    return season_id, None
-
-                round_id = round_result[0]
-                return season_id, round_id
-    except Exception as e:
-        print(f"❌ 시즌 및 라운드 검색 오류: {e}")
-        return None, None
-
 def insert_ranking_snapshots(season_id, round_id):
     """ 시즌과 라운드의 랭킹 스냅샷을 삽입 (중복 오류 시 무시) """
     try:
@@ -95,12 +60,11 @@ def insert_ranking_snapshots(season_id, round_id):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="스냅샷 초기화 스크립트")
-    parser.add_argument("block_index", type=int, help="현재 블록 인덱스")
+    parser.add_argument("season_id", type=int, help="season_id")
+    parser.add_argument("round_id", type=int, help="round_id")
     args = parser.parse_args()
 
-    season_id, round_id = get_current_season_and_round(args.block_index)
-
-    if season_id and round_id:
-        insert_ranking_snapshots(season_id, round_id)
+    if args.season_id and args.round_id:
+        insert_ranking_snapshots(args.season_id, args.round_id)
     else:
         print("❌ 현재 블록 인덱스에 해당하는 시즌 및 라운드를 찾을 수 없습니다.")

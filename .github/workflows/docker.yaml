@@ -3,7 +3,7 @@ name: Build Docker Images
 on:
   push:
     branches:
-      - ncip-24
+      - main
   workflow_dispatch:
 
 jobs:
