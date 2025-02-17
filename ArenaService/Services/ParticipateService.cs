@@ -84,28 +84,31 @@ public class ParticipateService : IParticipateService
         );
         if (currentSeason.Season.ArenaType == ArenaType.CHAMPIONSHIP)
         {
-            var totalMedalCount = 0;
-            var seasons = await _seasonService.ClassifyByChampionship(
-                currentSeason.Season.StartBlock
-            );
-            var onlySeasons = seasons.Where(s => s.ArenaType == ArenaType.SEASON).ToList();
-            if (!onlySeasons.Any())
+            if (currentSeason.Season.RequiredMedalCount > 0)
             {
-                throw new NotFoundSeasonException("Not found seasons for check medals");
-            }
-
-            foreach (var season in onlySeasons)
-            {
-                var medal = await _medalRepo.GetMedalAsync(season.Id, avatarAddress);
-                if (medal is not null)
+                var totalMedalCount = 0;
+                var seasons = await _seasonService.ClassifyByChampionship(
+                    currentSeason.Season.StartBlock
+                );
+                var onlySeasons = seasons.Where(s => s.ArenaType == ArenaType.SEASON).ToList();
+                if (!onlySeasons.Any())
                 {
-                    totalMedalCount += medal.MedalCount;
+                    throw new NotFoundSeasonException("Not found seasons for check medals");
                 }
-            }
 
-            if (totalMedalCount < currentSeason.Season.RequiredMedalCount)
-            {
-                throw new NotEnoughMedalException($"{totalMedalCount} is not enough");
+                foreach (var season in onlySeasons)
+                {
+                    var medal = await _medalRepo.GetMedalAsync(season.Id, avatarAddress);
+                    if (medal is not null)
+                    {
+                        totalMedalCount += medal.MedalCount;
+                    }
+                }
+
+                if (totalMedalCount < currentSeason.Season.RequiredMedalCount)
+                {
+                    throw new NotEnoughMedalException($"{totalMedalCount} is not enough");
+                }
             }
         }
 
