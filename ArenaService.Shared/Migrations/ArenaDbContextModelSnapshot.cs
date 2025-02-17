@@ -120,6 +120,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExceptionNames")
+                        .HasColumnType("text")
+                        .HasColumnName("exception_names");
+
                     b.Property<bool?>("IsVictory")
                         .HasColumnType("boolean")
                         .HasColumnName("is_victory");
@@ -131,6 +135,10 @@ namespace ArenaService.Migrations
                     b.Property<int?>("OpponentScoreChange")
                         .HasColumnType("integer")
                         .HasColumnName("opponent_score_change");
+
+                    b.Property<bool?>("Reviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reviewed");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")
@@ -240,6 +248,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExceptionNames")
+                        .HasColumnType("text")
+                        .HasColumnName("exception_names");
+
                     b.Property<int>("PurchaseCount")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_count");
@@ -247,6 +259,10 @@ namespace ArenaService.Migrations
                     b.Property<int>("PurchaseStatus")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_status");
+
+                    b.Property<bool?>("Reviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reviewed");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")
@@ -657,6 +673,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExceptionNames")
+                        .HasColumnType("text")
+                        .HasColumnName("exception_names");
+
                     b.Property<int>("PurchaseCount")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_count");
@@ -664,6 +684,10 @@ namespace ArenaService.Migrations
                     b.Property<int>("PurchaseStatus")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_status");
+
+                    b.Property<bool?>("Reviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reviewed");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")

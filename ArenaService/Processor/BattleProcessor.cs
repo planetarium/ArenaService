@@ -1,14 +1,14 @@
 using ArenaService.ActionValues;
 using ArenaService.Client;
-using ArenaService.Extensions;
-using ArenaService.Options;
-using ArenaService.Services;
 using ArenaService.Constants;
+using ArenaService.Extensions;
 using ArenaService.Jwt;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.Enums;
+using ArenaService.Options;
 using ArenaService.Repositories;
+using ArenaService.Services;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -147,28 +147,13 @@ public class BattleProcessor
             battle.TxId.Value,
             async status =>
             {
-                if (status == Client.TxStatus.Failure)
-                {
-                    await _battleRepo.UpdateBattle(
-                        battle,
-                        b =>
-                        {
-                            b.TxStatus = status.ToModelTxStatus();
-                            b.BattleStatus = BattleStatus.TX_FAILED;
-                        }
-                    );
-                    processResult = "tx failed";
-                }
-                else
-                {
-                    await _battleRepo.UpdateBattle(
-                        battle,
-                        b =>
-                        {
-                            b.TxStatus = status.ToModelTxStatus();
-                        }
-                    );
-                }
+                await _battleRepo.UpdateBattle(
+                    battle,
+                    b =>
+                    {
+                        b.TxStatus = status.ToModelTxStatus();
+                    }
+                );
             },
             async successResponse =>
             {
@@ -210,6 +195,19 @@ public class BattleProcessor
                         processResult = "success";
                     }
                 }
+            },
+            async failureResponse =>
+            {
+                await _battleRepo.UpdateBattle(
+                    battle,
+                    b =>
+                    {
+                        b.TxStatus = Models.Enums.TxStatus.FAILURE;
+                        b.BattleStatus = BattleStatus.TX_FAILED;
+                        // b.ExceptionNames = failureResponse.ExceptionNames?.ToString();
+                    }
+                );
+                processResult = "tx failed";
             },
             txId =>
             {

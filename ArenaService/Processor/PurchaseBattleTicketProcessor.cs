@@ -86,28 +86,13 @@ public class PurchaseBattleTicketProcessor
             purchaseLog.TxId,
             async status =>
             {
-                if (status == Client.TxStatus.Failure)
-                {
-                    await _ticketRepo.UpdateBattleTicketPurchaseLog(
-                        purchaseLog,
-                        btpl =>
-                        {
-                            btpl.TxStatus = status.ToModelTxStatus();
-                            btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
-                        }
-                    );
-                    processResult = "tx failed";
-                }
-                else
-                {
-                    await _ticketRepo.UpdateBattleTicketPurchaseLog(
-                        purchaseLog,
-                        btpl =>
-                        {
-                            btpl.TxStatus = status.ToModelTxStatus();
-                        }
-                    );
-                }
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.TxStatus = status.ToModelTxStatus();
+                    }
+                );
             },
             async successResponse =>
             {
@@ -174,6 +159,18 @@ public class PurchaseBattleTicketProcessor
                         }
                     }
                 }
+            },
+            async failureResponse =>
+            {
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.TxStatus = Models.Enums.TxStatus.FAILURE;
+                        btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                    }
+                );
+                processResult = "tx failed";
             },
             txId =>
             {
