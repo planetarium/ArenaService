@@ -9,6 +9,8 @@
   <ItemGroup>
     <PackageReference Include="EFCore.NamingConventions" Version="8.0.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="8.0.0" />
     <PackageReference Include="Libplanet.Crypto" Version="5.5.0" />
     <PackageReference Include="Libplanet.Types" Version="5.5.0" />
   </ItemGroup>
