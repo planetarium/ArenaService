@@ -567,14 +567,14 @@ public class TicketRepository : ITicketRepository
         var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
 
         var purchases = await _context
-            .BattleTicketPurchaseLogs.Where(b =>
-                b.AvatarAddress == avatarAddress
-                && b.SeasonId == seasonId
-                && b.RoundId == roundId
-                && b.CreatedAt >= fiveMinutesAgo
+            .BattleTicketPurchaseLogs.Where(l =>
+                l.AvatarAddress == avatarAddress
+                && l.SeasonId == seasonId
+                && l.RoundId == roundId
+                && l.CreatedAt >= fiveMinutesAgo
                 && (
-                    b.PurchaseStatus == PurchaseStatus.PENDING
-                    || b.PurchaseStatus == PurchaseStatus.TRACKING
+                    l.PurchaseStatus == PurchaseStatus.PENDING
+                    || l.PurchaseStatus == PurchaseStatus.TRACKING
                 )
             )
             .ToListAsync();
@@ -591,14 +591,14 @@ public class TicketRepository : ITicketRepository
         var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
 
         var purchases = await _context
-            .RefreshTicketPurchaseLogs.Where(b =>
-                b.AvatarAddress == avatarAddress
-                && b.SeasonId == seasonId
-                && b.RoundId == roundId
-                && b.CreatedAt >= fiveMinutesAgo
+            .RefreshTicketPurchaseLogs.Where(l =>
+                l.AvatarAddress == avatarAddress
+                && l.SeasonId == seasonId
+                && l.RoundId == roundId
+                && l.CreatedAt >= fiveMinutesAgo
                 && (
-                    b.PurchaseStatus == PurchaseStatus.PENDING
-                    || b.PurchaseStatus == PurchaseStatus.TRACKING
+                    l.PurchaseStatus == PurchaseStatus.PENDING
+                    || l.PurchaseStatus == PurchaseStatus.TRACKING
                 )
             )
             .ToListAsync();
