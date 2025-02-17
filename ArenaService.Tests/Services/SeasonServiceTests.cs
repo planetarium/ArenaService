@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using ArenaService.Constants;
-using ArenaService.Models;
+using ArenaService.Shared.Models;
 using ArenaService.Repositories;
 using ArenaService.Services;
 using Moq;

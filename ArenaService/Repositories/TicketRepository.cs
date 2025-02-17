@@ -1,11 +1,11 @@
 namespace ArenaService.Repositories;
 
 using ArenaService.Constants;
-using ArenaService.Data;
-using ArenaService.Models;
-using ArenaService.Models.BattleTicket;
-using ArenaService.Models.Enums;
-using ArenaService.Models.RefreshTicket;
+using ArenaService.Shared.Data;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.BattleTicket;
+using ArenaService.Shared.Models.Enums;
+using ArenaService.Shared.Models.RefreshTicket;
 using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;

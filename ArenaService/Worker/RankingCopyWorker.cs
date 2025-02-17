@@ -1,6 +1,6 @@
 using ArenaService.Constants;
 using ArenaService.Exceptions;
-using ArenaService.Models;
+using ArenaService.Shared.Models;
 using ArenaService.Repositories;
 using ArenaService.Services;
 using Libplanet.Crypto;

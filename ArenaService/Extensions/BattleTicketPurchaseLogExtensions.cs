@@ -1,8 +1,8 @@
 namespace ArenaService.Extensions;
 
 using ArenaService.Dtos;
-using ArenaService.Models;
-using ArenaService.Models.BattleTicket;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.BattleTicket;
 
 public static class BattleTicketPurchaseLogExtensions
 {
