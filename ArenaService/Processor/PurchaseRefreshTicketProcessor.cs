@@ -165,10 +165,11 @@ public class PurchaseRefreshTicketProcessor
             {
                 await _ticketRepo.UpdateRefreshTicketPurchaseLog(
                     purchaseLog,
-                    btpl =>
+                    rtpl =>
                     {
-                        btpl.TxStatus = Models.Enums.TxStatus.FAILURE;
-                        btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        rtpl.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
+                        rtpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        rtpl.ExceptionNames = failureResponse.ExceptionNames?.ToString();
                     }
                 );
                 processResult = "tx failed";

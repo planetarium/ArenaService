@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.BattleTicket;
-using ArenaService.Shared.Models.Enums;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.BattleTicket;
+using ArenaService.Shared.Models.Enums;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -166,8 +166,9 @@ public class PurchaseBattleTicketProcessor
                     purchaseLog,
                     btpl =>
                     {
-                        btpl.TxStatus = Models.Enums.TxStatus.FAILURE;
+                        btpl.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
                         btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        btpl.ExceptionNames = failureResponse.ExceptionNames?.ToString();
                     }
                 );
                 processResult = "tx failed";

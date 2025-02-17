@@ -202,9 +202,9 @@ public class BattleProcessor
                     battle,
                     b =>
                     {
-                        b.TxStatus = Models.Enums.TxStatus.FAILURE;
+                        b.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
                         b.BattleStatus = BattleStatus.TX_FAILED;
-                        // b.ExceptionNames = failureResponse.ExceptionNames?.ToString();
+                        b.ExceptionNames = failureResponse.ExceptionNames?.ToString();
                     }
                 );
                 processResult = "tx failed";
