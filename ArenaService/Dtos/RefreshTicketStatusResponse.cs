@@ -1,7 +1,7 @@
 namespace ArenaService.Dtos;
 
-using ArenaService.Models;
-using ArenaService.Models.RefreshTicket;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.RefreshTicket;
 
 public class RefreshTicketStatusResponse : TicketStatusResponse
 {

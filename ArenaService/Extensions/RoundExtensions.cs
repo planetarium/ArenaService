@@ -1,7 +1,7 @@
 namespace ArenaService.Extensions;
 
 using ArenaService.Dtos;
-using ArenaService.Models;
+using ArenaService.Shared.Models;
 
 public static class RoundExtensions
 {

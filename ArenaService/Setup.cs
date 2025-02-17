@@ -5,7 +5,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json.Serialization;
 using ArenaService.Auth;
-using ArenaService.Data;
+using ArenaService.Shared.Data;
 using ArenaService.Filter;
 using ArenaService.JsonConverters;
 using ArenaService.Jwt;

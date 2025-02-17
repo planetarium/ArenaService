@@ -23,4 +23,8 @@
     <PackageReference Include="Libplanet.Types" Version="5.5.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\ArenaService.Shared\ArenaService.Shared.csproj" />
+  </ItemGroup>
+
 </Project>

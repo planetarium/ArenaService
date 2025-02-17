@@ -1,6 +1,6 @@
 // using System.Security.Claims;
 // using ArenaService.Controllers;
-// using ArenaService.Models;
+// using ArenaService.Shared.Models;
 // using ArenaService.Repositories;
 // using ArenaService.Tests.Utils;
 // using Microsoft.AspNetCore.Http;

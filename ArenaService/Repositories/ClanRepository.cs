@@ -1,7 +1,7 @@
 namespace ArenaService.Repositories;
 
-using ArenaService.Data;
-using ArenaService.Models;
+using ArenaService.Shared.Data;
+using ArenaService.Shared.Models;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 

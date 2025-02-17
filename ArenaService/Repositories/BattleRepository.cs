@@ -1,10 +1,10 @@
 namespace ArenaService.Repositories;
 
 using ArenaService.Constants;
-using ArenaService.Data;
+using ArenaService.Shared.Data;
 using ArenaService.Jwt;
-using ArenaService.Models;
-using ArenaService.Models.Enums;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.Enums;
 using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
