@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.BattleTicket;
-using ArenaService.Shared.Models.Enums;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.BattleTicket;
+using ArenaService.Shared.Models.Enums;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -86,28 +86,13 @@ public class PurchaseBattleTicketProcessor
             purchaseLog.TxId,
             async status =>
             {
-                if (status == Client.TxStatus.Failure)
-                {
-                    await _ticketRepo.UpdateBattleTicketPurchaseLog(
-                        purchaseLog,
-                        btpl =>
-                        {
-                            btpl.TxStatus = status.ToModelTxStatus();
-                            btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
-                        }
-                    );
-                    processResult = "tx failed";
-                }
-                else
-                {
-                    await _ticketRepo.UpdateBattleTicketPurchaseLog(
-                        purchaseLog,
-                        btpl =>
-                        {
-                            btpl.TxStatus = status.ToModelTxStatus();
-                        }
-                    );
-                }
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.TxStatus = status.ToModelTxStatus();
+                    }
+                );
             },
             async successResponse =>
             {
@@ -174,6 +159,21 @@ public class PurchaseBattleTicketProcessor
                         }
                     }
                 }
+            },
+            async failureResponse =>
+            {
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
+                        btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        btpl.ExceptionNames = failureResponse.ExceptionNames is not null
+                            ? string.Join(", ", failureResponse.ExceptionNames)
+                            : null;
+                    }
+                );
+                processResult = "tx failed";
             },
             txId =>
             {

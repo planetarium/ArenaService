@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.Enums;
-using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.Enums;
+using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -86,28 +86,13 @@ public class PurchaseRefreshTicketProcessor
             purchaseLog.TxId,
             async status =>
             {
-                if (status == Client.TxStatus.Failure)
-                {
-                    await _ticketRepo.UpdateRefreshTicketPurchaseLog(
-                        purchaseLog,
-                        btpl =>
-                        {
-                            btpl.TxStatus = status.ToModelTxStatus();
-                            btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
-                        }
-                    );
-                    processResult = "tx failed";
-                }
-                else
-                {
-                    await _ticketRepo.UpdateRefreshTicketPurchaseLog(
-                        purchaseLog,
-                        btpl =>
-                        {
-                            btpl.TxStatus = status.ToModelTxStatus();
-                        }
-                    );
-                }
+                await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.TxStatus = status.ToModelTxStatus();
+                    }
+                );
             },
             async successResponse =>
             {
@@ -175,6 +160,21 @@ public class PurchaseRefreshTicketProcessor
                         }
                     }
                 }
+            },
+            async failureResponse =>
+            {
+                await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                    purchaseLog,
+                    rtpl =>
+                    {
+                        rtpl.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
+                        rtpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
+                        rtpl.ExceptionNames = failureResponse.ExceptionNames is not null
+                            ? string.Join(", ", failureResponse.ExceptionNames)
+                            : null;
+                    }
+                );
+                processResult = "tx failed";
             },
             txId =>
             {

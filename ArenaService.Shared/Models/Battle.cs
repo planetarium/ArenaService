@@ -37,10 +37,19 @@ public class Battle
     public required string Token { get; set; }
 
     public BattleStatus BattleStatus { get; set; }
+
     public TxId? TxId { get; set; }
+
     public TxStatus? TxStatus { get; set; }
+
+    public string? ExceptionNames { get; set; }
+
+    public bool? Reviewed { get; set; }
+
     public bool? IsVictory { get; set; }
+
     public int? MyScoreChange { get; set; }
+
     public int? OpponentScoreChange { get; set; }
 
     [Required]

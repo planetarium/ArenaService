@@ -35,6 +35,10 @@ public abstract class TicketPurchaseLog
 
     public TxStatus? TxStatus { get; set; }
 
+    public string? ExceptionNames { get; set; }
+
+    public bool? Reviewed { get; set; }
+
     [Required]
     [Column(TypeName = "timestamptz")]
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

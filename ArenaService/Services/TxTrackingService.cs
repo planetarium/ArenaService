@@ -9,6 +9,7 @@ public interface ITxTrackingService
         TxId txId,
         Func<TxStatus, Task> onStatusUpdated,
         Func<IGetTransactionResult_Transaction_TransactionResult, Task> onSuccessResponse,
+        Func<IGetTransactionResult_Transaction_TransactionResult, Task> onFailureResponse,
         Func<TxId, Task> onTimeout
     );
 }
@@ -28,6 +29,7 @@ public class TxTrackingService : ITxTrackingService
         TxId txId,
         Func<TxStatus, Task> onStatusUpdated,
         Func<IGetTransactionResult_Transaction_TransactionResult, Task> onSuccessResponse,
+        Func<IGetTransactionResult_Transaction_TransactionResult, Task> onFailureResponse,
         Func<TxId, Task> onTimeout
     )
     {
@@ -62,6 +64,8 @@ public class TxTrackingService : ITxTrackingService
 
                     case TxStatus.Failure:
                         _logger.LogWarning("Transaction failed.");
+                        var failureResponse = txResultResponse.Data.Transaction.TransactionResult;
+                        await onFailureResponse(failureResponse);
                         return;
 
                     default:

@@ -26,7 +26,7 @@ namespace ArenaService.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.AvailableOpponent", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -96,7 +96,7 @@ namespace ArenaService.Migrations
                     b.ToTable("available_opponents", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Battle", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Battle", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -175,7 +175,7 @@ namespace ArenaService.Migrations
                     b.ToTable("battles", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketPolicy", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketPolicy", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -220,7 +220,7 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_policies", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketPurchaseLog", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketPurchaseLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -278,7 +278,7 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_purchase_logs", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketStatusPerRound", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketStatusPerRound", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -352,7 +352,7 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_statuses_per_round", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketStatusPerSeason", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketStatusPerSeason", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -407,7 +407,7 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_statuses_per_season", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketUsageLog", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketUsageLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -444,7 +444,7 @@ namespace ArenaService.Migrations
                     b.ToTable("battle_ticket_usage_logs", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Clan", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Clan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -478,7 +478,7 @@ namespace ArenaService.Migrations
                     b.ToTable("clans", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Medal", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Medal", b =>
                 {
                     b.Property<string>("AvatarAddress")
                         .HasMaxLength(40)
@@ -513,7 +513,7 @@ namespace ArenaService.Migrations
                     b.ToTable("medals", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Participant", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Participant", b =>
                 {
                     b.Property<string>("AvatarAddress")
                         .HasMaxLength(40)
@@ -557,7 +557,7 @@ namespace ArenaService.Migrations
                     b.ToTable("participants", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RankingSnapshot", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RankingSnapshot", b =>
                 {
                     b.Property<string>("AvatarAddress")
                         .HasMaxLength(40)
@@ -596,7 +596,7 @@ namespace ArenaService.Migrations
                     b.ToTable("ranking_snapshots", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RefreshTicket.RefreshTicketPolicy", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RefreshTicket.RefreshTicketPolicy", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -637,7 +637,7 @@ namespace ArenaService.Migrations
                     b.ToTable("refresh_ticket_policies", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RefreshTicket.RefreshTicketPurchaseLog", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RefreshTicket.RefreshTicketPurchaseLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -695,7 +695,7 @@ namespace ArenaService.Migrations
                     b.ToTable("refresh_ticket_purchase_logs", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RefreshTicket.RefreshTicketStatusPerRound", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RefreshTicket.RefreshTicketStatusPerRound", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -761,7 +761,7 @@ namespace ArenaService.Migrations
                     b.ToTable("refresh_ticket_statuses_per_round", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RefreshTicket.RefreshTicketUsageLog", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RefreshTicket.RefreshTicketUsageLog", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -792,7 +792,7 @@ namespace ArenaService.Migrations
                     b.ToTable("refresh_ticket_usage_logs", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Round", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Round", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -830,7 +830,7 @@ namespace ArenaService.Migrations
                     b.ToTable("rounds", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Season", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Season", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -906,7 +906,7 @@ namespace ArenaService.Migrations
                     b.ToTable("seasons", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.User", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.User", b =>
                 {
                     b.Property<string>("AvatarAddress")
                         .HasMaxLength(40)
@@ -957,35 +957,35 @@ namespace ArenaService.Migrations
                     b.ToTable("users", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.AvailableOpponent", b =>
                 {
-                    b.HasOne("ArenaService.Models.Round", "Round")
+                    b.HasOne("ArenaService.Shared.Models.Round", "Round")
                         .WithMany()
                         .HasForeignKey("RoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_available_opponents_rounds_round_id");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_available_opponents_seasons_season_id");
 
-                    b.HasOne("ArenaService.Models.Battle", "SuccessBattle")
+                    b.HasOne("ArenaService.Shared.Models.Battle", "SuccessBattle")
                         .WithMany()
                         .HasForeignKey("SuccessBattleId")
                         .HasConstraintName("fk_available_opponents_battles_success_battle_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Me")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Me")
                         .WithMany("AvailableOpponents")
                         .HasForeignKey("AvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_available_opponents_participants_avatar_address_season_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Opponent")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Opponent")
                         .WithMany()
                         .HasForeignKey("OpponentAvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1003,23 +1003,23 @@ namespace ArenaService.Migrations
                     b.Navigation("SuccessBattle");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Battle", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Battle", b =>
                 {
-                    b.HasOne("ArenaService.Models.AvailableOpponent", "AvailableOpponent")
+                    b.HasOne("ArenaService.Shared.Models.AvailableOpponent", "AvailableOpponent")
                         .WithMany("Battles")
                         .HasForeignKey("AvailableOpponentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battles_available_opponents_available_opponent_id");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battles_seasons_season_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Participant")
                         .WithMany()
                         .HasForeignKey("AvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1033,30 +1033,30 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketStatusPerRound", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketStatusPerRound", b =>
                 {
-                    b.HasOne("ArenaService.Models.BattleTicket.BattleTicketPolicy", "BattleTicketPolicy")
+                    b.HasOne("ArenaService.Shared.Models.BattleTicket.BattleTicketPolicy", "BattleTicketPolicy")
                         .WithMany()
                         .HasForeignKey("BattleTicketPolicyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_statuses_per_round_battle_ticket_policies_bat");
 
-                    b.HasOne("ArenaService.Models.Round", "Round")
+                    b.HasOne("ArenaService.Shared.Models.Round", "Round")
                         .WithMany()
                         .HasForeignKey("RoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_statuses_per_round_rounds_round_id");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_statuses_per_round_seasons_season_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Participant")
                         .WithMany()
                         .HasForeignKey("AvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1072,23 +1072,23 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketStatusPerSeason", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketStatusPerSeason", b =>
                 {
-                    b.HasOne("ArenaService.Models.BattleTicket.BattleTicketPolicy", "BattleTicketPolicy")
+                    b.HasOne("ArenaService.Shared.Models.BattleTicket.BattleTicketPolicy", "BattleTicketPolicy")
                         .WithMany()
                         .HasForeignKey("BattleTicketPolicyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_statuses_per_season_battle_ticket_policies_ba");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_statuses_per_season_seasons_season_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Participant")
                         .WithMany()
                         .HasForeignKey("AvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1102,16 +1102,16 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.BattleTicket.BattleTicketUsageLog", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.BattleTicket.BattleTicketUsageLog", b =>
                 {
-                    b.HasOne("ArenaService.Models.BattleTicket.BattleTicketStatusPerRound", "BattleTicketStatusPerRound")
+                    b.HasOne("ArenaService.Shared.Models.BattleTicket.BattleTicketStatusPerRound", "BattleTicketStatusPerRound")
                         .WithMany()
                         .HasForeignKey("BattleTicketStatusPerRoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_battle_ticket_usage_logs_battle_ticket_statuses_per_round_b");
 
-                    b.HasOne("ArenaService.Models.BattleTicket.BattleTicketStatusPerSeason", "BattleTicketStatusPerSeason")
+                    b.HasOne("ArenaService.Shared.Models.BattleTicket.BattleTicketStatusPerSeason", "BattleTicketStatusPerSeason")
                         .WithMany()
                         .HasForeignKey("BattleTicketStatusPerSeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1123,16 +1123,16 @@ namespace ArenaService.Migrations
                     b.Navigation("BattleTicketStatusPerSeason");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Medal", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Medal", b =>
                 {
-                    b.HasOne("ArenaService.Models.User", "User")
+                    b.HasOne("ArenaService.Shared.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("AvatarAddress")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_medals_users_avatar_address");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1144,16 +1144,16 @@ namespace ArenaService.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Participant", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Participant", b =>
                 {
-                    b.HasOne("ArenaService.Models.User", "User")
+                    b.HasOne("ArenaService.Shared.Models.User", "User")
                         .WithMany()
                         .HasForeignKey("AvatarAddress")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_participants_users_avatar_address");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1165,23 +1165,23 @@ namespace ArenaService.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RankingSnapshot", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RankingSnapshot", b =>
                 {
-                    b.HasOne("ArenaService.Models.Round", "Round")
+                    b.HasOne("ArenaService.Shared.Models.Round", "Round")
                         .WithMany()
                         .HasForeignKey("RoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_ranking_snapshots_rounds_round_id");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_ranking_snapshots_seasons_season_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Participant")
                         .WithMany()
                         .HasForeignKey("AvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1195,30 +1195,30 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RefreshTicket.RefreshTicketStatusPerRound", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RefreshTicket.RefreshTicketStatusPerRound", b =>
                 {
-                    b.HasOne("ArenaService.Models.RefreshTicket.RefreshTicketPolicy", "RefreshTicketPolicy")
+                    b.HasOne("ArenaService.Shared.Models.RefreshTicket.RefreshTicketPolicy", "RefreshTicketPolicy")
                         .WithMany()
                         .HasForeignKey("RefreshTicketPolicyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_refresh_ticket_statuses_per_round_refresh_ticket_policies_r");
 
-                    b.HasOne("ArenaService.Models.Round", "Round")
+                    b.HasOne("ArenaService.Shared.Models.Round", "Round")
                         .WithMany()
                         .HasForeignKey("RoundId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_refresh_ticket_statuses_per_round_rounds_round_id");
 
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany()
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_refresh_ticket_statuses_per_round_seasons_season_id");
 
-                    b.HasOne("ArenaService.Models.Participant", "Participant")
+                    b.HasOne("ArenaService.Shared.Models.Participant", "Participant")
                         .WithMany()
                         .HasForeignKey("AvatarAddress", "SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1234,9 +1234,9 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.RefreshTicket.RefreshTicketUsageLog", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.RefreshTicket.RefreshTicketUsageLog", b =>
                 {
-                    b.HasOne("ArenaService.Models.RefreshTicket.RefreshTicketStatusPerRound", "RefreshTicketStatusPerRound")
+                    b.HasOne("ArenaService.Shared.Models.RefreshTicket.RefreshTicketStatusPerRound", "RefreshTicketStatusPerRound")
                         .WithMany()
                         .HasForeignKey("RefreshTicketStatusPerRoundId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1246,9 +1246,9 @@ namespace ArenaService.Migrations
                     b.Navigation("RefreshTicketStatusPerRound");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Round", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Round", b =>
                 {
-                    b.HasOne("ArenaService.Models.Season", "Season")
+                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
                         .WithMany("Rounds")
                         .HasForeignKey("SeasonId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1258,16 +1258,16 @@ namespace ArenaService.Migrations
                     b.Navigation("Season");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Season", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Season", b =>
                 {
-                    b.HasOne("ArenaService.Models.BattleTicket.BattleTicketPolicy", "BattleTicketPolicy")
+                    b.HasOne("ArenaService.Shared.Models.BattleTicket.BattleTicketPolicy", "BattleTicketPolicy")
                         .WithMany()
                         .HasForeignKey("BattleTicketPolicyId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired()
                         .HasConstraintName("fk_seasons_battle_ticket_policies_battle_ticket_policy_id");
 
-                    b.HasOne("ArenaService.Models.RefreshTicket.RefreshTicketPolicy", "RefreshTicketPolicy")
+                    b.HasOne("ArenaService.Shared.Models.RefreshTicket.RefreshTicketPolicy", "RefreshTicketPolicy")
                         .WithMany()
                         .HasForeignKey("RefreshTicketPolicyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -1279,9 +1279,9 @@ namespace ArenaService.Migrations
                     b.Navigation("RefreshTicketPolicy");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.User", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.User", b =>
                 {
-                    b.HasOne("ArenaService.Models.Clan", "Clan")
+                    b.HasOne("ArenaService.Shared.Models.Clan", "Clan")
                         .WithMany("Users")
                         .HasForeignKey("ClanId")
                         .HasConstraintName("fk_users_clans_clan_id");
@@ -1289,22 +1289,22 @@ namespace ArenaService.Migrations
                     b.Navigation("Clan");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.AvailableOpponent", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.AvailableOpponent", b =>
                 {
                     b.Navigation("Battles");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Clan", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Clan", b =>
                 {
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Participant", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Participant", b =>
                 {
                     b.Navigation("AvailableOpponents");
                 });
 
-            modelBuilder.Entity("ArenaService.Models.Season", b =>
+            modelBuilder.Entity("ArenaService.Shared.Models.Season", b =>
                 {
                     b.Navigation("Rounds");
                 });
