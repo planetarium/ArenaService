@@ -129,11 +129,14 @@ public class BattleRepository : IBattleRepository
         int roundId
     )
     {
+        var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+
         var battles = await _context
             .Battles.Where(b =>
                 b.AvatarAddress == avatarAddress
                 && b.SeasonId == seasonId
                 && b.RoundId == roundId
+                && b.CreatedAt >= fiveMinutesAgo
                 && b.AvailableOpponent.OpponentAvatarAddress == opponentAvatarAddress
                 && (
                     b.BattleStatus == BattleStatus.TOKEN_ISSUED

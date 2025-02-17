@@ -564,11 +564,14 @@ public class TicketRepository : ITicketRepository
         int roundId
     )
     {
+        var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+
         var purchases = await _context
             .BattleTicketPurchaseLogs.Where(b =>
                 b.AvatarAddress == avatarAddress
                 && b.SeasonId == seasonId
                 && b.RoundId == roundId
+                && b.CreatedAt >= fiveMinutesAgo
                 && (
                     b.PurchaseStatus == PurchaseStatus.PENDING
                     || b.PurchaseStatus == PurchaseStatus.TRACKING
@@ -585,11 +588,14 @@ public class TicketRepository : ITicketRepository
         int roundId
     )
     {
+        var fiveMinutesAgo = DateTime.UtcNow.AddMinutes(-5);
+
         var purchases = await _context
             .RefreshTicketPurchaseLogs.Where(b =>
                 b.AvatarAddress == avatarAddress
                 && b.SeasonId == seasonId
                 && b.RoundId == roundId
+                && b.CreatedAt >= fiveMinutesAgo
                 && (
                     b.PurchaseStatus == PurchaseStatus.PENDING
                     || b.PurchaseStatus == PurchaseStatus.TRACKING
