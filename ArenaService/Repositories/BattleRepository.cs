@@ -25,7 +25,12 @@ public interface IBattleRepository
         Func<IQueryable<Battle>, IQueryable<Battle>>? includeQuery = null
     );
     Task<Battle?> GetBattleByTxId(TxId txId, int battleId);
-    Task<List<Battle>> GetInProgressBattles(Address avatarAddress, int seasonId, int roundId);
+    Task<List<Battle>> GetInProgressBattles(
+        Address avatarAddress,
+        Address opponentAvatarAddress,
+        int seasonId,
+        int roundId
+    );
 }
 
 public class BattleRepository : IBattleRepository
@@ -119,6 +124,7 @@ public class BattleRepository : IBattleRepository
 
     public async Task<List<Battle>> GetInProgressBattles(
         Address avatarAddress,
+        Address opponentAvatarAddress,
         int seasonId,
         int roundId
     )
@@ -128,11 +134,13 @@ public class BattleRepository : IBattleRepository
                 b.AvatarAddress == avatarAddress
                 && b.SeasonId == seasonId
                 && b.RoundId == roundId
+                && b.AvailableOpponent.OpponentAvatarAddress == opponentAvatarAddress
                 && (
                     b.BattleStatus == BattleStatus.TOKEN_ISSUED
                     || b.BattleStatus == BattleStatus.TRACKING
                 )
             )
+            .Include(b => b.AvailableOpponent)
             .ToListAsync();
 
         return battles;
