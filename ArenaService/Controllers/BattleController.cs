@@ -70,6 +70,7 @@ public class BattleController : ControllerBase
         }
         var inProgressBattles = await _battleRepo.GetInProgressBattles(
             avatarAddress,
+            opponentAvatarAddress,
             cachedSeason.Id,
             cachedRound.Id
         );
