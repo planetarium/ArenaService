@@ -13,8 +13,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace ArenaService.Migrations
 {
     [DbContext(typeof(ArenaDbContext))]
-    [Migration("20250211134913_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250217153958_AddExceptionNames")]
+    partial class AddExceptionNames
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -123,6 +123,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExceptionNames")
+                        .HasColumnType("text")
+                        .HasColumnName("exception_names");
+
                     b.Property<bool?>("IsVictory")
                         .HasColumnType("boolean")
                         .HasColumnName("is_victory");
@@ -134,6 +138,10 @@ namespace ArenaService.Migrations
                     b.Property<int?>("OpponentScoreChange")
                         .HasColumnType("integer")
                         .HasColumnName("opponent_score_change");
+
+                    b.Property<bool?>("Reviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reviewed");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")
@@ -243,6 +251,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExceptionNames")
+                        .HasColumnType("text")
+                        .HasColumnName("exception_names");
+
                     b.Property<int>("PurchaseCount")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_count");
@@ -250,6 +262,10 @@ namespace ArenaService.Migrations
                     b.Property<int>("PurchaseStatus")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_status");
+
+                    b.Property<bool?>("Reviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reviewed");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")
@@ -478,40 +494,6 @@ namespace ArenaService.Migrations
                     b.ToTable("clans", (string)null);
                 });
 
-            modelBuilder.Entity("ArenaService.Shared.Models.ClanRankingSnapshot", b =>
-                {
-                    b.Property<int>("ClanId")
-                        .HasColumnType("integer")
-                        .HasColumnName("clan_id");
-
-                    b.Property<int>("SeasonId")
-                        .HasColumnType("integer")
-                        .HasColumnName("season_id");
-
-                    b.Property<int>("RoundId")
-                        .HasColumnType("integer")
-                        .HasColumnName("round_id");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("integer")
-                        .HasColumnName("score");
-
-                    b.HasKey("ClanId", "SeasonId", "RoundId")
-                        .HasName("pk_clan_ranking_snapshots");
-
-                    b.HasIndex("RoundId")
-                        .HasDatabaseName("ix_clan_ranking_snapshots_round_id");
-
-                    b.HasIndex("SeasonId", "RoundId")
-                        .HasDatabaseName("ix_clan_ranking_snapshots_season_id_round_id");
-
-                    b.ToTable("clan_ranking_snapshots", (string)null);
-                });
-
             modelBuilder.Entity("ArenaService.Shared.Models.Medal", b =>
                 {
                     b.Property<string>("AvatarAddress")
@@ -606,6 +588,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("round_id");
 
+                    b.Property<int?>("ClanId")
+                        .HasColumnType("integer")
+                        .HasColumnName("clan_id");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
@@ -690,6 +676,10 @@ namespace ArenaService.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("ExceptionNames")
+                        .HasColumnType("text")
+                        .HasColumnName("exception_names");
+
                     b.Property<int>("PurchaseCount")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_count");
@@ -697,6 +687,10 @@ namespace ArenaService.Migrations
                     b.Property<int>("PurchaseStatus")
                         .HasColumnType("integer")
                         .HasColumnName("purchase_status");
+
+                    b.Property<bool?>("Reviewed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("reviewed");
 
                     b.Property<int>("RoundId")
                         .HasColumnType("integer")
@@ -1153,36 +1147,6 @@ namespace ArenaService.Migrations
                     b.Navigation("BattleTicketStatusPerSeason");
                 });
 
-            modelBuilder.Entity("ArenaService.Shared.Models.ClanRankingSnapshot", b =>
-                {
-                    b.HasOne("ArenaService.Shared.Models.Clan", "Clan")
-                        .WithMany()
-                        .HasForeignKey("ClanId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_clan_ranking_snapshots_clans_clan_id");
-
-                    b.HasOne("ArenaService.Shared.Models.Round", "Round")
-                        .WithMany()
-                        .HasForeignKey("RoundId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_clan_ranking_snapshots_rounds_round_id");
-
-                    b.HasOne("ArenaService.Shared.Models.Season", "Season")
-                        .WithMany()
-                        .HasForeignKey("SeasonId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired()
-                        .HasConstraintName("fk_clan_ranking_snapshots_seasons_season_id");
-
-                    b.Navigation("Clan");
-
-                    b.Navigation("Round");
-
-                    b.Navigation("Season");
-                });
-
             modelBuilder.Entity("ArenaService.Shared.Models.Medal", b =>
                 {
                     b.HasOne("ArenaService.Shared.Models.User", "User")
@@ -1342,7 +1306,7 @@ namespace ArenaService.Migrations
             modelBuilder.Entity("ArenaService.Shared.Models.User", b =>
                 {
                     b.HasOne("ArenaService.Shared.Models.Clan", "Clan")
-                        .WithMany()
+                        .WithMany("Users")
                         .HasForeignKey("ClanId")
                         .HasConstraintName("fk_users_clans_clan_id");
 
@@ -1352,6 +1316,11 @@ namespace ArenaService.Migrations
             modelBuilder.Entity("ArenaService.Shared.Models.AvailableOpponent", b =>
                 {
                     b.Navigation("Battles");
+                });
+
+            modelBuilder.Entity("ArenaService.Shared.Models.Clan", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("ArenaService.Shared.Models.Participant", b =>
