@@ -8,8 +8,8 @@ public interface ITxTrackingService
     Task TrackTransactionAsync(
         TxId txId,
         Func<TxStatus, Task> onStatusUpdated,
-        Func<IGetTransactionResult_Transaction_TransactionResult, Task> onFailureResponse,
         Func<IGetTransactionResult_Transaction_TransactionResult, Task> onSuccessResponse,
+        Func<IGetTransactionResult_Transaction_TransactionResult, Task> onFailureResponse,
         Func<TxId, Task> onTimeout
     );
 }
@@ -28,8 +28,8 @@ public class TxTrackingService : ITxTrackingService
     public async Task TrackTransactionAsync(
         TxId txId,
         Func<TxStatus, Task> onStatusUpdated,
-        Func<IGetTransactionResult_Transaction_TransactionResult, Task> onFailureResponse,
         Func<IGetTransactionResult_Transaction_TransactionResult, Task> onSuccessResponse,
+        Func<IGetTransactionResult_Transaction_TransactionResult, Task> onFailureResponse,
         Func<TxId, Task> onTimeout
     )
     {

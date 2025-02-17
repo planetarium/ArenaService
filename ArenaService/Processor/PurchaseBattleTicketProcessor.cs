@@ -168,7 +168,9 @@ public class PurchaseBattleTicketProcessor
                     {
                         btpl.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
                         btpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
-                        btpl.ExceptionNames = failureResponse.ExceptionNames?.ToString();
+                        btpl.ExceptionNames = failureResponse.ExceptionNames is not null
+                            ? string.Join(", ", failureResponse.ExceptionNames)
+                            : null;
                     }
                 );
                 processResult = "tx failed";

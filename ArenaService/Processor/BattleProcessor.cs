@@ -3,12 +3,12 @@ using ArenaService.Client;
 using ArenaService.Constants;
 using ArenaService.Extensions;
 using ArenaService.Jwt;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.BattleTicket;
-using ArenaService.Shared.Models.Enums;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.BattleTicket;
+using ArenaService.Shared.Models.Enums;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -204,7 +204,9 @@ public class BattleProcessor
                     {
                         b.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
                         b.BattleStatus = BattleStatus.TX_FAILED;
-                        b.ExceptionNames = failureResponse.ExceptionNames?.ToString();
+                        b.ExceptionNames = failureResponse.ExceptionNames is not null
+                            ? string.Join(", ", failureResponse.ExceptionNames)
+                            : null;
                     }
                 );
                 processResult = "tx failed";

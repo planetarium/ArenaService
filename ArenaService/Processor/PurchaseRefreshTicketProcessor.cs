@@ -3,12 +3,12 @@ using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
-using ArenaService.Shared.Models;
-using ArenaService.Shared.Models.Enums;
-using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Options;
 using ArenaService.Repositories;
 using ArenaService.Services;
+using ArenaService.Shared.Models;
+using ArenaService.Shared.Models.Enums;
+using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -169,7 +169,9 @@ public class PurchaseRefreshTicketProcessor
                     {
                         rtpl.TxStatus = Shared.Models.Enums.TxStatus.FAILURE;
                         rtpl.PurchaseStatus = PurchaseStatus.TX_FAILED;
-                        rtpl.ExceptionNames = failureResponse.ExceptionNames?.ToString();
+                        rtpl.ExceptionNames = failureResponse.ExceptionNames is not null
+                            ? string.Join(", ", failureResponse.ExceptionNames)
+                            : null;
                     }
                 );
                 processResult = "tx failed";
