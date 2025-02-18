@@ -1,5 +1,5 @@
-using ArenaService.Exceptions;
-using ArenaService.Repositories;
+using ArenaService.Shared.Exceptions;
+using ArenaService.Shared.Repositories;
 using StackExchange.Redis;
 
 namespace ArenaService.Worker;

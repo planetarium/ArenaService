@@ -1,10 +1,10 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Dtos;
-using ArenaService.Extensions;
-using ArenaService.Services;
-using ArenaService.Constants;
-using ArenaService.Repositories;
+using ArenaService.Shared.Dtos;
+using ArenaService.Shared.Extensions;
+using ArenaService.Shared.Services;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Repositories;
 using ArenaService.Worker;
 using Hangfire;
 using Libplanet.Crypto;

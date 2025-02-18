@@ -1,4 +1,4 @@
-using ArenaService.Jwt;
+using ArenaService.Shared.Jwt;
 
 namespace ArenaService.Tests.Jwt;
 

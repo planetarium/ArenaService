@@ -1,5 +1,5 @@
 using ArenaService.IntegrationTests.Fixtures;
-using ArenaService.Repositories;
+using ArenaService.Shared.Repositories;
 using StackExchange.Redis;
 
 namespace ArenaService.IntegrationTests.Services;

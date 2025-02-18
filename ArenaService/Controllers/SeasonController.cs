@@ -1,12 +1,12 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Constants;
-using ArenaService.Dtos;
-using ArenaService.Exceptions;
-using ArenaService.Extensions;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Dtos;
+using ArenaService.Shared.Exceptions;
+using ArenaService.Shared.Extensions;
 using ArenaService.Options;
-using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;

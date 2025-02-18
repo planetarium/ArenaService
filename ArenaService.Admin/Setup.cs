@@ -2,6 +2,8 @@ namespace ArenaService.Admin;
 
 using ArenaService.Admin.Options;
 using ArenaService.Shared.Data;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
@@ -76,6 +78,12 @@ public class Startup
                 builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()
             );
         });
+
+        services.AddScoped<ISeasonRepository, SeasonRepository>();
+        services.AddScoped<IRoundRepository, RoundRepository>();
+
+        services.AddScoped<ISeasonPreparationService, SeasonPreparationService>();
+        services.AddScoped<IRoundPreparationService, RoundPreparationService>();
 
         services.AddHealthChecks();
     }

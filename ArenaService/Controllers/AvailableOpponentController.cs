@@ -1,11 +1,11 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Constants;
-using ArenaService.Dtos;
-using ArenaService.Exceptions;
-using ArenaService.Extensions;
-using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Dtos;
+using ArenaService.Shared.Exceptions;
+using ArenaService.Shared.Extensions;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;

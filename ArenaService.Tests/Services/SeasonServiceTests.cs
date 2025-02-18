@@ -3,10 +3,10 @@ namespace ArenaService.Tests.Services;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using ArenaService.Constants;
+using ArenaService.Shared.Constants;
 using ArenaService.Shared.Models;
-using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using Moq;
 using Xunit;
 

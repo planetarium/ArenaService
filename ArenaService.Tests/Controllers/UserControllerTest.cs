@@ -2,9 +2,9 @@ namespace ArenaService.Tests.Controllers;
 
 using System.Security.Claims;
 using ArenaService.Controllers;
-using ArenaService.Dtos;
-using ArenaService.Services;
-using ArenaService.Repositories;
+using ArenaService.Shared.Dtos;
+using ArenaService.Shared.Services;
+using ArenaService.Shared.Repositories;
 using Libplanet.Crypto;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;

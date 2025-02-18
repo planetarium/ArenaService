@@ -1,14 +1,15 @@
 using ArenaService.ActionValues;
 using ArenaService.Client;
-using ArenaService.Constants;
 using ArenaService.Extensions;
-using ArenaService.Jwt;
 using ArenaService.Options;
-using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Shared.Services;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Extensions;
+using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.Enums;
+using ArenaService.Shared.Repositories;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -16,6 +17,7 @@ using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ArenaService.Services;
 
 namespace ArenaService.Worker;
 

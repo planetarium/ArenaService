@@ -1,5 +1,5 @@
 using ArenaService.IntegrationTests.Fixtures;
-using ArenaService.Repositories;
+using ArenaService.Shared.Repositories;
 
 namespace ArenaService.IntegrationTests.Services.RankingServiceTests;
 

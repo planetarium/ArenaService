@@ -1,8 +1,8 @@
 using ArenaService.Client;
-using ArenaService.Services;
-using ArenaService.Exceptions;
+using ArenaService.Shared.Services;
+using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Models;
-using ArenaService.Repositories;
+using ArenaService.Shared.Repositories;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 

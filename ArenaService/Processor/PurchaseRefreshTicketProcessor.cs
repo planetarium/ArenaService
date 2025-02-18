@@ -2,10 +2,10 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
 using ArenaService.Client;
-using ArenaService.Extensions;
+using ArenaService.Shared.Extensions;
 using ArenaService.Options;
-using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.Enums;
 using ArenaService.Shared.Models.RefreshTicket;
@@ -16,6 +16,8 @@ using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using ArenaService.Extensions;
+using ArenaService.Services;
 
 namespace ArenaService.Worker;
 

@@ -1,6 +1,6 @@
 using ArenaService.IntegrationTests.Fixtures;
-using ArenaService.Constants;
-using ArenaService.Repositories;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Repositories;
 using Libplanet.Crypto;
 using StackExchange.Redis;
 using Xunit;
