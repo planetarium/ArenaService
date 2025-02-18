@@ -2,6 +2,7 @@ namespace ArenaService.Controllers;
 
 using ArenaService.Constants;
 using ArenaService.Dtos;
+using ArenaService.Exceptions;
 using ArenaService.Extensions;
 using ArenaService.Options;
 using ArenaService.Repositories;
@@ -33,21 +34,26 @@ public class SeasonController : ControllerBase
     }
 
     [HttpGet("by-block/{blockIndex}")]
-    [SwaggerResponse(StatusCodes.Status200OK, "SeasonResponse", typeof(SeasonResponse))]
+    [SwaggerResponse(
+        StatusCodes.Status200OK,
+        "SeasonAndRoundResponse",
+        typeof(SeasonAndRoundResponse)
+    )]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
-    public async Task<IActionResult> GetSeasonByBlock(long blockIndex)
+    public async Task<ActionResult<SeasonAndRoundResponse>> GetSeasonAndRoundByBlock(
+        long blockIndex
+    )
     {
-        var seasons = await _seasonRepo.GetAllSeasonsAsync();
-        var season = seasons.FirstOrDefault(s =>
-            s.StartBlock <= blockIndex && s.EndBlock >= blockIndex
-        );
+        try
+        {
+            var seasonInfo = await _seasonService.GetSeasonAndRoundByBlock(blockIndex);
 
-        if (season == null)
+            return Ok(seasonInfo.ToResponse());
+        }
+        catch (NotFoundSeasonException)
         {
             return NotFound($"No active season found for block index {blockIndex}.");
         }
-
-        return Ok(season.ToResponse());
     }
 
     [HttpGet("classify-by-championship/{blockIndex}")]

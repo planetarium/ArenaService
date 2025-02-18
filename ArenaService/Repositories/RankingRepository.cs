@@ -31,6 +31,8 @@ public interface IRankingRepository
     );
 
     Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId, int roundInterval);
+
+    Task<int> GetRankingCountAsync(int seasonId, int roundId);
 }
 
 public class RankingRepository : IRankingRepository
@@ -72,7 +74,10 @@ public class RankingRepository : IRankingRepository
         await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
+        string participantKey = string.Format(
+            ParticipantKeyFormat,
+            avatarAddress.ToHex().ToLower()
+        );
 
         await _redis.SortedSetIncrementAsync(rankingKey, participantKey, scoreChange);
     }
@@ -82,7 +87,10 @@ public class RankingRepository : IRankingRepository
         await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
+        string participantKey = string.Format(
+            ParticipantKeyFormat,
+            avatarAddress.ToHex().ToLower()
+        );
 
         var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
 
@@ -126,12 +134,24 @@ public class RankingRepository : IRankingRepository
             .ToList();
     }
 
+    public async Task<int> GetRankingCountAsync(int seasonId, int roundId)
+    {
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
+
+        int totalRankingCount = (int)await _redis.SortedSetLengthAsync(rankingKey);
+
+        return totalRankingCount;
+    }
+
     public async Task<int> GetScoreAsync(Address avatarAddress, int seasonId, int roundId)
     {
         await InsureRankingStatus(seasonId, roundId);
 
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
+        string participantKey = string.Format(
+            ParticipantKeyFormat,
+            avatarAddress.ToHex().ToLower()
+        );
 
         var score = await _redis.SortedSetScoreAsync(rankingKey, participantKey);
         return score.HasValue
@@ -144,7 +164,10 @@ public class RankingRepository : IRankingRepository
     > SelectBattleOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
     {
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
-        string participantKey = string.Format(ParticipantKeyFormat, avatarAddress.ToHex().ToLower());
+        string participantKey = string.Format(
+            ParticipantKeyFormat,
+            avatarAddress.ToHex().ToLower()
+        );
 
         int totalRankingCount = (int)await _redis.SortedSetLengthAsync(rankingKey);
 
