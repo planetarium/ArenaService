@@ -32,12 +32,7 @@ public class SeasonManagingController : ControllerBase
     }
 
     [HttpPost("initialize-season")]
-    [SwaggerResponse(
-        StatusCodes.Status200OK,
-        "SeasonAndRoundResponse",
-        typeof(SeasonAndRoundResponse)
-    )]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
+    [SwaggerResponse(StatusCodes.Status200OK, "OK")]
     public async Task<ActionResult> InitializeSeason(int seasonId)
     {
         var season = await _seasonRepo.GetSeasonAsync(seasonId, q => q.Include(s => s.Rounds));
@@ -51,7 +46,6 @@ public class SeasonManagingController : ControllerBase
 
     [HttpPost("prepare-next-round")]
     [SwaggerResponse(StatusCodes.Status200OK, "Ok")]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
     public async Task<ActionResult> PrepareNextRound(int roundId)
     {
         var round = await _roundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season));

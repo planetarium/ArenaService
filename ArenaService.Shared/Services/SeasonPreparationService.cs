@@ -24,7 +24,7 @@ public class SeasonPreparationService : ISeasonPreparationService
     private readonly IRankingService _rankingService;
     private readonly ILogger<SeasonPreparationService> _logger;
 
-    private const int BatchSize = 300;
+    private const int BatchSize = 3000;
 
     public SeasonPreparationService(
         IParticipantRepository participantRepo,

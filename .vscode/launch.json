@@ -12,6 +12,18 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Local"
             }
+        },
+        {
+            "name": "Debug ArenaService.Admin",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-admin",
+            "program": "${workspaceFolder}/ArenaService.Admin/bin/Debug/net8.0/ArenaService.Admin.dll",
+            "cwd": "${workspaceFolder}/ArenaService.Admin",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Local"
+            }
         }
     ]
 } 

@@ -14,12 +14,12 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "build-worker",
+            "label": "build-admin",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ArenaService.Worker/ArenaService.Worker.csproj",
+                "${workspaceFolder}/ArenaService.Admin/ArenaService.Admin.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],

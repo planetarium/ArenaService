@@ -81,6 +81,15 @@ public class Startup
 
         services.AddScoped<ISeasonRepository, SeasonRepository>();
         services.AddScoped<IRoundRepository, RoundRepository>();
+        services.AddScoped<IParticipantRepository, ParticipantRepository>();
+        services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
+        services.AddScoped<IAllClanRankingRepository, AllClanRankingRepository>();
+        services.AddScoped<IRankingRepository, RankingRepository>();
+        services.AddScoped<IClanRepository, ClanRepository>();
+        services.AddScoped<IClanRankingRepository, ClanRankingRepository>();
+        services.AddScoped<IMedalRepository, MedalRepository>();
+        services.AddScoped<ISeasonService, SeasonService>();
+        services.AddScoped<IRankingService, RankingService>();
 
         services.AddScoped<ISeasonPreparationService, SeasonPreparationService>();
         services.AddScoped<IRoundPreparationService, RoundPreparationService>();
