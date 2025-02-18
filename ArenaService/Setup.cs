@@ -7,11 +7,12 @@ using System.Text.Json.Serialization;
 using ArenaService.Auth;
 using ArenaService.Filter;
 using ArenaService.JsonConverters;
-using ArenaService.Jwt;
 using ArenaService.Options;
-using ArenaService.Repositories;
 using ArenaService.Services;
 using ArenaService.Shared.Data;
+using ArenaService.Shared.Jwt;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
@@ -148,6 +149,8 @@ public class Startup
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
 
+        services.AddScoped<ISeasonPreparationService, SeasonPreparationService>();
+        services.AddScoped<IRoundPreparationService, RoundPreparationService>();
         services.AddScoped<IRankingService, RankingService>();
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITxTrackingService, TxTrackingService>();

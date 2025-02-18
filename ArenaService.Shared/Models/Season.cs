@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using ArenaService.Constants;
+using ArenaService.Shared.Constants;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Shared.Models.Ticket;

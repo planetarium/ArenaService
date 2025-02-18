@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
-using ArenaService.Extensions;
+using ArenaService.Shared.Extensions;
 using Bencodex.Types;
 
 namespace ArenaService.Utils;

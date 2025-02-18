@@ -1,4 +1,4 @@
-namespace ArenaService.Constants;
+namespace ArenaService.Shared.Constants;
 
 public enum ArenaType
 {

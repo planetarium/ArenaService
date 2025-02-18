@@ -1,6 +1,6 @@
 namespace ArenaService.Filter;
 
-using ArenaService.Exceptions;
+using ArenaService.Shared.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 

@@ -1,8 +1,8 @@
-using ArenaService.Constants;
-using ArenaService.Exceptions;
+using ArenaService.Shared.Constants;
+using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Models;
-using ArenaService.Repositories;
-using ArenaService.Services;
+using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;

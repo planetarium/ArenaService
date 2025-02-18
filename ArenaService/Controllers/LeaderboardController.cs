@@ -1,6 +1,6 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Repositories;
+using ArenaService.Shared.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
 

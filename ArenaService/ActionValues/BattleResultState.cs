@@ -1,4 +1,4 @@
-using ArenaService.Extensions;
+using ArenaService.Shared.Extensions;
 using Bencodex;
 using Bencodex.Types;
 using Libplanet.Crypto;

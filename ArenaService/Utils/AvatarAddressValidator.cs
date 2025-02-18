@@ -1,5 +1,5 @@
 using System.Globalization;
-using ArenaService.Extensions;
+using ArenaService.Shared.Extensions;
 using Bencodex.Types;
 using Libplanet.Crypto;
 
