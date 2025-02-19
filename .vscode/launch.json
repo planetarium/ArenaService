@@ -24,6 +24,18 @@
             "env": {
                 "ASPNETCORE_ENVIRONMENT": "Local"
             }
+        },
+        {
+            "name": "Debug ArenaService.BackOffice",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build-backoffice",
+            "program": "${workspaceFolder}/ArenaService.BackOffice/bin/Debug/net8.0/ArenaService.BackOffice.dll",
+            "cwd": "${workspaceFolder}/ArenaService.BackOffice",
+            "stopAtEntry": false,
+            "env": {
+                "ASPNETCORE_ENVIRONMENT": "Development"
+            }
         }
     ]
 } 

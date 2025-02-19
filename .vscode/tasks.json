@@ -25,5 +25,17 @@
             ],
             "problemMatcher": "$msCompile"
         },
+        {
+            "label": "build-backoffice",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/ArenaService.BackOffice/ArenaService.BackOffice.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        }
     ]
 }

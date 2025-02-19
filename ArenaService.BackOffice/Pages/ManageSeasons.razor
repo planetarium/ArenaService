@@ -1,0 +1,100 @@
+@page "/manage-seasons"
+@using ArenaService.Shared.Repositories
+@using ArenaService.Shared.Services
+@using ArenaService.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@inject ISeasonRepository SeasonRepo
+@inject IRoundRepository RoundRepo
+@inject ISeasonPreparationService SeasonPreparationService
+@inject IRoundPreparationService RoundPreparationService
+
+<h3>🏆 시즌 관리</h3>
+
+<!-- 시즌 초기화 -->
+<div class="form-group">
+    <label for="seasonId">시즌 ID:</label>
+    <input id="seasonId" class="form-control" @bind="seasonId" type="number" />
+</div>
+
+<button class="btn btn-primary" @onclick="InitializeSeason">시즌 초기화</button>
+
+@if (seasonMessage is not null)
+{
+    <p class="text-info">@seasonMessage</p>
+}
+
+<hr />
+
+<!-- 다음 라운드 준비 -->
+<div class="form-group">
+    <label for="roundId">라운드 ID:</label>
+    <input id="roundId" class="form-control" @bind="roundId" type="number" />
+</div>
+
+<button class="btn btn-success" @onclick="PrepareNextRound">다음 라운드 준비</button>
+
+@if (roundMessage is not null)
+{
+    <p class="text-info">@roundMessage</p>
+}
+
+@code {
+    private int seasonId;
+    private int roundId;
+    private string? seasonMessage;
+    private string? roundMessage;
+
+    private async Task InitializeSeason()
+    {
+        seasonMessage = "시즌 초기화 중...";
+        try
+        {
+            var season = await SeasonRepo.GetSeasonAsync(seasonId, q => q.Include(s => s.Rounds));
+
+            if (season == null)
+            {
+                seasonMessage = "❌ 시즌을 찾을 수 없습니다.";
+                return;
+            }
+
+            var firstRound = season.Rounds.OrderBy(r => r.StartBlock).FirstOrDefault();
+
+            if (firstRound == null)
+            {
+                seasonMessage = "⚠️ 해당 시즌에 라운드가 없습니다.";
+                return;
+            }
+
+            await SeasonPreparationService.PrepareSeasonAsync((season, firstRound));
+
+            seasonMessage = "✅ 시즌 초기화 완료!";
+        }
+        catch (Exception ex)
+        {
+            seasonMessage = $"❌ 오류 발생: {ex.Message}";
+        }
+    }
+
+    private async Task PrepareNextRound()
+    {
+        roundMessage = "라운드 준비 중...";
+        try
+        {
+            var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season));
+
+            if (round == null || round.Season == null)
+            {
+                roundMessage = "❌ 라운드를 찾을 수 없습니다.";
+                return;
+            }
+
+            await RoundPreparationService.PrepareNextRoundWithSnapshotAsync((round.Season, round));
+
+            roundMessage = "✅ 다음 라운드 준비 완료!";
+        }
+        catch (Exception ex)
+        {
+            roundMessage = $"❌ 오류 발생: {ex.Message}";
+        }
+    }
+}

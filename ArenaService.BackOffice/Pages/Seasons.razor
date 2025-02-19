@@ -1,0 +1,123 @@
+@page "/seasons"
+@using ArenaService.Shared.Services
+@using ArenaService.Shared.Models
+@using ArenaService.Shared.Repositories
+@inject ISeasonService SeasonService
+@inject ISeasonCacheRepository SeasonCacheRepo
+
+<h3>🏆 시즌 목록</h3>
+
+@if (loading)
+{
+    <p>로딩 중...</p>
+}
+else
+{
+    <h4>현재 시즌</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>시작 블록</th>
+                <th>종료 블록</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@currentSeason?.Id</td>
+                <td>@currentSeason?.StartBlock</td>
+                <td>@currentSeason?.EndBlock</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>📅 시즌 목록</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>시작 블록</th>
+                <th>종료 블록</th>
+                <th>타입</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var season in paginatedSeasons)
+            {
+                <tr>
+                    <td>@season.Id</td>
+                    <td>@season.StartBlock</td>
+                    <td>@season.EndBlock</td>
+                    <td>@season.ArenaType</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button @onclick="PreviousPage" disabled="@(!CanGoPrevious)">이전</button>
+        <span>페이지 @(currentPage + 1) / @totalPages</span>
+        <button @onclick="NextPage" disabled="@(!CanGoNext)">다음</button>
+    </div>
+}
+
+@code {
+    private (int Id, long StartBlock, long EndBlock)? currentSeason;
+    private List<Season> seasons = new();
+    private List<Season> paginatedSeasons = new();
+    private int currentPage = 0;
+    private int pageSize = 5;
+    private bool loading = true;
+
+    private bool CanGoPrevious => currentPage > 0;
+    private bool CanGoNext => (currentPage + 1) * pageSize < seasons.Count;
+    private int totalPages => (seasons.Count + pageSize - 1) / pageSize;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            // Redis에서 현재 시즌 가져오기
+            currentSeason = await SeasonCacheRepo.GetSeasonAsync();
+
+            // Redis에서 블록 인덱스 가져오기
+            long blockIndex = await SeasonCacheRepo.GetBlockIndexAsync();
+
+            // 시즌 목록 가져오기
+            seasons = await SeasonService.ClassifyByChampionship(blockIndex);
+
+            UpdatePagination();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading data: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void UpdatePagination()
+    {
+        paginatedSeasons = seasons.Skip(currentPage * pageSize).Take(pageSize).ToList();
+    }
+
+    private void NextPage()
+    {
+        if (CanGoNext)
+        {
+            currentPage++;
+            UpdatePagination();
+        }
+    }
+
+    private void PreviousPage()
+    {
+        if (CanGoPrevious)
+        {
+            currentPage--;
+            UpdatePagination();
+        }
+    }
+}
