@@ -2,6 +2,7 @@ namespace ArenaService.Shared.Repositories;
 
 using ArenaService.Shared.Data;
 using ArenaService.Shared.Models;
+using EFCore.BulkExtensions;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
@@ -61,8 +62,7 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
                 rankingSnapshots.Add(rankingSnapshot);
             }
 
-            await _context.RankingSnapshots.AddRangeAsync(rankingSnapshots);
-            await _context.SaveChangesAsync();
+            await _context.BulkInsertAsync(rankingSnapshots);
             await transaction.CommitAsync();
         }
         catch

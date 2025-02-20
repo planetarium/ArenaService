@@ -59,7 +59,7 @@ public class SeasonPreparationService : ISeasonPreparationService
                 prevSeasonId,
                 skip,
                 BatchSize,
-                q => q.Include(p => p.User)
+                q => q.Where(p => p.Score > 1001).Include(p => p.User)
             );
 
             if (!prevSeasonParticipants.Any())
