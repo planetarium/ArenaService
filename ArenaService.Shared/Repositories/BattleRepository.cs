@@ -31,6 +31,7 @@ public interface IBattleRepository
         int seasonId,
         int roundId
     );
+    Task<List<Battle>> GetUnReviewedBattlesAsync();
 }
 
 public class BattleRepository : IBattleRepository
@@ -147,5 +148,17 @@ public class BattleRepository : IBattleRepository
             .ToListAsync();
 
         return battles;
+    }
+
+    public async Task<List<Battle>> GetUnReviewedBattlesAsync()
+    {
+        return await _context
+            .Battles.Where(b =>
+                b.BattleStatus != BattleStatus.TOKEN_ISSUED
+                && b.BattleStatus != BattleStatus.TRACKING
+                && b.BattleStatus != BattleStatus.SUCCESS
+                && b.Reviewed == null
+            )
+            .ToListAsync();
     }
 }

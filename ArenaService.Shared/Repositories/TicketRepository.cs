@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 
 public interface ITicketRepository
 {
+    Task<List<BattleTicketPurchaseLog>> GetUnReviewedBattleTicketPurchasesAsync();
+    Task<List<RefreshTicketPurchaseLog>> GetUnReviewedRefreshTicketPurchasesAsync();
     Task<RefreshTicketStatusPerRound> AddRefreshTicketStatusPerRound(
         int seasonId,
         int roundId,
@@ -604,5 +606,29 @@ public class TicketRepository : ITicketRepository
             .ToListAsync();
 
         return purchases;
+    }
+
+    public async Task<List<BattleTicketPurchaseLog>> GetUnReviewedBattleTicketPurchasesAsync()
+    {
+        return await _context
+            .BattleTicketPurchaseLogs.Where(log =>
+                log.PurchaseStatus != PurchaseStatus.PENDING
+                && log.PurchaseStatus != PurchaseStatus.TRACKING
+                && log.PurchaseStatus != PurchaseStatus.SUCCESS
+                && log.Reviewed == null
+            )
+            .ToListAsync();
+    }
+
+    public async Task<List<RefreshTicketPurchaseLog>> GetUnReviewedRefreshTicketPurchasesAsync()
+    {
+        return await _context
+            .RefreshTicketPurchaseLogs.Where(log =>
+                log.PurchaseStatus != PurchaseStatus.PENDING
+                && log.PurchaseStatus != PurchaseStatus.TRACKING
+                && log.PurchaseStatus != PurchaseStatus.SUCCESS
+                && log.Reviewed == null
+            )
+            .ToListAsync();
     }
 }
