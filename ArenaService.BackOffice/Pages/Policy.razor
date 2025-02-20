@@ -161,7 +161,14 @@ else
 
     private async Task AddBattlePolicy()
     {
-        var prices = ParsePrices(newMaxPurchasableTicketsPerSeason);
+        var prices = ParsePrices();
+
+        if (prices.Count != newMaxPurchasableTicketsPerSeason)
+        {
+            message = "배틀 티켓 가격은 시즌별 최대 구매 횟수와 같아야합니다.";
+            return;
+        }
+
         var policy = new BattleTicketPolicy
         {
             Name = newPolicyName,
@@ -178,7 +185,20 @@ else
 
     private async Task AddRefreshPolicy()
     {
-        var prices = ParsePrices(newMaxPurchasableTicketsPerRound);
+        if (newDefaultTickets < 1)
+        {
+            message = "리프레시 티켓은 기본 티켓이 1개 이상 있어야합니다.";
+            return;
+        }
+
+        var prices = ParsePrices();
+
+        if (prices.Count != newMaxPurchasableTicketsPerRound)
+        {
+            message = "리프레시 티켓 가격은 시즌별 최대 구매 횟수와 같아야합니다.";
+            return;
+        }
+
         var policy = new RefreshTicketPolicy
         {
             Name = newPolicyName,
@@ -204,19 +224,19 @@ else
         manualPrices = string.Join(", ", prices);
     }
 
-    private List<decimal> ParsePrices(int length)
+    private List<decimal> ParsePrices()
     {
         return manualPrices.Split(',')
-            .Select(p => decimal.TryParse(p.Trim(), out var result) ? result : (decimal?)null)
-            .Where(p => p.HasValue)
-            .Select(p => p!.Value)
-            .ToList();
+        .Select(p => decimal.TryParse(p.Trim(), out var result) ? result : (decimal?)null)
+        .Where(p => p.HasValue)
+        .Select(p => p!.Value)
+        .ToList();
     }
 
     private List<decimal> GenerateSequence(int length, decimal start, decimal step)
     {
         return Enumerable.Range(0, length)
-            .Select(i => Math.Round(start + step * i, 1))
-            .ToList();
+        .Select(i => Math.Round(start + step * i, 1))
+        .ToList();
     }
 }
