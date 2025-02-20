@@ -13,6 +13,8 @@ using StackExchange.Redis;
 var builder = WebApplication.CreateBuilder(args);
 var configuration = builder.Configuration;
 
+builder.Services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
+
 // Add services to the container.
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
