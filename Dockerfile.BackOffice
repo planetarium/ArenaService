@@ -11,14 +11,14 @@ echo "TARGETPLATFROM=$TARGETPLATFORM"
 echo "BUILDPLATFORM=$BUILDPLATFORM"
 if [[ "$TARGETPLATFORM" = "linux/amd64" ]]
 then
-  dotnet publish ArenaService.Admin/ArenaService.Admin.csproj \
+  dotnet publish ArenaService.BackOffice/ArenaService.BackOffice.csproj \
     -c Release \
     -r linux-x64 \
     -o out \
     --self-contained
 elif [[ "$TARGETPLATFORM" = "linux/arm64" ]]
 then
-  dotnet publish ArenaService.Admin/ArenaService.Admin.csproj \
+  dotnet publish ArenaService.BackOffice/ArenaService.BackOffice.csproj \
     -c Release \
     -r linux-arm64 \
     -o out \
@@ -41,4 +41,4 @@ RUN apt-get update \
         libc6-dev jq curl \
      && rm -rf /var/lib/apt/lists/*
 
-ENTRYPOINT ["dotnet", "ArenaService.Admin.dll"]
+ENTRYPOINT ["dotnet", "ArenaService.BackOffice.dll"]
