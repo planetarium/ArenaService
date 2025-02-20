@@ -14,15 +14,15 @@
             }
         },
         {
-            "name": "Debug ArenaService.Admin",
+            "name": "Debug ArenaService.BackOffice",
             "type": "coreclr",
             "request": "launch",
-            "preLaunchTask": "build-admin",
-            "program": "${workspaceFolder}/ArenaService.Admin/bin/Debug/net8.0/ArenaService.Admin.dll",
-            "cwd": "${workspaceFolder}/ArenaService.Admin",
+            "preLaunchTask": "build-backoffice",
+            "program": "${workspaceFolder}/ArenaService.BackOffice/bin/Debug/net8.0/ArenaService.BackOffice.dll",
+            "cwd": "${workspaceFolder}/ArenaService.BackOffice",
             "stopAtEntry": false,
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Local"
+                "ASPNETCORE_ENVIRONMENT": "Development"
             }
         }
     ]

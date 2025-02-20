@@ -14,16 +14,16 @@
             "problemMatcher": "$msCompile"
         },
         {
-            "label": "build-admin",
+            "label": "build-backoffice",
             "command": "dotnet",
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/ArenaService.Admin/ArenaService.Admin.csproj",
+                "${workspaceFolder}/ArenaService.BackOffice/ArenaService.BackOffice.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
             "problemMatcher": "$msCompile"
-        },
+        }
     ]
 }

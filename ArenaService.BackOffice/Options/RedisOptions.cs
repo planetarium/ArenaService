@@ -1,4 +1,4 @@
-namespace ArenaService.Admin.Options;
+namespace ArenaService.BackOffice.Options;
 
 public class RedisOptions
 {

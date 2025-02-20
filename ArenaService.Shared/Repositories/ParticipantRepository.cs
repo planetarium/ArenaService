@@ -2,6 +2,7 @@ namespace ArenaService.Shared.Repositories;
 
 using ArenaService.Shared.Data;
 using ArenaService.Shared.Models;
+using EFCore.BulkExtensions;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
 
@@ -69,8 +70,7 @@ public class ParticipantRepository : IParticipantRepository
                 participants.Add(participant);
             }
 
-            await _context.Participants.AddRangeAsync(participants);
-            await _context.SaveChangesAsync();
+            await _context.BulkInsertAsync(participants);
             await transaction.CommitAsync();
         }
         catch

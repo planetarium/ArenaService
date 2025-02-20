@@ -76,20 +76,6 @@ public class UserController : ControllerBase
                 new { avatarAddress = user.AvatarAddress }
             );
 
-            var cachedSeason = await _seasonCacheRepo.GetSeasonAsync();
-            var cachedRound = await _seasonCacheRepo.GetRoundAsync();
-
-            try
-            {
-                var participant = await _participateService.ParticipateAsync(
-                    cachedSeason.Id,
-                    cachedRound.Id,
-                    avatarAddress,
-                    (int)(cachedRound.EndBlock - cachedRound.StartBlock)
-                );
-            }
-            catch (NotEnoughMedalException) { }
-
             return Created(locationUri, user.AvatarAddress);
         }
 

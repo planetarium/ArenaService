@@ -1,0 +1,217 @@
+@page "/seasons"
+@using ArenaService.Shared.Constants
+@using ArenaService.Shared.Services
+@using ArenaService.Shared.Models
+@using ArenaService.Shared.Repositories
+@using Microsoft.EntityFrameworkCore
+@inject ISeasonRepository SeasonRepository
+@inject ISeasonCacheRepository SeasonCacheRepo
+@inject NavigationManager NavigationManager
+
+<h3>🏆 시즌 목록</h3>
+
+@if (loading)
+{
+    <p>로딩 중...</p>
+}
+else
+{
+    <h4>📅 시즌 목록</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>시즌 그룹 ID</th>
+                <th>시작 블록</th>
+                <th>종료 블록</th>
+                <th>타입</th>
+                <th>라운드 간격</th>
+                <th>필요 메달</th>
+                <th>상금</th>
+                <th>배틀티켓 정책</th>
+                <th>리프레시티켓 정책</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var season in paginatedSeasons)
+            {
+                <tr @onclick="() => SelectSeason(season)">
+                    <td>@season.Id</td>
+                    <td>@season.SeasonGroupId</td>
+                    <td>@season.StartBlock</td>
+                    <td>@season.EndBlock</td>
+                    <td>@season.ArenaType</td>
+                    <td>@season.RoundInterval</td>
+                    <td>@season.RequiredMedalCount</td>
+                    <td>@season.TotalPrize</td>
+                    <td>@season.BattleTicketPolicy.Name</td>
+                    <td>@season.RefreshTicketPolicy.Name</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <div class="pagination">
+        <button @onclick="PreviousPage" disabled="@(!CanGoPrevious)">이전</button>
+        <span>페이지 @(currentPage) / @totalPages</span>
+        <button @onclick="NextPage" disabled="@(!CanGoNext)">다음</button>
+    </div>
+}
+
+@if (selectedSeason != null)
+{
+    <h4>📋 선택한 시즌의 라운드 목록</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>라운드 ID</th>
+                <th>시작 블록</th>
+                <th>종료 블록</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var round in rounds)
+            {
+                <tr>
+                    <td>@round.Id</td>
+                    <td>@round.StartBlock</td>
+                    <td>@round.EndBlock</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+<h4>🆕 새 시즌 추가</h4>
+<div class="form-group">
+    <label>시즌 시작 블록:</label>
+    <input class="form-control" type="number" @bind="newStartBlock" />
+</div>
+<div class="form-group">
+    <label>라운드 인터벌:</label>
+    <input class="form-control" type="number" @bind="newRoundInterval" />
+</div>
+<div class="form-group">
+    <label>총 진행할 라운드 수:</label>
+    <input class="form-control" type="number" @bind="newRoundCount" />
+</div>
+<div class="form-group">
+    <label>아레나 타입:</label>
+    <select class="form-control" @bind="newArenaType">
+        @foreach (var type in Enum.GetValues<ArenaType>())
+        {
+            <option value="@type">@type</option>
+        }
+    </select>
+</div>
+<div class="form-group">
+    <label>필요 메달 숫자:</label>
+    <input class="form-control" type="number" @bind="newRequiredMedalCount" />
+</div>
+<div class="form-group">
+    <label>상금:</label>
+    <input class="form-control" type="number" @bind="newTotalPrize" />
+</div>
+<div class="form-group">
+    <label>Battle Policy ID:</label>
+    <input class="form-control" type="number" @bind="newBattlePolicyId" />
+</div>
+<div class="form-group">
+    <label>Refresh Policy ID:</label>
+    <input class="form-control" type="number" @bind="newRefreshPolicyId" />
+</div>
+<button class="btn btn-primary" @onclick="AddSeason">시즌 추가</button>
+
+@if (message is not null)
+{
+    <p class="text-info">@message</p>
+}
+
+@code {
+    private List<Season> paginatedSeasons = new();
+    private List<Round> rounds = new();
+    private Season? selectedSeason;
+    private int currentPage = 1;
+    private int pageSize = 10;
+    private int totalSeasons = 0;
+    private bool loading = true;
+
+    private int newStartBlock;
+    private int newRoundInterval;
+    private int newRoundCount;
+    private ArenaType newArenaType = ArenaType.SEASON;
+    private int newRequiredMedalCount;
+    private int newTotalPrize;
+    private int newBattlePolicyId;
+    private int newRefreshPolicyId;
+    private string? message;
+
+    protected override async Task OnInitializedAsync()
+    {
+        newStartBlock = await SeasonRepository.GetLastSeasonEndBlockAsync() + 1 ?? 1;
+        totalSeasons = await SeasonRepository.GetTotalSeasonsCountAsync();
+        await LoadSeasons();
+    }
+
+    private async Task LoadSeasons()
+    {
+        loading = true;
+        paginatedSeasons = await SeasonRepository.GetSeasonsPagedAsync(currentPage, pageSize, q => q.Include(s =>
+        s.Rounds).Include(s => s.BattleTicketPolicy).Include(s => s.RefreshTicketPolicy));
+        loading = false;
+    }
+
+    private async Task AddSeason()
+    {
+        try
+        {
+            await SeasonRepository.AddSeasonWithRoundsAsync(
+            newStartBlock,
+            newRoundInterval,
+            newRoundCount,
+            0,
+            newArenaType,
+            newRequiredMedalCount,
+            newTotalPrize,
+            newBattlePolicyId,
+            newRefreshPolicyId
+            );
+
+            totalSeasons = await SeasonRepository.GetTotalSeasonsCountAsync();
+
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            message = $"❌ 시즌 추가 실패: {ex.Message}";
+        }
+    }
+
+    private async Task SelectSeason(Season season)
+    {
+        selectedSeason = season;
+        rounds = season.Rounds.OrderBy(r => r.StartBlock).ToList();
+    }
+
+    private async Task NextPage()
+    {
+        if (CanGoNext)
+        {
+            currentPage++;
+            await LoadSeasons();
+        }
+    }
+
+    private async Task PreviousPage()
+    {
+        if (CanGoPrevious)
+        {
+            currentPage--;
+            await LoadSeasons();
+        }
+    }
+
+    private int totalPages => (int)Math.Ceiling((double)totalSeasons / pageSize);
+    private bool CanGoPrevious => currentPage > 1;
+    private bool CanGoNext => currentPage < totalPages;
+}
