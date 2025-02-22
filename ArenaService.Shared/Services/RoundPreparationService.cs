@@ -41,6 +41,14 @@ public class RoundPreparationService : IRoundPreparationService
     {
         _logger.LogInformation($"Start PrepareNextRound {seasonAndRound.Round.Id}");
 
+        var firstRound = seasonAndRound.Season.Rounds.OrderBy(r => r.StartBlock).First();
+
+        if (firstRound.Id == seasonAndRound.Round.Id)
+        {
+            _logger.LogInformation($"First round, skip");
+            return;
+        }
+
         await _rankingRepo.CopyRoundDataAsync(
             seasonAndRound.Season.Id,
             seasonAndRound.Round.Id,

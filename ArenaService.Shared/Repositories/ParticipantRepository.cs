@@ -15,6 +15,7 @@ public interface IParticipantRepository
         Address avatarAddress,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
     );
+    Task<int> GetParticipantCountAsync(int seasonId);
     Task<List<Participant>> GetParticipantsAsync(
         int seasonId,
         int skip = 0,
@@ -78,6 +79,15 @@ public class ParticipantRepository : IParticipantRepository
             await transaction.RollbackAsync();
             throw;
         }
+    }
+
+    public async Task<int> GetParticipantCountAsync(int seasonId)
+    {
+        return await _context
+            .RankingSnapshots.AsQueryable()
+            .AsNoTracking()
+            .Where(p => p.SeasonId == seasonId)
+            .CountAsync();
     }
 
     public async Task<Participant?> GetParticipantAsync(

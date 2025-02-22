@@ -185,7 +185,7 @@ else
         roundMessage = "라운드 준비 중...";
         try
         {
-            var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season));
+            var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season).ThenInclude(s => s.Rounds));
 
             if (round == null || round.Season == null)
             {
