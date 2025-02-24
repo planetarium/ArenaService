@@ -39,8 +39,8 @@ public class PrepareRankingWorker : BackgroundService
             {
                 using (var scope = _serviceProvider.CreateScope())
                 {
-                    var userRepo = scope.ServiceProvider.GetRequiredService<IUserRepository>();
                     var seasonRepo = scope.ServiceProvider.GetRequiredService<ISeasonRepository>();
+                    var roundRepo = scope.ServiceProvider.GetRequiredService<IRoundRepository>();
                     var rankingSnapshotRepo =
                         scope.ServiceProvider.GetRequiredService<IRankingSnapshotRepository>();
                     var rankingService =
@@ -53,8 +53,9 @@ public class PrepareRankingWorker : BackgroundService
                         scope.ServiceProvider.GetRequiredService<IRankingRepository>();
                     var clanRankingRepo =
                         scope.ServiceProvider.GetRequiredService<IClanRankingRepository>();
-                    var medalRepo = scope.ServiceProvider.GetRequiredService<IMedalRepository>();
                     var seasonService = scope.ServiceProvider.GetRequiredService<ISeasonService>();
+                    var seasonPreparationService =
+                        scope.ServiceProvider.GetRequiredService<ISeasonPreparationService>();
 
                     var cachedBlockIndex = await seasonCacheRepo.GetBlockIndexAsync();
                     var cachedRound = await seasonCacheRepo.GetRoundAsync();
@@ -69,16 +70,31 @@ public class PrepareRankingWorker : BackgroundService
                     {
                         await ProcessAsync(
                             cachedBlockIndex,
-                            participantRepo,
                             seasonService,
                             rankingSnapshotRepo,
-                            rankingRepo,
-                            clanRankingRepo,
-                            medalRepo,
-                            rankingService
+                            seasonPreparationService
                         );
                         await Task.Delay(
                             TimeSpan.FromSeconds(ArenaServiceConfig.BLOCK_INTERVAL_SECONDS * 5),
+                            stoppingToken
+                        );
+                    }
+                    // 만약 현재 시즌에 대한 참가자가 없다면 진행
+                    else if (
+                        !prepareInProgress
+                        & await participantRepo.GetParticipantCountAsync(cachedSeason.Id) <= 0
+                    )
+                    {
+                        var season = await seasonRepo.GetSeasonAsync(
+                            cachedSeason.Id,
+                            q => q.Include(s => s.Rounds)
+                        );
+                        var firstRound = season.Rounds.OrderBy(r => r.StartBlock).First();
+
+                        await PrepareNextSeason((season!, firstRound!), seasonPreparationService);
+
+                        await Task.Delay(
+                            TimeSpan.FromSeconds(ArenaServiceConfig.BLOCK_INTERVAL_SECONDS),
                             stoppingToken
                         );
                     }
@@ -114,19 +130,18 @@ public class PrepareRankingWorker : BackgroundService
                 break;
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(4), stoppingToken);
+            await Task.Delay(
+                TimeSpan.FromSeconds(ArenaServiceConfig.BLOCK_INTERVAL_SECONDS),
+                stoppingToken
+            );
         }
     }
 
     private async Task ProcessAsync(
         long blockIndex,
-        IParticipantRepository participantRepo,
         ISeasonService seasonService,
         IRankingSnapshotRepository rankingSnapshotRepo,
-        IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo,
-        IMedalRepository medalRepo,
-        IRankingService rankingService
+        ISeasonPreparationService seasonPreparationService
     )
     {
         var nextSeason = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 51);
@@ -134,22 +149,13 @@ public class PrepareRankingWorker : BackgroundService
         // 캐싱 중이거나 캐싱이 된 상태라면 진행하지 않습니다.
         if (
             !prepareInProgress
-            && await rankingSnapshotRepo.GetRankingSnapshotsCount(
+            & await rankingSnapshotRepo.GetRankingSnapshotsCount(
                 nextSeason.Season.Id,
                 nextSeason.Round.Id
             ) <= 0
         )
         {
-            await PrepareNextSeason(
-                nextSeason,
-                participantRepo,
-                rankingSnapshotRepo,
-                rankingRepo,
-                clanRankingRepo,
-                medalRepo,
-                seasonService,
-                rankingService
-            );
+            await PrepareNextSeason(nextSeason, seasonPreparationService);
         }
         else
         {
@@ -159,179 +165,16 @@ public class PrepareRankingWorker : BackgroundService
 
     private async Task PrepareNextSeason(
         (Season Season, Round Round) nextSeason,
-        IParticipantRepository participantRepo,
-        IRankingSnapshotRepository rankingSnapshotRepo,
-        IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo,
-        IMedalRepository medalRepo,
-        ISeasonService seasonService,
-        IRankingService rankingService
+        ISeasonPreparationService seasonPreparationService
     )
     {
         prepareInProgress = true;
         _logger.LogInformation($"Start PrepareNextSeason {nextSeason.Season.Id}");
 
-        var prevSeasonId = nextSeason.Season.Id - 1;
-        Dictionary<Address, int>? medalCounts = null;
-        int skip = 0;
-
-        while (true)
-        {
-            // 전시즌 참가들을 300명씩 불러옵니다.
-            var prevSeasonParticipants = await participantRepo.GetParticipantsAsync(
-                prevSeasonId,
-                skip,
-                batchSize,
-                q => q.Include(p => p.User)
-            );
-
-            if (!prevSeasonParticipants.Any())
-                break;
-
-            _logger.LogInformation($"Init participants and ranking {prevSeasonParticipants.Count}");
-
-            List<Participant> eligibleParticipants;
-            if (nextSeason.Season.ArenaType == ArenaType.CHAMPIONSHIP)
-            {
-                if (nextSeason.Season.RequiredMedalCount <= 0)
-                {
-                    eligibleParticipants = prevSeasonParticipants.ToList();
-                }
-                else
-                {
-                    // 챔피언쉽이면 메달 개수를 충족했는지 확인합니다.
-                    if (medalCounts is null)
-                    {
-                        var seasons = await seasonService.ClassifyByChampionship(
-                            nextSeason.Season.StartBlock + 1
-                        );
-                        var onlySeasons = seasons
-                            .Where(s => s.ArenaType == ArenaType.SEASON)
-                            .ToList();
-                        if (!onlySeasons.Any())
-                        {
-                            throw new NotFoundSeasonException("Not found seasons for check medals");
-                        }
-
-                        // 아바타 기준이 아닌 시즌별로 총합 메달 카운트가 들어있기 때문에 캐싱합니다.
-                        medalCounts = await medalRepo.GetMedalsBySeasonsAsync(
-                            onlySeasons.Select(s => s.Id).ToList()
-                        );
-                    }
-
-                    // 자격이 있는 참가자만 정리합니다.
-                    eligibleParticipants = prevSeasonParticipants
-                        .Where(p =>
-                            medalCounts.TryGetValue(p.AvatarAddress, out var totalMedals)
-                            && totalMedals >= nextSeason.Season.RequiredMedalCount
-                        )
-                        .ToList();
-                    _logger.LogInformation(
-                        $"Filtered eligible participants {eligibleParticipants.Count}"
-                    );
-                }
-            }
-            else
-            {
-                eligibleParticipants = prevSeasonParticipants.ToList();
-            }
-
-            await participantRepo.AddParticipantsAsync(
-                eligibleParticipants.Select(p => p.User).ToList(),
-                nextSeason.Season.Id
-            );
-
-            // 초기 랭킹 데이터를 만듭니다.
-            List<(Address AvatarAddress, int? ClanId, int Score)> rankingData = eligibleParticipants
-                .Select(p => (p.AvatarAddress, p.User.ClanId, 1000))
-                .ToList();
-            var clanRankingData = new Dictionary<int, List<(Address, int)>>();
-            foreach (var participant in eligibleParticipants)
-            {
-                if (participant.User.ClanId is not null)
-                {
-                    try
-                    {
-                        clanRankingData[participant.User.ClanId.Value]
-                            .Add((participant.AvatarAddress, 1000));
-                    }
-                    catch (KeyNotFoundException)
-                    {
-                        clanRankingData[participant.User.ClanId.Value] = new List<(Address, int)>()
-                        {
-                            (participant.AvatarAddress, 1000)
-                        };
-                    }
-                }
-            }
-
-            // 시즌이 시작되는 최초 라운드에 대한 snapshot을 기록하고 랭킹을 주입해줍니다.
-            // 다음 다운드, 즉 최초 라운드 + 1 라운드까지 준비해야합니다.
-            await rankingSnapshotRepo.AddRankingsSnapshot(
-                rankingData,
-                nextSeason.Season.Id,
-                nextSeason.Round.Id
-            );
-            await InitializeRankings(
-                rankingData.Select(r => (r.AvatarAddress, r.Score)).ToList(),
-                clanRankingData,
-                nextSeason.Season,
-                nextSeason.Round,
-                rankingRepo,
-                clanRankingRepo,
-                rankingService
-            );
-
-            _logger.LogInformation($"Finish Init {eligibleParticipants.Count}");
-
-            skip += batchSize;
-        }
+        await seasonPreparationService.PrepareSeasonAsync(nextSeason);
 
         prepareInProgress = false;
         _logger.LogInformation($"PrepareNextSeason {nextSeason.Season.Id} Done");
-    }
-
-    private async Task InitializeRankings(
-        List<(Address, int)> rankingData,
-        Dictionary<int, List<(Address, int)>> clanRankingsData,
-        Season season,
-        Round round,
-        IRankingRepository rankingRepo,
-        IClanRankingRepository clanRankingRepo,
-        IRankingService rankingService
-    )
-    {
-        await rankingRepo.InitRankingAsync(rankingData, season.Id, round.Id, season.RoundInterval);
-        await rankingRepo.InitRankingAsync(
-            rankingData,
-            season.Id,
-            round.Id + 1,
-            season.RoundInterval
-        );
-
-        foreach (var (clanId, clanRankingData) in clanRankingsData)
-        {
-            await clanRankingRepo.InitRankingAsync(
-                clanRankingData,
-                clanId,
-                season.Id,
-                round.Id,
-                season.RoundInterval
-            );
-            await clanRankingRepo.InitRankingAsync(
-                clanRankingData,
-                clanId,
-                season.Id,
-                round.Id + 1,
-                season.RoundInterval
-            );
-        }
-        await rankingService.UpdateAllClanRankingAsync(season.Id, round.Id, season.RoundInterval);
-        await rankingService.UpdateAllClanRankingAsync(
-            season.Id,
-            round.Id + 1,
-            season.RoundInterval
-        );
     }
 
     private async Task RestoreRankings(

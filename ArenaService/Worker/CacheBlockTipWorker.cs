@@ -1,8 +1,8 @@
 using ArenaService.Client;
-using ArenaService.Shared.Services;
 using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using Microsoft.EntityFrameworkCore;
 using StackExchange.Redis;
 
@@ -39,6 +39,11 @@ public class CacheBlockTipWorker : BackgroundService
 
                     await ProcessAsync(client, seasonService, seasonCacheRepo, stoppingToken);
                 }
+            }
+            catch (TaskCanceledException ex) when (!stoppingToken.IsCancellationRequested)
+            {
+                _logger.LogWarning(ex, "HTTP request timed out. Retrying...");
+                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
             catch (HttpRequestException ex)
             {
