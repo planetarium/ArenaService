@@ -157,8 +157,8 @@ public interface ITicketRepository
     );
 
     Task<bool> DeductBattleTicket(
-        int battleTicketStatusPerRoundId,
-        int battleTicketStatusPerSeasonId,
+        int roundTicketStatusId,
+        int seasonTicketStatusId,
         bool isVictory
     );
 }
@@ -637,29 +637,51 @@ public class TicketRepository : ITicketRepository
             )
             .ToListAsync();
     }
+
     public async Task<bool> DeductBattleTicket(
         int roundTicketStatusId,
         int seasonTicketStatusId,
         bool isVictory
     )
     {
-        var roundTicketUpdateCount = await _context.BattleTicketStatusesPerRound
-            .Where(status => status.Id == roundTicketStatusId && status.RemainingCount > 0)
-            .ExecuteUpdateAsync(status => status
-                .SetProperty(x => x.RemainingCount, x => x.RemainingCount - 1)
-                .SetProperty(x => x.UsedCount, x => x.UsedCount + 1)
-                .SetProperty(x => x.WinCount, x => x.WinCount + (isVictory ? 1 : 0))
-                .SetProperty(x => x.LoseCount, x => x.LoseCount + (isVictory ? 0 : 1))
-                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
-            );
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            var roundTicketUpdateCount = await _context.BattleTicketStatusesPerRound
+                .Where(status => status.Id == roundTicketStatusId)
+                .ExecuteUpdateAsync(status => status
+                    .SetProperty(x => x.RemainingCount, x => x.RemainingCount - 1)
+                    .SetProperty(x => x.UsedCount, x => x.UsedCount + 1)
+                    .SetProperty(x => x.WinCount, x => x.WinCount + (isVictory ? 1 : 0))
+                    .SetProperty(x => x.LoseCount, x => x.LoseCount + (isVictory ? 0 : 1))
+                    .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+                );
 
-        var seasonTicketUpdateCount = await _context.BattleTicketStatusesPerSeason
-            .Where(status => status.Id == seasonTicketStatusId)
-            .ExecuteUpdateAsync(status => status
-                .SetProperty(x => x.UsedCount, x => x.UsedCount + 1)
-                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
-            );
+            if (roundTicketUpdateCount < 1)
+            {
+                return false;
+            }
 
-        return roundTicketUpdateCount > 0 && seasonTicketUpdateCount > 0;
+            var seasonTicketUpdateCount = await _context.BattleTicketStatusesPerSeason
+                .Where(status => status.Id == seasonTicketStatusId)
+                .ExecuteUpdateAsync(status => status
+                    .SetProperty(x => x.UsedCount, x => x.UsedCount + 1)
+                    .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+                );
+
+            if (seasonTicketUpdateCount > 0)
+            {
+                await transaction.CommitAsync();
+                return true;
+            }
+
+            await transaction.RollbackAsync();
+            return false;
+        }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
     }
 }

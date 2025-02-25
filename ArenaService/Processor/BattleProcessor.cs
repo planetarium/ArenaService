@@ -18,6 +18,7 @@ using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Npgsql;
 
 namespace ArenaService.Worker;
 
@@ -353,23 +354,36 @@ public class BattleProcessor
             return $"Already have success battle id";
         }
 
-        var deductResult = await _ticketRepo.DeductBattleTicket(
-            battleTicketStatusPerRound.Id,
-            battleTicketStatusPerSeason.Id,
-            battleResult.IsVictory
-        );
+        try
+        {
+            var deductResult = await _ticketRepo.DeductBattleTicket(
+                battleTicketStatusPerRound.Id,
+                battleTicketStatusPerSeason.Id,
+                battleResult.IsVictory
+            );
 
-        if (!deductResult)
+            if (!deductResult)
+            {
+                await _battleRepo.UpdateBattle(
+                    battle,
+                    b =>
+                    {
+                        b.BattleStatus = BattleStatus.INVALID_BATTLE;
+                    }
+                );
+                return "No remaining battle tickets";
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23514")
         {
             await _battleRepo.UpdateBattle(
                 battle,
                 b =>
                 {
-                    // NO_REMAINING_TICKET 으로 변경할 것
                     b.BattleStatus = BattleStatus.INVALID_BATTLE;
                 }
             );
-            return "no remaining ticket";
+            return "No remaining battle tickets";
         }
 
         await _battleRepo.UpdateBattle(
