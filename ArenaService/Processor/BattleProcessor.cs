@@ -365,7 +365,7 @@ public class BattleProcessor
                 battle,
                 b =>
                 {
-                    // NO_REMAINING_TICKET 으로 변경할 것 
+                    // NO_REMAINING_TICKET 으로 변경할 것
                     b.BattleStatus = BattleStatus.INVALID_BATTLE;
                 }
             );
@@ -401,21 +401,16 @@ public class BattleProcessor
                     : battle.AvailableOpponent.Opponent.User.Clan.Id
             );
         }
-        await _participantRepo.UpdateParticipantAsync(
-            battle.Participant,
-            p =>
-            {
-                p.Score += myScoreChange;
-                p.TotalWin += battleResult.IsVictory ? 1 : 0;
-                p.TotalLose += battleResult.IsVictory ? 0 : 1;
-            }
+        await _participantRepo.UpdateMyScore(
+            battle.SeasonId,
+            battle.AvatarAddress,
+            myScoreChange,
+            battleResult.IsVictory
         );
-        await _participantRepo.UpdateParticipantAsync(
-            battle.AvailableOpponent.Opponent,
-            p =>
-            {
-                p.Score += opponentScoreChange;
-            }
+        await _participantRepo.UpdateOpponentScore(
+            battle.SeasonId,
+            battle.AvailableOpponent.OpponentAvatarAddress,
+            opponentScoreChange
         );
 
         await _ticketRepo.AddBattleTicketUsageLog(
@@ -443,15 +438,7 @@ public class BattleProcessor
 
         if (battle.Season.ArenaType == ArenaType.SEASON && battleResult.IsVictory)
         {
-            var medal = await _medalRepo.GetMedalAsync(battle.SeasonId, battle.AvatarAddress);
-            if (medal is null)
-            {
-                await _medalRepo.AddMedalAsync(battle.SeasonId, battle.AvatarAddress);
-            }
-            else
-            {
-                await _medalRepo.UpdateMedalAsync(medal, m => m.MedalCount += 1);
-            }
+            await _medalRepo.AddOrUpdateMedal(battle.SeasonId, battle.AvatarAddress);
         }
 
         return "success";

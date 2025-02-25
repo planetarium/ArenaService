@@ -637,34 +637,29 @@ public class TicketRepository : ITicketRepository
             )
             .ToListAsync();
     }
-
     public async Task<bool> DeductBattleTicket(
-        int battleTicketStatusPerRoundId,
-        int battleTicketStatusPerSeasonId,
+        int roundTicketStatusId,
+        int seasonTicketStatusId,
         bool isVictory
     )
     {
-        var roundResult = await _context.Database.ExecuteSqlInterpolatedAsync(
-            $@"
-        UPDATE battle_ticket_status_per_round
-        SET remaining_count = remaining_count - 1,
-            used_count = used_count + 1,
-            win_count = win_count + CASE WHEN {isVictory} THEN 1 ELSE 0 END,
-            lose_count = lose_count + CASE WHEN {isVictory} THEN 0 ELSE 1 END,
-            updated_at = NOW()
-        WHERE id = {battleTicketStatusPerRoundId} AND remaining_count > 0
-        RETURNING remaining_count;"
-        );
+        var roundTicketUpdateCount = await _context.BattleTicketStatusesPerRound
+            .Where(status => status.Id == roundTicketStatusId && status.RemainingCount > 0)
+            .ExecuteUpdateAsync(status => status
+                .SetProperty(x => x.RemainingCount, x => x.RemainingCount - 1)
+                .SetProperty(x => x.UsedCount, x => x.UsedCount + 1)
+                .SetProperty(x => x.WinCount, x => x.WinCount + (isVictory ? 1 : 0))
+                .SetProperty(x => x.LoseCount, x => x.LoseCount + (isVictory ? 0 : 1))
+                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+            );
 
-        var seasonResult = await _context.Database.ExecuteSqlInterpolatedAsync(
-            $@"
-        UPDATE battle_ticket_status_per_season
-        SET used_count = used_count + 1,
-            updated_at = NOW()
-        WHERE id = {battleTicketStatusPerSeasonId}
-        RETURNING used_count;"
-        );
+        var seasonTicketUpdateCount = await _context.BattleTicketStatusesPerSeason
+            .Where(status => status.Id == seasonTicketStatusId)
+            .ExecuteUpdateAsync(status => status
+                .SetProperty(x => x.UsedCount, x => x.UsedCount + 1)
+                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+            );
 
-        return roundResult > 0 && seasonResult > 0;
+        return roundTicketUpdateCount > 0 && seasonTicketUpdateCount > 0;
     }
 }
