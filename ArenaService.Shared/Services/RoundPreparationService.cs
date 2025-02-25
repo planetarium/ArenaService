@@ -66,7 +66,7 @@ public class RoundPreparationService : IRoundPreparationService
             seasonAndRound.Round.Id
         );
 
-        var clans = await GetClanMappingsAsync(clanIds, seasonAndRound.Season.RoundInterval);
+        var clans = await GetClanMappingsAsync(clanIds, seasonAndRound);
 
         var rankingDataWithClan = rankingData
             .Select(entry =>
@@ -95,7 +95,7 @@ public class RoundPreparationService : IRoundPreparationService
 
     private async Task<Dictionary<Address, int>> GetClanMappingsAsync(
         IEnumerable<int> clanIds,
-        int roundInterval
+        (Season Season, Round Round) seasonAndRound
     )
     {
         var clans = new Dictionary<Address, int>();
@@ -104,10 +104,10 @@ public class RoundPreparationService : IRoundPreparationService
         {
             await _clanRankingRepo.CopyRoundDataAsync(
                 clanId,
-                clanId,
-                clanId + 1,
-                clanId + 1,
-                roundInterval
+                seasonAndRound.Season.Id,
+                seasonAndRound.Round.Id,
+                seasonAndRound.Round.Id + 1,
+                seasonAndRound.Season.RoundInterval
             );
 
             var clan = await _clanRepo.GetClan(clanId, q => q.Include(c => c.Users));
