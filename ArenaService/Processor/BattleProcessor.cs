@@ -2,7 +2,7 @@ using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
 using ArenaService.Options;
-using ArenaService.Shared.Services;
+using ArenaService.Services;
 using ArenaService.Shared.Constants;
 using ArenaService.Shared.Extensions;
 using ArenaService.Shared.Jwt;
@@ -10,6 +10,7 @@ using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.Enums;
 using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -17,7 +18,6 @@ using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using ArenaService.Services;
 
 namespace ArenaService.Worker;
 
@@ -88,6 +88,10 @@ public class BattleProcessor
         if (battle.TxId is null)
         {
             return $"Battle log {battleId} doesn't have any tx.";
+        }
+        if (battle.AvailableOpponent.SuccessBattleId is not null)
+        {
+            return $"Already have success battle id";
         }
 
         if (!await ValidateUsedTxId(battle.TxId.Value, battleId))
@@ -188,13 +192,12 @@ public class BattleProcessor
                     else
                     {
                         var battleResult = await GetBattleResultState(battle, battle.TxId.Value);
-                        await UpdateModels(
+                        processResult = await UpdateModels(
                             battle,
                             battleTicketStatusPerRound,
                             battleTicketStatusPerSeason,
                             battleResult
                         );
-                        processResult = "success";
                     }
                 }
             },
@@ -332,7 +335,7 @@ public class BattleProcessor
         return battleResult;
     }
 
-    private async Task UpdateModels(
+    private async Task<string> UpdateModels(
         Battle battle,
         BattleTicketStatusPerRound battleTicketStatusPerRound,
         BattleTicketStatusPerSeason battleTicketStatusPerSeason,
@@ -343,6 +346,31 @@ public class BattleProcessor
 
         var myScoreChange = battleResult.IsVictory ? scoreDict.WinScore : scoreDict.LoseScore;
         var opponentScoreChange = battleResult.IsVictory ? -1 : 0;
+
+        var currentSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
+        if (currentSuccessBattleId is not null)
+        {
+            return $"Already have success battle id";
+        }
+
+        var deductResult = await _ticketRepo.DeductBattleTicket(
+            battleTicketStatusPerRound.Id,
+            battleTicketStatusPerSeason.Id,
+            battleResult.IsVictory
+        );
+
+        if (!deductResult)
+        {
+            await _battleRepo.UpdateBattle(
+                battle,
+                b =>
+                {
+                    // NO_REMAINING_TICKET 으로 변경할 것 
+                    b.BattleStatus = BattleStatus.INVALID_BATTLE;
+                }
+            );
+            return "no remaining ticket";
+        }
 
         await _battleRepo.UpdateBattle(
             battle,
@@ -390,24 +418,6 @@ public class BattleProcessor
             }
         );
 
-        await _ticketRepo.UpdateBattleTicketStatusPerRound(
-            battleTicketStatusPerRound,
-            rts =>
-            {
-                rts.RemainingCount -= 1;
-                rts.UsedCount += 1;
-                rts.WinCount += battleResult.IsVictory ? 1 : 0;
-                rts.LoseCount += battleResult.IsVictory ? 0 : 1;
-            }
-        );
-        await _ticketRepo.UpdateBattleTicketStatusPerSeason(
-            battleTicketStatusPerSeason,
-            rts =>
-            {
-                rts.UsedCount += 1;
-            }
-        );
-
         await _ticketRepo.AddBattleTicketUsageLog(
             battleTicketStatusPerRound.Id,
             battleTicketStatusPerSeason.Id,
@@ -443,5 +453,7 @@ public class BattleProcessor
                 await _medalRepo.UpdateMedalAsync(medal, m => m.MedalCount += 1);
             }
         }
+
+        return "success";
     }
 }

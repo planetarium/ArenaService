@@ -155,6 +155,12 @@ public interface ITicketRepository
         int seasonId,
         int roundId
     );
+
+    Task<bool> DeductBattleTicket(
+        int battleTicketStatusPerRoundId,
+        int battleTicketStatusPerSeasonId,
+        bool isVictory
+    );
 }
 
 public class TicketRepository : ITicketRepository
@@ -630,5 +636,35 @@ public class TicketRepository : ITicketRepository
                 && log.Reviewed == null
             )
             .ToListAsync();
+    }
+
+    public async Task<bool> DeductBattleTicket(
+        int battleTicketStatusPerRoundId,
+        int battleTicketStatusPerSeasonId,
+        bool isVictory
+    )
+    {
+        var roundResult = await _context.Database.ExecuteSqlInterpolatedAsync(
+            $@"
+        UPDATE battle_ticket_status_per_round
+        SET remaining_count = remaining_count - 1,
+            used_count = used_count + 1,
+            win_count = win_count + CASE WHEN {isVictory} THEN 1 ELSE 0 END,
+            lose_count = lose_count + CASE WHEN {isVictory} THEN 0 ELSE 1 END,
+            updated_at = NOW()
+        WHERE id = {battleTicketStatusPerRoundId} AND remaining_count > 0
+        RETURNING remaining_count;"
+        );
+
+        var seasonResult = await _context.Database.ExecuteSqlInterpolatedAsync(
+            $@"
+        UPDATE battle_ticket_status_per_season
+        SET used_count = used_count + 1,
+            updated_at = NOW()
+        WHERE id = {battleTicketStatusPerSeasonId}
+        RETURNING used_count;"
+        );
+
+        return roundResult > 0 && seasonResult > 0;
     }
 }
