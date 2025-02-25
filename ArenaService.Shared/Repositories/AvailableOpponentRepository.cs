@@ -36,6 +36,7 @@ public interface IAvailableOpponentRepository
         AvailableOpponent availableOpponent,
         Action<AvailableOpponent> updateFields
     );
+    Task<int?> GetSuccessBattleId(int availableOpponentId);
 }
 
 public class AvailableOpponentRepository : IAvailableOpponentRepository
@@ -175,5 +176,13 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         await _context.SaveChangesAsync();
 
         return availableOpponent;
+    }
+
+    public async Task<int?> GetSuccessBattleId(int availableOpponentId)
+    {
+        return await _context.AvailableOpponents
+            .Where(ao => ao.Id == availableOpponentId)
+            .Select(ao => ao.SuccessBattleId)
+            .SingleOrDefaultAsync();
     }
 }

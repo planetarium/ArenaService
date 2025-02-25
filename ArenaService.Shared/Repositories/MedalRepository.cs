@@ -11,6 +11,7 @@ public interface IMedalRepository
     Task<Dictionary<Address, int>> GetMedalsBySeasonsAsync(List<int> seasons);
     Task<Medal> UpdateMedalAsync(Medal medal, Action<Medal> updateFields);
     Task<Medal> AddMedalAsync(int seasonId, Address avatarAddress);
+    Task<bool> AddOrUpdateMedal(int seasonId, Address avatarAddress);
 }
 
 public class MedalRepository : IMedalRepository
@@ -81,5 +82,33 @@ public class MedalRepository : IMedalRepository
         await _context.SaveChangesAsync();
 
         return addedMedal.Entity;
+    }
+
+    public async Task<bool> AddOrUpdateMedal(int seasonId, Address avatarAddress)
+    {
+        try
+        {
+            await _context.Medals.AddAsync(new Medal
+            {
+                SeasonId = seasonId,
+                AvatarAddress = avatarAddress,
+                MedalCount = 1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            });
+            await _context.SaveChangesAsync();
+            return true;
+        }
+        catch (DbUpdateException)
+        {
+            var affected = await _context.Medals
+                .Where(m => m.SeasonId == seasonId && m.AvatarAddress == avatarAddress)
+                .ExecuteUpdateAsync(m => m
+                    .SetProperty(x => x.MedalCount, x => x.MedalCount + 1)
+                    .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+                );
+
+            return affected > 0;
+        }
     }
 }

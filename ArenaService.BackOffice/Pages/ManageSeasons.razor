@@ -185,7 +185,8 @@ else
         roundMessage = "라운드 준비 중...";
         try
         {
-            var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season).ThenInclude(s => s.Rounds));
+            var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season));
+            var season = await SeasonRepo.GetSeasonAsync(round!.SeasonId, q => q.Include(s => s.Rounds));
 
             if (round == null || round.Season == null)
             {
@@ -193,7 +194,7 @@ else
                 return;
             }
 
-            await RoundPreparationService.PrepareNextRoundWithSnapshotAsync((round.Season, round));
+            await RoundPreparationService.PrepareNextRoundWithSnapshotAsync((season, round));
 
             roundMessage = "✅ 다음 라운드 준비 완료!";
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);

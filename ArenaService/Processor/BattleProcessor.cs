@@ -2,7 +2,7 @@ using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
 using ArenaService.Options;
-using ArenaService.Shared.Services;
+using ArenaService.Services;
 using ArenaService.Shared.Constants;
 using ArenaService.Shared.Extensions;
 using ArenaService.Shared.Jwt;
@@ -10,6 +10,7 @@ using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.Enums;
 using ArenaService.Shared.Repositories;
+using ArenaService.Shared.Services;
 using ArenaService.Utils;
 using Bencodex;
 using Bencodex.Types;
@@ -17,7 +18,7 @@ using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using ArenaService.Services;
+using Npgsql;
 
 namespace ArenaService.Worker;
 
@@ -88,6 +89,10 @@ public class BattleProcessor
         if (battle.TxId is null)
         {
             return $"Battle log {battleId} doesn't have any tx.";
+        }
+        if (battle.AvailableOpponent.SuccessBattleId is not null)
+        {
+            return $"Already have success battle id";
         }
 
         if (!await ValidateUsedTxId(battle.TxId.Value, battleId))
@@ -188,13 +193,12 @@ public class BattleProcessor
                     else
                     {
                         var battleResult = await GetBattleResultState(battle, battle.TxId.Value);
-                        await UpdateModels(
+                        processResult = await UpdateModels(
                             battle,
                             battleTicketStatusPerRound,
                             battleTicketStatusPerSeason,
                             battleResult
                         );
-                        processResult = "success";
                     }
                 }
             },
@@ -332,7 +336,7 @@ public class BattleProcessor
         return battleResult;
     }
 
-    private async Task UpdateModels(
+    private async Task<string> UpdateModels(
         Battle battle,
         BattleTicketStatusPerRound battleTicketStatusPerRound,
         BattleTicketStatusPerSeason battleTicketStatusPerSeason,
@@ -343,6 +347,44 @@ public class BattleProcessor
 
         var myScoreChange = battleResult.IsVictory ? scoreDict.WinScore : scoreDict.LoseScore;
         var opponentScoreChange = battleResult.IsVictory ? -1 : 0;
+
+        var currentSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
+        if (currentSuccessBattleId is not null)
+        {
+            return $"Already have success battle id";
+        }
+
+        try
+        {
+            var deductResult = await _ticketRepo.DeductBattleTicket(
+                battleTicketStatusPerRound.Id,
+                battleTicketStatusPerSeason.Id,
+                battleResult.IsVictory
+            );
+
+            if (!deductResult)
+            {
+                await _battleRepo.UpdateBattle(
+                    battle,
+                    b =>
+                    {
+                        b.BattleStatus = BattleStatus.INVALID_BATTLE;
+                    }
+                );
+                return "No remaining battle tickets";
+            }
+        }
+        catch (PostgresException ex) when (ex.SqlState == "23514")
+        {
+            await _battleRepo.UpdateBattle(
+                battle,
+                b =>
+                {
+                    b.BattleStatus = BattleStatus.INVALID_BATTLE;
+                }
+            );
+            return "No remaining battle tickets";
+        }
 
         await _battleRepo.UpdateBattle(
             battle,
@@ -373,39 +415,16 @@ public class BattleProcessor
                     : battle.AvailableOpponent.Opponent.User.Clan.Id
             );
         }
-        await _participantRepo.UpdateParticipantAsync(
-            battle.Participant,
-            p =>
-            {
-                p.Score += myScoreChange;
-                p.TotalWin += battleResult.IsVictory ? 1 : 0;
-                p.TotalLose += battleResult.IsVictory ? 0 : 1;
-            }
+        await _participantRepo.UpdateMyScore(
+            battle.SeasonId,
+            battle.AvatarAddress,
+            myScoreChange,
+            battleResult.IsVictory
         );
-        await _participantRepo.UpdateParticipantAsync(
-            battle.AvailableOpponent.Opponent,
-            p =>
-            {
-                p.Score += opponentScoreChange;
-            }
-        );
-
-        await _ticketRepo.UpdateBattleTicketStatusPerRound(
-            battleTicketStatusPerRound,
-            rts =>
-            {
-                rts.RemainingCount -= 1;
-                rts.UsedCount += 1;
-                rts.WinCount += battleResult.IsVictory ? 1 : 0;
-                rts.LoseCount += battleResult.IsVictory ? 0 : 1;
-            }
-        );
-        await _ticketRepo.UpdateBattleTicketStatusPerSeason(
-            battleTicketStatusPerSeason,
-            rts =>
-            {
-                rts.UsedCount += 1;
-            }
+        await _participantRepo.UpdateOpponentScore(
+            battle.SeasonId,
+            battle.AvailableOpponent.OpponentAvatarAddress,
+            opponentScoreChange
         );
 
         await _ticketRepo.AddBattleTicketUsageLog(
@@ -433,15 +452,9 @@ public class BattleProcessor
 
         if (battle.Season.ArenaType == ArenaType.SEASON && battleResult.IsVictory)
         {
-            var medal = await _medalRepo.GetMedalAsync(battle.SeasonId, battle.AvatarAddress);
-            if (medal is null)
-            {
-                await _medalRepo.AddMedalAsync(battle.SeasonId, battle.AvatarAddress);
-            }
-            else
-            {
-                await _medalRepo.UpdateMedalAsync(medal, m => m.MedalCount += 1);
-            }
+            await _medalRepo.AddOrUpdateMedal(battle.SeasonId, battle.AvatarAddress);
         }
+
+        return "success";
     }
 }

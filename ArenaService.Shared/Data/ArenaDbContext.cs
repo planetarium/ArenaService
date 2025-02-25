@@ -84,6 +84,14 @@ public class ArenaDbContext : DbContext
             .HasForeignKey(b => new { b.AvatarAddress, b.SeasonId });
 
         modelBuilder
+            .Entity<BattleTicketStatusPerRound>()
+            .HasCheckConstraint("CK_BattleTicketStatusPerRound_RemainingCount", "remaining_count >= 0");
+
+        modelBuilder
+            .Entity<RefreshTicketStatusPerRound>()
+            .HasCheckConstraint("CK_RefreshTicketStatusPerRound_RemainingCount", "remaining_count >= 0");
+
+        modelBuilder
             .Entity<BattleTicketStatusPerSeason>()
             .Property(p => p.AvatarAddress)
             .HasConversion(new AddressConverter());
