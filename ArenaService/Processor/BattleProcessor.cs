@@ -1,3 +1,4 @@
+using System.Data;
 using ArenaService.ActionValues;
 using ArenaService.Client;
 using ArenaService.Extensions;
@@ -38,6 +39,7 @@ public class BattleProcessor
     private readonly ITicketRepository _ticketRepo;
     private readonly ITxTrackingService _txTrackingService;
     private readonly BattleTokenValidator _battleTokenValidator;
+    private readonly DbContext _dbContext;
 
     public BattleProcessor(
         ILogger<BattleProcessor> logger,
@@ -50,7 +52,8 @@ public class BattleProcessor
         ITicketRepository ticketRepo,
         ITxTrackingService txTrackingService,
         IParticipantRepository participantRepo,
-        IOptions<OpsConfigOptions> options
+        IOptions<OpsConfigOptions> options,
+        DbContext dbContext
     )
     {
         _logger = logger;
@@ -65,6 +68,7 @@ public class BattleProcessor
         _participantRepo = participantRepo;
         _arenaProviderName = options.Value.ArenaProviderName;
         _battleTokenValidator = new BattleTokenValidator(options.Value.JwtPublicKey);
+        _dbContext = dbContext;
     }
 
     public async Task<string> ProcessAsync(int battleId)
@@ -344,18 +348,21 @@ public class BattleProcessor
     )
     {
         var scoreDict = OpponentGroupConstants.Groups[battle.AvailableOpponent.GroupId];
-
         var myScoreChange = battleResult.IsVictory ? scoreDict.WinScore : scoreDict.LoseScore;
         var opponentScoreChange = battleResult.IsVictory ? -1 : 0;
 
-        var currentSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
-        if (currentSuccessBattleId is not null)
-        {
-            return $"Already have success battle id";
-        }
-
+        using var transaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
+            // 첫 번째 검증
+            var initialSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
+            if (initialSuccessBattleId is not null)
+            {
+                await transaction.RollbackAsync();
+                return "Already have success battle id";
+            }
+
+            // 기존 로직 수행
             var deductResult = await _ticketRepo.DeductBattleTicket(
                 battleTicketStatusPerRound.Id,
                 battleTicketStatusPerSeason.Id,
@@ -366,95 +373,105 @@ public class BattleProcessor
             {
                 await _battleRepo.UpdateBattle(
                     battle,
-                    b =>
-                    {
-                        b.BattleStatus = BattleStatus.INVALID_BATTLE;
-                    }
+                    b => b.BattleStatus = BattleStatus.INVALID_BATTLE
                 );
+                await transaction.CommitAsync();
                 return "No remaining battle tickets";
             }
-        }
-        catch (PostgresException ex) when (ex.SqlState == "23514")
-        {
+
             await _battleRepo.UpdateBattle(
                 battle,
                 b =>
                 {
-                    b.BattleStatus = BattleStatus.INVALID_BATTLE;
+                    b.IsVictory = battleResult.IsVictory;
+                    b.BattleStatus = BattleStatus.SUCCESS;
+                    b.MyScoreChange = myScoreChange;
+                    b.OpponentScoreChange = opponentScoreChange;
                 }
             );
-            return "No remaining battle tickets";
-        }
-
-        await _battleRepo.UpdateBattle(
-            battle,
-            b =>
-            {
-                b.IsVictory = battleResult.IsVictory;
-                b.BattleStatus = BattleStatus.SUCCESS;
-                b.MyScoreChange = myScoreChange;
-                b.OpponentScoreChange = opponentScoreChange;
-            }
-        );
-        await _rankingService.UpdateScoreAsync(
-            battle.AvatarAddress,
-            battle.SeasonId,
-            battle.RoundId + 1,
-            myScoreChange,
-            battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
-        );
-        if (opponentScoreChange != 0)
-        {
             await _rankingService.UpdateScoreAsync(
-                battle.AvailableOpponent.OpponentAvatarAddress,
+                battle.AvatarAddress,
                 battle.SeasonId,
                 battle.RoundId + 1,
-                opponentScoreChange,
-                battle.AvailableOpponent.Opponent.User.Clan is null
-                    ? null
-                    : battle.AvailableOpponent.Opponent.User.Clan.Id
+                myScoreChange,
+                battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
             );
+            if (opponentScoreChange != 0)
+            {
+                await _rankingService.UpdateScoreAsync(
+                    battle.AvailableOpponent.OpponentAvatarAddress,
+                    battle.SeasonId,
+                    battle.RoundId + 1,
+                    opponentScoreChange,
+                    battle.AvailableOpponent.Opponent.User.Clan is null
+                        ? null
+                        : battle.AvailableOpponent.Opponent.User.Clan.Id
+                );
+            }
+            await _participantRepo.UpdateMyScore(
+                battle.SeasonId,
+                battle.AvatarAddress,
+                myScoreChange,
+                battleResult.IsVictory
+            );
+            await _participantRepo.UpdateOpponentScore(
+                battle.SeasonId,
+                battle.AvailableOpponent.OpponentAvatarAddress,
+                opponentScoreChange
+            );
+
+            await _ticketRepo.AddBattleTicketUsageLog(
+                battleTicketStatusPerRound.Id,
+                battleTicketStatusPerSeason.Id,
+                battle.Id
+            );
+
+            await _availableOpponentRepo.UpdateAvailableOpponent(
+                battle.AvailableOpponent,
+                ao =>
+                {
+                    ao.SuccessBattleId = battle.Id;
+                }
+            );
+            await _userRepo.UpdateUserAsync(
+                battle.Participant.User,
+                u =>
+                {
+                    u.PortraitId = battleResult.PortraitId;
+                    u.Cp = battleResult.Cp;
+                    u.Level = battleResult.Level;
+                }
+            );
+
+            if (battle.Season.ArenaType == ArenaType.SEASON && battleResult.IsVictory)
+            {
+                await _medalRepo.AddOrUpdateMedal(battle.SeasonId, battle.AvatarAddress);
+            }
+
+            // 커밋 직전 최종 검증
+            var finalSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
+            if (finalSuccessBattleId is not null)
+            {
+                // 다른 워커가 먼저 battle id를 설정했으므로 현재 트랜잭션의 모든 변경사항을 롤백
+                await transaction.RollbackAsync();
+                
+                // 현재 배틀 상태를 INVALID로 업데이트
+                await _battleRepo.UpdateBattle(
+                    battle,
+                    b => b.BattleStatus = BattleStatus.INVALID_BATTLE
+                );
+                
+                return "Another worker has already processed this battle";
+            }
+
+            // 최종 검증을 통과했으므로 트랜잭션 커밋
+            await transaction.CommitAsync();
+            return "success";
         }
-        await _participantRepo.UpdateMyScore(
-            battle.SeasonId,
-            battle.AvatarAddress,
-            myScoreChange,
-            battleResult.IsVictory
-        );
-        await _participantRepo.UpdateOpponentScore(
-            battle.SeasonId,
-            battle.AvailableOpponent.OpponentAvatarAddress,
-            opponentScoreChange
-        );
-
-        await _ticketRepo.AddBattleTicketUsageLog(
-            battleTicketStatusPerRound.Id,
-            battleTicketStatusPerSeason.Id,
-            battle.Id
-        );
-
-        await _availableOpponentRepo.UpdateAvailableOpponent(
-            battle.AvailableOpponent,
-            ao =>
-            {
-                ao.SuccessBattleId = battle.Id;
-            }
-        );
-        await _userRepo.UpdateUserAsync(
-            battle.Participant.User,
-            u =>
-            {
-                u.PortraitId = battleResult.PortraitId;
-                u.Cp = battleResult.Cp;
-                u.Level = battleResult.Level;
-            }
-        );
-
-        if (battle.Season.ArenaType == ArenaType.SEASON && battleResult.IsVictory)
+        catch (Exception)
         {
-            await _medalRepo.AddOrUpdateMedal(battle.SeasonId, battle.AvatarAddress);
+            await transaction.RollbackAsync();
+            throw;
         }
-
-        return "success";
     }
 }
