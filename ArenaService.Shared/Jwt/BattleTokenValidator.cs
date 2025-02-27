@@ -52,4 +52,36 @@ public class BattleTokenValidator
             return false;
         }
     }
+    public bool TryValidateBattleToken(string token, out JwtPayload payload)
+    {
+        try
+        {
+            var validationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidIssuer = "planetarium arena service",
+
+                ValidateAudience = true,
+                ValidAudience = "NineChronicles headless",
+
+                ValidateLifetime = true,
+                ClockSkew = TimeSpan.Zero,
+
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new RsaSecurityKey(_rsa)
+            };
+
+            var handler = new JwtSecurityTokenHandler();
+            handler.ValidateToken(token, validationParameters, out SecurityToken validated);
+            var validatedToken = (JwtSecurityToken)validated;
+
+            payload = validatedToken.Payload;
+            return true;
+        }
+        catch (Exception)
+        {
+            payload = null;
+            return false;
+        }
+    }
 }

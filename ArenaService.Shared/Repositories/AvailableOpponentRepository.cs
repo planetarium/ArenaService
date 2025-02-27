@@ -37,6 +37,7 @@ public interface IAvailableOpponentRepository
         Action<AvailableOpponent> updateFields
     );
     Task<int?> GetSuccessBattleId(int availableOpponentId);
+    Task<bool> TrySetSuccessBattleId(int availableOpponentId, int battleId);
 }
 
 public class AvailableOpponentRepository : IAvailableOpponentRepository
@@ -184,5 +185,16 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
             .Where(ao => ao.Id == availableOpponentId)
             .Select(ao => ao.SuccessBattleId)
             .SingleOrDefaultAsync();
+    }
+
+    public async Task<bool> TrySetSuccessBattleId(int availableOpponentId, int battleId)
+    {
+        var rowsAffected = await _context.AvailableOpponents
+            .Where(ao => ao.Id == availableOpponentId && ao.SuccessBattleId == null)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(ao => ao.SuccessBattleId, battleId)
+                .SetProperty(ao => ao.UpdatedAt, DateTime.UtcNow));
+
+        return rowsAffected > 0;
     }
 }

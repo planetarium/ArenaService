@@ -5,6 +5,7 @@ using ArenaService.Extensions;
 using ArenaService.Options;
 using ArenaService.Services;
 using ArenaService.Shared.Constants;
+using ArenaService.Shared.Data;
 using ArenaService.Shared.Extensions;
 using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Models;
@@ -39,7 +40,7 @@ public class BattleProcessor
     private readonly ITicketRepository _ticketRepo;
     private readonly ITxTrackingService _txTrackingService;
     private readonly BattleTokenValidator _battleTokenValidator;
-    private readonly DbContext _dbContext;
+    private readonly ArenaDbContext _dbContext;
 
     public BattleProcessor(
         ILogger<BattleProcessor> logger,
@@ -53,7 +54,7 @@ public class BattleProcessor
         ITxTrackingService txTrackingService,
         IParticipantRepository participantRepo,
         IOptions<OpsConfigOptions> options,
-        DbContext dbContext
+        ArenaDbContext dbContext
     )
     {
         _logger = logger;
@@ -354,15 +355,17 @@ public class BattleProcessor
         using var transaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
         try
         {
-            // 첫 번째 검증
-            var initialSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
-            if (initialSuccessBattleId is not null)
+            var updated = await _availableOpponentRepo.TrySetSuccessBattleId(
+                battle.AvailableOpponent.Id,
+                battle.Id
+            );
+
+            if (!updated)
             {
                 await transaction.RollbackAsync();
                 return "Already have success battle id";
             }
 
-            // 기존 로직 수행
             var deductResult = await _ticketRepo.DeductBattleTicket(
                 battleTicketStatusPerRound.Id,
                 battleTicketStatusPerSeason.Id,
@@ -426,13 +429,6 @@ public class BattleProcessor
                 battle.Id
             );
 
-            await _availableOpponentRepo.UpdateAvailableOpponent(
-                battle.AvailableOpponent,
-                ao =>
-                {
-                    ao.SuccessBattleId = battle.Id;
-                }
-            );
             await _userRepo.UpdateUserAsync(
                 battle.Participant.User,
                 u =>
@@ -448,23 +444,6 @@ public class BattleProcessor
                 await _medalRepo.AddOrUpdateMedal(battle.SeasonId, battle.AvatarAddress);
             }
 
-            // 커밋 직전 최종 검증
-            var finalSuccessBattleId = await _availableOpponentRepo.GetSuccessBattleId(battle.AvailableOpponent.Id);
-            if (finalSuccessBattleId is not null)
-            {
-                // 다른 워커가 먼저 battle id를 설정했으므로 현재 트랜잭션의 모든 변경사항을 롤백
-                await transaction.RollbackAsync();
-                
-                // 현재 배틀 상태를 INVALID로 업데이트
-                await _battleRepo.UpdateBattle(
-                    battle,
-                    b => b.BattleStatus = BattleStatus.INVALID_BATTLE
-                );
-                
-                return "Another worker has already processed this battle";
-            }
-
-            // 최종 검증을 통과했으므로 트랜잭션 커밋
             await transaction.CommitAsync();
             return "success";
         }

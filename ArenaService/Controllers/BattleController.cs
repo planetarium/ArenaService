@@ -164,27 +164,27 @@ public class BattleController : ControllerBase
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        var battle = await _battleRepo.GetBattleAsync(battleId);
+        // var battle = await _battleRepo.GetBattleAsync(battleId);
 
-        if (battle is null)
-        {
-            return NotFound($"Battle log with ID {battleId} not found.");
-        }
+        // if (battle is null)
+        // {
+        //     return NotFound($"Battle log with ID {battleId} not found.");
+        // }
 
-        if (battle.AvatarAddress != avatarAddress)
-        {
-            return StatusCode(StatusCodes.Status403Forbidden);
-        }
+        // if (battle.AvatarAddress != avatarAddress)
+        // {
+        //     return StatusCode(StatusCodes.Status403Forbidden);
+        // }
 
-        await _battleRepo.UpdateBattle(
-            battle,
-            b =>
-            {
-                b.TxId = request.TxId;
-            }
-        );
+        // await _battleRepo.UpdateBattle(
+        //     battle,
+        //     b =>
+        //     {
+        //         b.TxId = request.TxId;
+        //     }
+        // );
 
-        _jobClient.Enqueue<BattleProcessor>(processor => processor.ProcessAsync(battleId));
+        // _jobClient.Enqueue<BattleProcessor>(processor => processor.ProcessAsync(battleId));
 
         return Ok();
     }
