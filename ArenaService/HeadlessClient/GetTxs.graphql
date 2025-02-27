@@ -1,0 +1,15 @@
+query GetTxs($startingBlockIndex: Long!, $limit: Long!, $actionType: String!, $txStatusFilter: [TxStatus!]) {
+  transaction {
+    ncTransactions(
+      startingBlockIndex: $startingBlockIndex
+      limit: $limit
+      actionType: $actionType
+      txStatusFilter: $txStatusFilter
+    ) {
+      actions {
+        raw
+      }
+      id
+    }
+  }
+}

@@ -185,6 +185,7 @@ public class Startup
             .Get<OpsConfigOptions>();
 
         services.AddSingleton(new BattleTokenGenerator(opsConfig!.JwtSecretKey));
+        services.AddSingleton(new BattleTokenValidator(opsConfig!.JwtPublicKey));
         services
             .AddSingleton<CacheBlockTipWorker>()
             .AddHostedService(provider => provider.GetRequiredService<CacheBlockTipWorker>());
@@ -197,6 +198,9 @@ public class Startup
         services
             .AddSingleton<AllClanRankingWorker>()
             .AddHostedService(provider => provider.GetRequiredService<AllClanRankingWorker>());
+        services
+            .AddSingleton<BattleTxTracker>()
+            .AddHostedService(provider => provider.GetRequiredService<BattleTxTracker>());
 
         services.AddHangfireServer();
         services.AddHealthChecks();
