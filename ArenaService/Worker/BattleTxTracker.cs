@@ -98,6 +98,17 @@ public class BattleTxTracker : BackgroundService
             return;
         }
 
+        var blockDiff = currentBlockIndex - startingBlock;
+        var limit = blockDiff switch
+        {
+            > 1000 => 300,
+            > 500 => 100,
+            > 100 => 30,
+            > 50 => 10,
+            > 30 => 5,
+            _ => 1
+        };
+
         _logger.LogInformation(
             $"Processing transactions from block {startingBlock} to {currentBlockIndex}"
         );
@@ -107,7 +118,7 @@ public class BattleTxTracker : BackgroundService
             {
                 var response = await client.GetTxs.ExecuteAsync(
                     startingBlock,
-                    1,
+                    limit,
                     ACTION_TYPE,
                     [TxStatus.Success, TxStatus.Staging],
                     stoppingToken
@@ -180,10 +191,11 @@ public class BattleTxTracker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Failed to process transaction {tx.Id}");
+                throw;
             }
         }
 
-        await SetLastProcessedBlockAsync(redis, startingBlock + 1);
+        await SetLastProcessedBlockAsync(redis, startingBlock + limit - 1);
     }
 
     private async Task<long> GetLastProcessedBlockAsync(IDatabase redis)
