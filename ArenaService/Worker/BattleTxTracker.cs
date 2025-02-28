@@ -72,10 +72,10 @@ public class BattleTxTracker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in BattleTxTracker");
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
+                await Task.Delay(TimeSpan.FromSeconds(2), stoppingToken);
             }
 
-            await Task.Delay(TimeSpan.FromSeconds(4), stoppingToken);
+            await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
         }
     }
 
