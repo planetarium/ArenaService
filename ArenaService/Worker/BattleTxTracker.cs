@@ -93,7 +93,7 @@ public class BattleTxTracker : BackgroundService
         var lastProcessedBlock = await GetLastProcessedBlockAsync(redis);
         var startingBlock = lastProcessedBlock;
 
-        if (startingBlock > currentBlockIndex)
+        if (startingBlock >= currentBlockIndex)
         {
             return;
         }
@@ -180,7 +180,7 @@ public class BattleTxTracker : BackgroundService
                             {
                                 b.TxId = TxId.FromHex(tx.Id);
                             }
-                            );
+                        );
 
                         jobClient.Enqueue<BattleProcessor>(x =>
                             x.ProcessAsync(Convert.ToInt32(payload["bid"]))
