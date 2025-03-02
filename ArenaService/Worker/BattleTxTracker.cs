@@ -99,15 +99,6 @@ public class BattleTxTracker : BackgroundService
         }
 
         var blockDiff = currentBlockIndex - startingBlock;
-        var limit = blockDiff switch
-        {
-            > 1000 => 300,
-            > 500 => 100,
-            > 100 => 30,
-            > 50 => 10,
-            > 30 => 5,
-            _ => 1
-        };
 
         _logger.LogInformation(
             $"Processing transactions from block {startingBlock} to {currentBlockIndex}"
@@ -118,7 +109,7 @@ public class BattleTxTracker : BackgroundService
             {
                 var response = await client.GetTxs.ExecuteAsync(
                     startingBlock,
-                    limit,
+                    1,
                     ACTION_TYPE,
                     [TxStatus.Success, TxStatus.Staging],
                     stoppingToken
@@ -195,7 +186,7 @@ public class BattleTxTracker : BackgroundService
             }
         }
 
-        await SetLastProcessedBlockAsync(redis, startingBlock + limit - 1);
+        await SetLastProcessedBlockAsync(redis, startingBlock + 1);
     }
 
     private async Task<long> GetLastProcessedBlockAsync(IDatabase redis)
