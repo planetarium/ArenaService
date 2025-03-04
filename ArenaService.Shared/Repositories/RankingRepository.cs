@@ -177,6 +177,10 @@ public class RankingRepository : IRankingRepository
                 $"Total ranking count is under 40 - {totalRankingCount}"
             );
         }
+        if (totalRankingCount > 1000)
+        {
+            totalRankingCount = 1000;
+        }
 
         long? myRank = await _redis.SortedSetRankAsync(
             rankingKey,
