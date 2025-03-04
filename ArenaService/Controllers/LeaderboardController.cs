@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Swashbuckle.AspNetCore.Annotations;
@@ -22,9 +23,20 @@ public class LeaderboardController : ControllerBase
 
     [HttpGet("count")]
     [SwaggerResponse(StatusCodes.Status200OK, "Ranking Count Response", typeof(int))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
     public async Task<ActionResult<int>> GetRankingCount(int seasonId, int roundId)
     {
         var rankingCount = await _rankingRepo.GetRankingCountAsync(seasonId, roundId);
+
+        if (rankingCount == 0)
+        {
+            return NotFound(
+                new ErrorResponse(
+                    "NO_RANKINGS",
+                    $"No rankings found for season {seasonId} and round {roundId}"
+                )
+            );
+        }
 
         return Ok(rankingCount);
     }
