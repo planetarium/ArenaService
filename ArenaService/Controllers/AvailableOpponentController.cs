@@ -50,9 +50,9 @@ public class AvailableOpponentController : ControllerBase
         "AvailableOpponents",
         typeof(List<AvailableOpponentResponse>)
     )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
     public async Task<IActionResult> GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -81,7 +81,12 @@ public class AvailableOpponentController : ControllerBase
 
         if (!availableOpponents.Any())
         {
-            return NotFound("Refresh first");
+            return NotFound(
+                new ErrorResponse(
+                    "NO_OPPONENTS_AVAILABLE",
+                    "No opponents available. Please refresh first."
+                )
+            );
         }
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
@@ -138,13 +143,10 @@ public class AvailableOpponentController : ControllerBase
         "AvailableOpponents",
         typeof(List<AvailableOpponentResponse>)
     )]
-    [SwaggerResponse(
-        StatusCodes.Status400BadRequest,
-        "Free refresh is not available at this time. Additional cost is required."
-    )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
-    [SwaggerResponse(StatusCodes.Status423Locked, "")]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
     public async Task<IActionResult> RequestFreeRefresh()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -158,7 +160,10 @@ public class AvailableOpponentController : ControllerBase
             <= cachedBlockIndex
         )
         {
-            return StatusCode(StatusCodes.Status423Locked);
+            return StatusCode(
+                StatusCodes.Status423Locked,
+                new ErrorResponse("ROUND_ENDING", "Round is about to end")
+            );
         }
 
         var participant = await _participateService.ParticipateAsync(
@@ -193,7 +198,12 @@ public class AvailableOpponentController : ControllerBase
 
         if (refreshTicketStatusPerRound.RemainingCount <= 0)
         {
-            return BadRequest("RemainingCount 0");
+            return BadRequest(
+                new ErrorResponse(
+                    "NO_REFRESH_TICKETS",
+                    "No remaining refresh tickets available"
+                )
+            );
         }
 
         var myScore = await _rankingRepo.GetScoreAsync(
@@ -206,6 +216,16 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id
         );
+
+        if (!opponents.Any())
+        {
+            return NotFound(
+                new ErrorResponse(
+                    "NO_OPPONENTS_FOUND",
+                    "No suitable opponents found for matching"
+                )
+            );
+        }
 
         var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
             cachedSeason.Id,
@@ -237,11 +257,18 @@ public class AvailableOpponentController : ControllerBase
                 opponent.AvatarAddress,
                 query => query.Include(p => p.User).ThenInclude(u => u.Clan)
             );
+
+            if (opponentParticipant == null)
+            {
+                continue;
+            }
+
             var opponentRank = await _rankingRepo.GetRankAsync(
-                opponentParticipant!.AvatarAddress,
+                opponentParticipant.AvatarAddress,
                 cachedSeason.Id,
                 cachedRound.Id
             );
+
             ClanResponse? clanResponse = null;
             if (opponentParticipant.User.ClanId is not null)
             {
@@ -258,24 +285,17 @@ public class AvailableOpponentController : ControllerBase
                 clanResponse = opponentParticipant.User.Clan!.ToResponse(clanRank, clanScore);
             }
 
+            var availableOpponent = availableOpponents.First(ao =>
+                ao.OpponentAvatarAddress == opponent.AvatarAddress
+            );
+
             availableOpponentsResponses.Add(
-                new AvailableOpponentResponse
-                {
-                    AvatarAddress = opponentParticipant!.AvatarAddress,
-                    NameWithHash = opponentParticipant.User.NameWithHash,
-                    PortraitId = opponentParticipant.User.PortraitId,
-                    Cp = opponentParticipant.User.Cp,
-                    Level = opponentParticipant.User.Level,
-                    SeasonId = opponentParticipant.SeasonId,
-                    Score = opponent.Score,
-                    GroupId = groupId,
-                    Rank = opponentRank,
-                    IsAttacked = false,
-                    ScoreGainOnWin = OpponentGroupConstants.Groups[groupId].WinScore,
-                    ScoreLossOnLose = OpponentGroupConstants.Groups[groupId].LoseScore,
-                    IsVictory = null,
-                    ClanInfo = clanResponse
-                }
+                AvailableOpponentResponse.FromAvailableOpponent(
+                    availableOpponent,
+                    opponentRank,
+                    opponent.Score,
+                    clanResponse
+                )
             );
         }
 
