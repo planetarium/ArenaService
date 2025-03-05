@@ -98,6 +98,12 @@ public class BattleTxTracker : BackgroundService
             return;
         }
 
+        if (startingBlock < currentBlockIndex - 50000)
+        {
+            await SetLastProcessedBlockAsync(redis, currentBlockIndex - 100);
+            return;
+        }
+
         var blockDiff = currentBlockIndex - startingBlock;
 
         _logger.LogInformation(
