@@ -11,18 +11,18 @@
 @inject IRoundPreparationService RoundPreparationService
 @inject NavigationManager NavigationManager
 
-<h3>🏆 시즌 관리</h3>
+<h3>🏆 Season Management</h3>
 
-<!-- 진행 중인 시즌 정보 -->
-<h4>📅 현재 진행 중인 시즌</h4>
+<!-- Ongoing Season Information -->
+<h4>📅 Currently Active Season</h4>
 @if (currentSeason != null)
 {
     <table class="table">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>시작 블록</th>
-                <th>종료 블록</th>
+                <th>Start Block</th>
+                <th>End Block</th>
             </tr>
         </thead>
         <tbody>
@@ -34,13 +34,13 @@
         </tbody>
     </table>
 
-    <h4>📅 현재 진행 중인 라운드</h4>
+    <h4>📅 Currently Active Round</h4>
     <table class="table">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>시작 블록</th>
-                <th>종료 블록</th>
+                <th>Start Block</th>
+                <th>End Block</th>
             </tr>
         </thead>
         <tbody>
@@ -52,13 +52,13 @@
         </tbody>
     </table>
 
-    <h4>📊 랭킹 데이터 존재 여부</h4>
+    <h4>📊 Ranking Data Availability</h4>
     <table class="table">
         <thead>
             <tr>
-                <th>라운드</th>
-                <th>랭킹 데이터 개수</th>
-                <th>상태</th>
+                <th>Round</th>
+                <th>Ranking Data Count</th>
+                <th>Status</th>
             </tr>
         </thead>
         <tbody>
@@ -67,7 +67,7 @@
                 <tr>
                     <td>@roundRanking.RoundOffset</td>
                     <td>@roundRanking.RankingCount</td>
-                    <td>@(roundRanking.RankingCount > 0 ? "✅ 준비됨" : "❌ 미완료")</td>
+                    <td>@(roundRanking.RankingCount > 0 ? "✅ Ready" : "❌ Incomplete")</td>
                 </tr>
             }
         </tbody>
@@ -75,18 +75,18 @@
 }
 else
 {
-    <p>⚠️ 현재 진행 중인 시즌이 없습니다.</p>
+    <p>⚠️ No active season currently.</p>
 }
 
 <hr />
 
-<!-- 시즌 초기화 -->
+<!-- Season Initialization -->
 <div class="form-group">
-    <label for="seasonId">시즌 ID:</label>
+    <label for="seasonId">Season ID:</label>
     <input id="seasonId" class="form-control" @bind="seasonId" type="number" />
 </div>
 
-<button class="btn btn-primary" @onclick="InitializeSeason">시즌 초기화</button>
+<button class="btn btn-primary" @onclick="InitializeSeason">Initialize Season</button>
 
 @if (seasonMessage is not null)
 {
@@ -95,14 +95,14 @@ else
 
 <hr />
 
-<!-- 라운드 준비 -->
+<!-- Round Preparation -->
 <div class="form-group">
-    <label for="roundId">(진행중인 라운드와 +1한 라운드를 준비하는겁니다. 예를들어 42라운드가 진행중인데 43라운드가 준비되어있지 않다면 42라운드를 입력해주세요.) 라운드
-        ID:</label>
+    <label for="roundId">(Prepares the currently active round and the next round. For example, if Round 42 is active but
+        Round 43 is not yet prepared, enter 42.) Round ID:</label>
     <input id="roundId" class="form-control" @bind="roundId" type="number" />
 </div>
 
-<button class="btn btn-success" @onclick="PrepareNextRound">라운드 준비</button>
+<button class="btn btn-success" @onclick="PrepareNextRound">Prepare Next Round</button>
 
 @if (roundMessage is not null)
 {
@@ -132,7 +132,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"⚠️ 진행 중인 시즌 정보를 불러오는 중 오류 발생: {ex.Message}");
+            Console.WriteLine($"⚠️ Error occurred while loading active season data: {ex.Message}");
         }
     }
 
@@ -150,14 +150,14 @@ else
 
     private async Task InitializeSeason()
     {
-        seasonMessage = "시즌 초기화 중...";
+        seasonMessage = "Initializing season...";
         try
         {
             var season = await SeasonRepo.GetSeasonAsync(seasonId, q => q.Include(s => s.Rounds));
 
             if (season == null)
             {
-                seasonMessage = "❌ 시즌을 찾을 수 없습니다.";
+                seasonMessage = "❌ Season not found.";
                 return;
             }
 
@@ -165,24 +165,24 @@ else
 
             if (firstRound == null)
             {
-                seasonMessage = "⚠️ 해당 시즌에 라운드가 없습니다.";
+                seasonMessage = "⚠️ No rounds exist for this season.";
                 return;
             }
 
             await SeasonPreparationService.PrepareSeasonAsync((season, firstRound));
 
-            seasonMessage = "✅ 시즌 초기화 완료!";
+            seasonMessage = "✅ Season initialized successfully!";
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
         catch (Exception ex)
         {
-            seasonMessage = $"❌ 오류 발생: {ex.Message}";
+            seasonMessage = $"❌ Error occurred: {ex.Message}";
         }
     }
 
     private async Task PrepareNextRound()
     {
-        roundMessage = "라운드 준비 중...";
+        roundMessage = "Preparing next round...";
         try
         {
             var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season));
@@ -190,18 +190,18 @@ else
 
             if (round == null || round.Season == null)
             {
-                roundMessage = "❌ 라운드를 찾을 수 없습니다.";
+                roundMessage = "❌ Round not found.";
                 return;
             }
 
             await RoundPreparationService.PrepareNextRoundWithSnapshotAsync((season, round));
 
-            roundMessage = "✅ 다음 라운드 준비 완료!";
+            roundMessage = "✅ Next round prepared successfully!";
             NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
         }
         catch (Exception ex)
         {
-            roundMessage = $"❌ 오류 발생: {ex.Message}";
+            roundMessage = $"❌ Error occurred: {ex.Message}";
         }
     }
 }

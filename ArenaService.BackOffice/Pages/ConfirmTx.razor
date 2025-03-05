@@ -7,15 +7,15 @@
 @inject ITicketRepository TicketRepo
 @inject IBattleRepository BattleRepo
 
-<h3>🔍 검토할 트랜잭션</h3>
+<h3>🔍 Transactions to Review</h3>
 
 @if (loading)
 {
-    <p>데이터 로딩 중...</p>
+    <p>Loading data...</p>
 }
 else
 {
-    <h4>⚔️ 검토할 배틀 트랜잭션</h4>
+    <h4>⚔️ Battle Transactions to Review</h4>
     <table class="table">
         <thead>
             <tr>
@@ -28,7 +28,7 @@ else
                 <th>Battle Status</th>
                 <th>Exception Names</th>
                 <th>Reviewed</th>
-                <th>액션</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -46,7 +46,7 @@ else
                     <td>@(battle.Reviewed?.ToString() ?? "❌")</td>
                     <td>
                         <button class="btn btn-success" @onclick="() => MarkBattleAsReviewed(battle.Id)">
-                            검토 완료
+                            Mark as Reviewed
                         </button>
                     </td>
                 </tr>
@@ -54,7 +54,7 @@ else
         </tbody>
     </table>
 
-    <h4>🎟️ 검토할 티켓 구매 트랜잭션</h4>
+    <h4>🎟️ Ticket Purchase Transactions to Review</h4>
     <table class="table">
         <thead>
             <tr>
@@ -67,7 +67,7 @@ else
                 <th>Purchase Status</th>
                 <th>Reviewed</th>
                 <th>Exception Names</th>
-                <th>액션</th>
+                <th>Action</th>
             </tr>
         </thead>
         <tbody>
@@ -85,7 +85,7 @@ else
                     <td>@(ticket.Reviewed?.ToString() ?? "❌")</td>
                     <td>
                         <button class="btn btn-success" @onclick="() => MarkTicketAsReviewed(ticket.Id)">
-                            검토 완료
+                            Mark as Reviewed
                         </button>
                     </td>
                 </tr>
@@ -111,7 +111,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ 데이터 로딩 오류: {ex.Message}");
+            Console.WriteLine($"❌ Data loading error: {ex.Message}");
         }
         finally
         {
@@ -128,7 +128,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ 배틀 검토 오류: {ex.Message}");
+            Console.WriteLine($"❌ Battle review error: {ex.Message}");
         }
     }
 
@@ -141,7 +141,7 @@ else
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"❌ 티켓 구매 검토 오류: {ex.Message}");
+            Console.WriteLine($"❌ Ticket purchase review error: {ex.Message}");
         }
     }
 }
