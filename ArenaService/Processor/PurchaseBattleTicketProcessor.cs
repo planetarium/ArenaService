@@ -1,3 +1,4 @@
+using System.Data;
 using System.Globalization;
 using System.Text.RegularExpressions;
 using ArenaService.ActionValues;
@@ -5,6 +6,7 @@ using ArenaService.Client;
 using ArenaService.Extensions;
 using ArenaService.Options;
 using ArenaService.Services;
+using ArenaService.Shared.Data;
 using ArenaService.Shared.Extensions;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
@@ -30,6 +32,7 @@ public class PurchaseBattleTicketProcessor
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ITxTrackingService _txTrackingService;
+    private readonly ArenaDbContext _dbContext;
 
     public PurchaseBattleTicketProcessor(
         ILogger<PurchaseBattleTicketProcessor> logger,
@@ -37,7 +40,8 @@ public class PurchaseBattleTicketProcessor
         ITicketRepository ticketRepo,
         ISeasonRepository seasonRepo,
         ITxTrackingService txTrackingService,
-        IOptions<OpsConfigOptions> options
+        IOptions<OpsConfigOptions> options,
+        ArenaDbContext dbContext
     )
     {
         _logger = logger;
@@ -46,6 +50,7 @@ public class PurchaseBattleTicketProcessor
         _seasonRepo = seasonRepo;
         _txTrackingService = txTrackingService;
         _recipientAddress = new Address(options.Value.RecipientAddress);
+        _dbContext = dbContext;
     }
 
     public async Task<string> ProcessAsync(int purchaseLogId)
@@ -57,6 +62,78 @@ public class PurchaseBattleTicketProcessor
         if (purchaseLog is null)
         {
             return $"Not found purchase log {purchaseLogId}";
+        }
+
+        var season = await _seasonRepo.GetSeasonAsync(
+            purchaseLog.SeasonId,
+            q => q.Include(s => s.BattleTicketPolicy)
+        );
+
+        var battleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
+            purchaseLog.SeasonId,
+            purchaseLog.AvatarAddress
+        );
+        var battleTicketStatusPerRound = await _ticketRepo.GetBattleTicketStatusPerRound(
+            purchaseLog.RoundId,
+            purchaseLog.AvatarAddress
+        );
+
+        if (battleTicketStatusPerRound is not null)
+        {
+            if (
+                battleTicketStatusPerRound.PurchaseCount + purchaseLog.PurchaseCount
+                > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound
+            )
+            {
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                    }
+                );
+                return "NO_REMAINING_PURCHASE_COUNT";
+            }
+        }
+        else if (purchaseLog.PurchaseCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound)
+        {
+            await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                purchaseLog,
+                btpl =>
+                {
+                    btpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                }
+            );
+            return "NO_REMAINING_PURCHASE_COUNT";
+        }
+
+        if (battleTicketStatusPerSeason is not null)
+        {
+            if (
+                battleTicketStatusPerSeason.PurchaseCount + purchaseLog.PurchaseCount
+                > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
+            )
+            {
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                    }
+                );
+                return "MAX_SEASON_TICKETS_REACHED";
+            }
+        }
+        else if (purchaseLog.PurchaseCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason)
+        {
+            await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                purchaseLog,
+                btpl =>
+                {
+                    btpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                }
+            );
+            return "MAX_SEASON_TICKETS_REACHED";
         }
 
         if (!await ValidateUsedTxId(purchaseLog.TxId, purchaseLogId))
@@ -77,11 +154,6 @@ public class PurchaseBattleTicketProcessor
             {
                 btpl.PurchaseStatus = PurchaseStatus.TRACKING;
             }
-        );
-
-        var season = await _seasonRepo.GetSeasonAsync(
-            purchaseLog.SeasonId,
-            q => q.Include(s => s.BattleTicketPolicy)
         );
 
         await _txTrackingService.TrackTransactionAsync(
@@ -147,17 +219,7 @@ public class PurchaseBattleTicketProcessor
                         }
                         else
                         {
-                            await UpdateTicket(season, purchaseLog);
-                            await _ticketRepo.UpdateBattleTicketPurchaseLog(
-                                purchaseLog,
-                                btpl =>
-                                {
-                                    btpl.PurchaseStatus = PurchaseStatus.SUCCESS;
-                                    btpl.AmountPaid = requiredAmount;
-                                }
-                            );
-
-                            processResult = "success";
+                            processResult = await ProcessTicketPurchaseAsync(season, purchaseLog, requiredAmount);
                         }
                     }
                 }
@@ -286,7 +348,7 @@ public class PurchaseBattleTicketProcessor
         return requiredAmount;
     }
 
-    private async Task UpdateTicket(Season season, BattleTicketPurchaseLog purchaseLog)
+    private async Task<bool> UpdateTicket(Season season, BattleTicketPurchaseLog purchaseLog)
     {
         var existBattleTicketStatusPerRound = await _ticketRepo.GetBattleTicketStatusPerRound(
             purchaseLog.RoundId,
@@ -307,15 +369,17 @@ public class PurchaseBattleTicketProcessor
         }
         else
         {
-            await _ticketRepo.UpdateBattleTicketStatusPerRound(
+            var roundUpdated = await _ticketRepo.TryUpdateBattleTicketStatusPerRound(
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
-                bts =>
-                {
-                    bts.RemainingCount += purchaseLog.PurchaseCount;
-                    bts.PurchaseCount += purchaseLog.PurchaseCount;
-                }
+                purchaseLog.PurchaseCount,
+                season.BattleTicketPolicy.MaxPurchasableTicketsPerRound
             );
+
+            if (!roundUpdated)
+            {
+                return false;
+            }
         }
 
         var existBattleTicketStatusPerSeason = await _ticketRepo.GetBattleTicketStatusPerSeason(
@@ -335,14 +399,60 @@ public class PurchaseBattleTicketProcessor
         }
         else
         {
-            await _ticketRepo.UpdateBattleTicketStatusPerSeason(
+            var seasonUpdated = await _ticketRepo.TryUpdateBattleTicketStatusPerSeason(
                 purchaseLog.SeasonId,
                 purchaseLog.AvatarAddress,
-                bts =>
+                purchaseLog.PurchaseCount,
+                season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
+            );
+
+            if (!seasonUpdated)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private async Task<string> ProcessTicketPurchaseAsync(
+        Season season,
+        BattleTicketPurchaseLog purchaseLog,
+        decimal requiredAmount
+    )
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+        try
+        {
+            var updated = await UpdateTicket(season, purchaseLog);
+            if (!updated)
+            {
+                await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                    purchaseLog,
+                    btpl =>
+                    {
+                        btpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                    }
+                );
+                await transaction.RollbackAsync();
+                return "NO_REMAINING_PURCHASE_COUNT";
+            }
+
+            await _ticketRepo.UpdateBattleTicketPurchaseLog(
+                purchaseLog,
+                btpl =>
                 {
-                    bts.PurchaseCount += purchaseLog.PurchaseCount;
+                    btpl.PurchaseStatus = PurchaseStatus.SUCCESS;
+                    btpl.AmountPaid = requiredAmount;
                 }
             );
+            await transaction.CommitAsync();
+            return "success";
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 }

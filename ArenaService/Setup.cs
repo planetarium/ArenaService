@@ -148,6 +148,7 @@ public class Startup
         services.AddScoped<IAllClanRankingRepository, AllClanRankingRepository>();
         services.AddScoped<IRankingRepository, RankingRepository>();
         services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
+        services.AddScoped<IBlockTrackerRepository, BlockTrackerRepository>();
 
         services.AddScoped<ISeasonPreparationService, SeasonPreparationService>();
         services.AddScoped<IRoundPreparationService, RoundPreparationService>();

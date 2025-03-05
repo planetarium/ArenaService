@@ -7,13 +7,13 @@ using Xunit;
 
 namespace ArenaService.IntegrationTests.Repositories.RankingRepo;
 
-public class SelectBattleOpponentsTotal40Tests : BaseTest
+public class SelectBattleOpponentsTotal3000Tests : BaseTest
 {
-    public SelectBattleOpponentsTotal40Tests(RedisTestFixture fixture)
-        : base(fixture, databaseNumber: 0) { }
+    public SelectBattleOpponentsTotal3000Tests(RedisTestFixture fixture)
+        : base(fixture, databaseNumber: 2) { }
 
     [Fact]
-    public async Task SelectBattleOpponentsTotal40Correctly()
+    public async Task SelectBattleOpponentsTotal3000Correctly()
     {
         var seasonId = 1;
         var roundId = 1;
@@ -21,7 +21,7 @@ public class SelectBattleOpponentsTotal40Tests : BaseTest
         string statusKey = string.Format(RankingRepository.StatusKeyFormat, seasonId, roundId);
         await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
 
-        var totalParticipants = 41;
+        var totalParticipants = 3000;
         var participants = new Dictionary<int, Address>();
         string rankingKey = string.Format(RankingRepository.RankingKeyFormat, seasonId, roundId);
 
@@ -63,7 +63,7 @@ public class SelectBattleOpponentsTotal40Tests : BaseTest
             avatarAddress,
             seasonId,
             roundId,
-            false
+            true
         );
         Assert.Equal(5, opponents.Count);
         foreach (var (groupId, opponent) in opponents)
@@ -80,6 +80,10 @@ public class SelectBattleOpponentsTotal40Tests : BaseTest
                 Order.Descending
             );
             long totalRankings = await Database.SortedSetLengthAsync(rankingKey);
+            if (totalRankings > 1000)
+            {
+                totalRankings = 1000;
+            }
 
             Assert.NotEqual(avatarAddress, opponent.AvatarAddress);
             Assert.InRange(opponentRank.Value + 1, totalRankings * min, totalRankings * max);

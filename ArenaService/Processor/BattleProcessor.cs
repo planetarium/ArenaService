@@ -376,7 +376,7 @@ public class BattleProcessor
             {
                 await _battleRepo.UpdateBattle(
                     battle,
-                    b => b.BattleStatus = BattleStatus.INVALID_BATTLE
+                    b => b.BattleStatus = BattleStatus.NO_REMAINING_TICKET
                 );
                 await transaction.CommitAsync();
                 return "No remaining battle tickets";
