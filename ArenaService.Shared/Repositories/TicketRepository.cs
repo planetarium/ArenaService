@@ -161,6 +161,28 @@ public interface ITicketRepository
         int seasonTicketStatusId,
         bool isVictory
     );
+
+
+    Task<bool> TryUpdateBattleTicketStatusPerRound(
+        int roundId,
+        Address avatarAddress,
+        int purchaseCount,
+        int maxPurchasableTickets
+    );
+
+    Task<bool> TryUpdateBattleTicketStatusPerSeason(
+        int seasonId,
+        Address avatarAddress,
+        int purchaseCount,
+        int maxPurchasableTickets
+    );
+
+    Task<bool> TryUpdateRefreshTicketStatusPerRound(
+        int roundId,
+        Address avatarAddress,
+        int purchaseCount,
+        int maxPurchasableTickets
+    );
 }
 
 public class TicketRepository : ITicketRepository
@@ -672,5 +694,64 @@ public class TicketRepository : ITicketRepository
         }
 
         return false;
+    }
+
+    public async Task<bool> TryUpdateBattleTicketStatusPerRound(
+        int roundId,
+        Address avatarAddress,
+        int purchaseCount,
+        int maxPurchasableTickets
+    )
+    {
+        var rowsAffected = await _context.BattleTicketStatusesPerRound
+            .Where(bts => 
+                bts.RoundId == roundId && 
+                bts.AvatarAddress == avatarAddress &&
+                bts.PurchaseCount + purchaseCount <= maxPurchasableTickets)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(bts => bts.RemainingCount, bts => bts.RemainingCount + purchaseCount)
+                .SetProperty(bts => bts.PurchaseCount, bts => bts.PurchaseCount + purchaseCount)
+                .SetProperty(bts => bts.UpdatedAt, DateTime.UtcNow));
+
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> TryUpdateBattleTicketStatusPerSeason(
+        int seasonId,
+        Address avatarAddress,
+        int purchaseCount,
+        int maxPurchasableTickets
+    )
+    {
+        var rowsAffected = await _context.BattleTicketStatusesPerSeason
+            .Where(bts => 
+                bts.SeasonId == seasonId && 
+                bts.AvatarAddress == avatarAddress &&
+                bts.PurchaseCount + purchaseCount <= maxPurchasableTickets)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(bts => bts.PurchaseCount, bts => bts.PurchaseCount + purchaseCount)
+                .SetProperty(bts => bts.UpdatedAt, DateTime.UtcNow));
+
+        return rowsAffected > 0;
+    }
+
+    public async Task<bool> TryUpdateRefreshTicketStatusPerRound(
+        int roundId,
+        Address avatarAddress,
+        int purchaseCount,
+        int maxPurchasableTickets
+    )
+    {
+        var rowsAffected = await _context.RefreshTicketStatusesPerRound
+            .Where(rts => 
+                rts.RoundId == roundId && 
+                rts.AvatarAddress == avatarAddress &&
+                rts.PurchaseCount + purchaseCount <= maxPurchasableTickets)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(rts => rts.RemainingCount, rts => rts.RemainingCount + purchaseCount)
+                .SetProperty(rts => rts.PurchaseCount, rts => rts.PurchaseCount + purchaseCount)
+                .SetProperty(rts => rts.UpdatedAt, DateTime.UtcNow));
+
+        return rowsAffected > 0;
     }
 }
