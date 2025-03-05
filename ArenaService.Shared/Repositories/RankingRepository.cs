@@ -27,7 +27,8 @@ public interface IRankingRepository
     Task<Dictionary<int, (Address AvatarAddress, int Score)>> SelectBattleOpponentsAsync(
         Address avatarAddress,
         int seasonId,
-        int roundId
+        int roundId,
+        bool isFirstRound
     );
 
     Task CopyRoundDataAsync(int seasonId, int sourceRoundId, int targetRoundId, int roundInterval);
@@ -161,7 +162,7 @@ public class RankingRepository : IRankingRepository
 
     public async Task<
         Dictionary<int, (Address AvatarAddress, int Score)>
-    > SelectBattleOpponentsAsync(Address avatarAddress, int seasonId, int roundId)
+    > SelectBattleOpponentsAsync(Address avatarAddress, int seasonId, int roundId, bool isFirstRound)
     {
         string rankingKey = string.Format(RankingKeyFormat, seasonId, roundId);
         string participantKey = string.Format(
@@ -177,7 +178,7 @@ public class RankingRepository : IRankingRepository
                 $"Total ranking count is under 40 - {totalRankingCount}"
             );
         }
-        if (totalRankingCount > 1000)
+        if (!isFirstRound && totalRankingCount > 1000)
         {
             totalRankingCount = 1000;
         }

@@ -62,7 +62,8 @@ public class SelectBattleOpponentsTotal40Tests : BaseTest
         var opponents = await RankingRepository.SelectBattleOpponentsAsync(
             avatarAddress,
             seasonId,
-            roundId
+            roundId,
+            false
         );
         Assert.Equal(5, opponents.Count);
         foreach (var (groupId, opponent) in opponents)

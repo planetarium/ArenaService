@@ -204,7 +204,8 @@ public class AvailableOpponentController : ControllerBase
         var opponents = await _rankingRepo.SelectBattleOpponentsAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id
+            cachedRound.Id,
+            cachedSeason.StartBlock == cachedRound.StartBlock
         );
 
         if (!opponents.Any())
