@@ -197,12 +197,15 @@ public class BattleTxTracker : BackgroundService
 
     private async Task<long> GetLastProcessedBlockAsync(IDatabase redis)
     {
-        var value = await redis.StringGetAsync(LAST_PROCESSED_BLOCK_KEY);
-        return value.HasValue ? (long)value : -1;
+        using var scope = _serviceProvider.CreateScope();
+        var blockTrackerRepo = scope.ServiceProvider.GetRequiredService<IBlockTrackerRepository>();
+        return await blockTrackerRepo.GetBattleTxTrackerBlockIndexAsync();
     }
 
     private async Task SetLastProcessedBlockAsync(IDatabase redis, long blockIndex)
     {
-        await redis.StringSetAsync(LAST_PROCESSED_BLOCK_KEY, blockIndex);
+        using var scope = _serviceProvider.CreateScope();
+        var blockTrackerRepo = scope.ServiceProvider.GetRequiredService<IBlockTrackerRepository>();
+        await blockTrackerRepo.SetBattleTxTrackerBlockIndexAsync(blockIndex);
     }
 }
