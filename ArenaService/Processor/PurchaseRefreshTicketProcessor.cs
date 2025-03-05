@@ -18,6 +18,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using ArenaService.Extensions;
 using ArenaService.Services;
+using ArenaService.Shared.Data;
+using System.Data;
 
 namespace ArenaService.Worker;
 
@@ -30,6 +32,7 @@ public class PurchaseRefreshTicketProcessor
     private readonly ITicketRepository _ticketRepo;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ITxTrackingService _txTrackingService;
+    private readonly ArenaDbContext _dbContext;
 
     public PurchaseRefreshTicketProcessor(
         ILogger<PurchaseRefreshTicketProcessor> logger,
@@ -37,7 +40,8 @@ public class PurchaseRefreshTicketProcessor
         ITicketRepository ticketRepo,
         ISeasonRepository seasonRepo,
         ITxTrackingService txTrackingService,
-        IOptions<OpsConfigOptions> options
+        IOptions<OpsConfigOptions> options,
+        ArenaDbContext dbContext
     )
     {
         _logger = logger;
@@ -46,6 +50,7 @@ public class PurchaseRefreshTicketProcessor
         _seasonRepo = seasonRepo;
         _txTrackingService = txTrackingService;
         _recipientAddress = new Address(options.Value.RecipientAddress);
+        _dbContext = dbContext;
     }
 
     public async Task<string> ProcessAsync(int purchaseLogId)
@@ -59,13 +64,53 @@ public class PurchaseRefreshTicketProcessor
             return $"Not found purchase log {purchaseLogId}";
         }
 
+        var season = await _seasonRepo.GetSeasonAsync(
+            purchaseLog.SeasonId,
+            q => q.Include(s => s.RefreshTicketPolicy)
+        );
+
+        // Initial validation for purchase limits
+        var refreshTicketStatusPerRound = await _ticketRepo.GetRefreshTicketStatusPerRound(
+            purchaseLog.RoundId,
+            purchaseLog.AvatarAddress
+        );
+
+        if (refreshTicketStatusPerRound is not null)
+        {
+            if (
+                refreshTicketStatusPerRound.PurchaseCount + purchaseLog.PurchaseCount
+                > season.RefreshTicketPolicy.MaxPurchasableTicketsPerRound
+            )
+            {
+                await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                    purchaseLog,
+                    rtpl =>
+                    {
+                        rtpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                    }
+                );
+                return "NO_REMAINING_PURCHASE_COUNT";
+            }
+        }
+        else if (purchaseLog.PurchaseCount > season.RefreshTicketPolicy.MaxPurchasableTicketsPerRound)
+        {
+            await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                purchaseLog,
+                rtpl =>
+                {
+                    rtpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                }
+            );
+            return "NO_REMAINING_PURCHASE_COUNT";
+        }
+
         if (!await ValidateUsedTxId(purchaseLog.TxId, purchaseLogId))
         {
             await _ticketRepo.UpdateRefreshTicketPurchaseLog(
                 purchaseLog,
-                btpl =>
+                rtpl =>
                 {
-                    btpl.PurchaseStatus = PurchaseStatus.DUPLICATE_TRANSACTION;
+                    rtpl.PurchaseStatus = PurchaseStatus.DUPLICATE_TRANSACTION;
                 }
             );
             return $"{purchaseLog.TxId} is used tx";
@@ -73,15 +118,10 @@ public class PurchaseRefreshTicketProcessor
 
         await _ticketRepo.UpdateRefreshTicketPurchaseLog(
             purchaseLog,
-            btpl =>
+            rtpl =>
             {
-                btpl.PurchaseStatus = PurchaseStatus.TRACKING;
+                rtpl.PurchaseStatus = PurchaseStatus.TRACKING;
             }
-        );
-
-        var season = await _seasonRepo.GetSeasonAsync(
-            purchaseLog.SeasonId,
-            q => q.Include(s => s.RefreshTicketPolicy)
         );
 
         await _txTrackingService.TrackTransactionAsync(
@@ -90,9 +130,9 @@ public class PurchaseRefreshTicketProcessor
             {
                 await _ticketRepo.UpdateRefreshTicketPurchaseLog(
                     purchaseLog,
-                    btpl =>
+                    rtpl =>
                     {
-                        btpl.TxStatus = status.ToModelTxStatus();
+                        rtpl.TxStatus = status.ToModelTxStatus();
                     }
                 );
             },
@@ -104,9 +144,9 @@ public class PurchaseRefreshTicketProcessor
                 {
                     await _ticketRepo.UpdateRefreshTicketPurchaseLog(
                         purchaseLog,
-                        btpl =>
+                        rtpl =>
                         {
-                            btpl.PurchaseStatus = PurchaseStatus.NOT_FOUND_TRANSFER_ASSETS_ACTION;
+                            rtpl.PurchaseStatus = PurchaseStatus.NOT_FOUND_TRANSFER_ASSETS_ACTION;
                         }
                     );
                     processResult = $"Not found tx for {purchaseLog.TxId}";
@@ -117,9 +157,9 @@ public class PurchaseRefreshTicketProcessor
                     {
                         await _ticketRepo.UpdateRefreshTicketPurchaseLog(
                             purchaseLog,
-                            btpl =>
+                            rtpl =>
                             {
-                                btpl.PurchaseStatus = PurchaseStatus.INVALID_RECIPIENT;
+                                rtpl.PurchaseStatus = PurchaseStatus.INVALID_RECIPIENT;
                             }
                         );
                         processResult = $"{_recipientAddress} is not ops address";
@@ -137,9 +177,9 @@ public class PurchaseRefreshTicketProcessor
                         {
                             await _ticketRepo.UpdateRefreshTicketPurchaseLog(
                                 purchaseLog,
-                                btpl =>
+                                rtpl =>
                                 {
-                                    btpl.PurchaseStatus = PurchaseStatus.INSUFFICIENT_PAYMENT;
+                                    rtpl.PurchaseStatus = PurchaseStatus.INSUFFICIENT_PAYMENT;
                                 }
                             );
 
@@ -148,17 +188,7 @@ public class PurchaseRefreshTicketProcessor
                         }
                         else
                         {
-                            await UpdateTicket(season, purchaseLog);
-                            await _ticketRepo.UpdateRefreshTicketPurchaseLog(
-                                purchaseLog,
-                                btpl =>
-                                {
-                                    btpl.PurchaseStatus = PurchaseStatus.SUCCESS;
-                                    btpl.AmountPaid = requiredAmount;
-                                }
-                            );
-
-                            processResult = "success";
+                            processResult = await ProcessTicketPurchaseAsync(season, purchaseLog, requiredAmount);
                         }
                     }
                 }
@@ -288,7 +318,7 @@ public class PurchaseRefreshTicketProcessor
         return requiredAmount;
     }
 
-    private async Task UpdateTicket(Season season, RefreshTicketPurchaseLog purchaseLog)
+    private async Task<bool> UpdateTicket(Season season, RefreshTicketPurchaseLog purchaseLog)
     {
         var existRefreshTicketStatusPerRound = await _ticketRepo.GetRefreshTicketStatusPerRound(
             purchaseLog.RoundId,
@@ -309,15 +339,60 @@ public class PurchaseRefreshTicketProcessor
         }
         else
         {
-            await _ticketRepo.UpdateRefreshTicketStatusPerRound(
+            var updated = await _ticketRepo.TryUpdateRefreshTicketStatusPerRound(
                 purchaseLog.RoundId,
                 purchaseLog.AvatarAddress,
-                bts =>
+                purchaseLog.PurchaseCount,
+                season.RefreshTicketPolicy.MaxPurchasableTicketsPerRound
+            );
+
+            if (!updated)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private async Task<string> ProcessTicketPurchaseAsync(
+        Season season,
+        RefreshTicketPurchaseLog purchaseLog,
+        decimal requiredAmount
+    )
+    {
+        using var transaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted);
+        try
+        {
+            var updated = await UpdateTicket(season, purchaseLog);
+            if (!updated)
+            {
+                await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                    purchaseLog,
+                    rtpl =>
+                    {
+                        rtpl.PurchaseStatus = PurchaseStatus.NO_REMAINING_PURCHASE_COUNT;
+                    }
+                );
+                await transaction.RollbackAsync();
+                return "MAX_TICKETS_REACHED";
+            }
+
+            await _ticketRepo.UpdateRefreshTicketPurchaseLog(
+                purchaseLog,
+                rtpl =>
                 {
-                    bts.RemainingCount += purchaseLog.PurchaseCount;
-                    bts.PurchaseCount += purchaseLog.PurchaseCount;
+                    rtpl.PurchaseStatus = PurchaseStatus.SUCCESS;
+                    rtpl.AmountPaid = requiredAmount;
                 }
             );
+            await transaction.CommitAsync();
+            return "success";
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            throw;
         }
     }
 }
