@@ -38,8 +38,8 @@ public class ArenaInfoController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "ArenaInfoResponse", typeof(ArenaInfoResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> GetArenaInfo()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -62,12 +62,7 @@ public class ArenaInfoController : ControllerBase
 
         if (participant is null)
         {
-            return NotFound(
-                new ErrorResponse(
-                    "PARTICIPANT_NOT_FOUND",
-                    $"No participant found for address {avatarAddress}"
-                )
-            );
+            return NotFound("PARTICIPANT_NOT_FOUND");
         }
 
         ClanResponse? myClanResponse = null;

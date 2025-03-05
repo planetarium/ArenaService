@@ -50,9 +50,9 @@ public class AvailableOpponentController : ControllerBase
         "AvailableOpponents",
         typeof(List<AvailableOpponentResponse>)
     )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -81,12 +81,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (!availableOpponents.Any())
         {
-            return NotFound(
-                new ErrorResponse(
-                    "NO_OPPONENTS_AVAILABLE",
-                    "No opponents available. Please refresh first."
-                )
-            );
+            return NotFound("NO_OPPONENTS_AVAILABLE");
         }
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
@@ -143,10 +138,10 @@ public class AvailableOpponentController : ControllerBase
         "AvailableOpponents",
         typeof(List<AvailableOpponentResponse>)
     )]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> RequestFreeRefresh()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -162,7 +157,7 @@ public class AvailableOpponentController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("ROUND_ENDING", "Round is about to end")
+                "ROUND_ENDING"
             );
         }
 
@@ -198,12 +193,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (refreshTicketStatusPerRound.RemainingCount <= 0)
         {
-            return BadRequest(
-                new ErrorResponse(
-                    "NO_REFRESH_TICKETS",
-                    "No remaining refresh tickets available"
-                )
-            );
+            return BadRequest("NO_REFRESH_TICKETS");
         }
 
         var myScore = await _rankingRepo.GetScoreAsync(
@@ -219,12 +209,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (!opponents.Any())
         {
-            return NotFound(
-                new ErrorResponse(
-                    "NO_OPPONENTS_FOUND",
-                    "No suitable opponents found for matching"
-                )
-            );
+            return NotFound("NO_OPPONENTS_FOUND");
         }
 
         var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(

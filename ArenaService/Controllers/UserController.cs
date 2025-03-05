@@ -44,9 +44,9 @@ public class UserController : ControllerBase
     [HttpPost]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerResponse(StatusCodes.Status201Created, "Ok")]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status409Conflict, "Status409Conflict", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status409Conflict, "Status409Conflict", typeof(string))]
     public async Task<ActionResult<string>> Register(
         [FromBody] UserRegisterRequest userRegisterRequest
     )
@@ -56,7 +56,7 @@ public class UserController : ControllerBase
 
         if (!AvatarAddressValidator.CheckSignerContainsAvatar(agentAddress, avatarAddress))
         {
-            return BadRequest(new ErrorResponse("INVALID_ADDRESS", "Invalid address provided"));
+            return BadRequest("INVALID_ADDRESS");
         }
 
         var user = await _userRepo.GetUserAsync(avatarAddress);
@@ -79,20 +79,20 @@ public class UserController : ControllerBase
             return Created(locationUri, user.AvatarAddress);
         }
 
-        return Conflict(new ErrorResponse("USER_EXISTS", "User is already registered"));
+        return Conflict("USER_EXISTS");
     }
 
     [HttpGet("{avatarAddress}")]
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerResponse(StatusCodes.Status200OK, "UserResponse", typeof(UserResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<ActionResult<UserResponse>> GetUser(Address avatarAddress)
     {
         var user = await _userRepo.GetUserAsync(avatarAddress);
         if (user == null)
         {
-            return NotFound(new ErrorResponse("USER_NOT_FOUND", "User not found"));
+            return NotFound("USER_NOT_FOUND");
         }
         return Ok(new UserResponse
         {
@@ -111,8 +111,8 @@ public class UserController : ControllerBase
         "ClassifyByBlockMedalsResponse",
         typeof(ClassifyByBlockMedalsResponse)
     )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> GetMedals(long blockIndex)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -121,7 +121,7 @@ public class UserController : ControllerBase
 
         if (!classifiedSeasons.Any())
         {
-            return NotFound(new ErrorResponse("NO_SEASONS_FOUND", "No seasons found for the given block index"));
+            return NotFound("NO_SEASONS_FOUND");
         }
 
         var medals = new List<MedalResponse>();

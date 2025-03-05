@@ -39,7 +39,7 @@ public class SeasonController : ControllerBase
         "SeasonAndRoundResponse",
         typeof(SeasonAndRoundResponse)
     )]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<ActionResult<SeasonAndRoundResponse>> GetSeasonAndRoundByBlock(
         long blockIndex
     )
@@ -52,18 +52,13 @@ public class SeasonController : ControllerBase
         }
         catch (NotFoundSeasonException)
         {
-            return NotFound(
-                new ErrorResponse(
-                    "SEASON_NOT_FOUND",
-                    $"No active season found for block index {blockIndex}"
-                )
-            );
+            return NotFound("SEASON_NOT_FOUND");
         }
     }
 
     [HttpGet("classify-by-championship/{blockIndex}")]
     [SwaggerResponse(StatusCodes.Status200OK, "SeasonResponse", typeof(SeasonsResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> GetSeasons(long blockIndex)
     {
         var classifiedSeasons = await _seasonService.ClassifyByChampionship(
@@ -76,12 +71,7 @@ public class SeasonController : ControllerBase
 
         if (!classifiedSeasons.Any())
         {
-            return NotFound(
-                new ErrorResponse(
-                    "NO_SEASONS_FOUND",
-                    $"No seasons found for block index {blockIndex}"
-                )
-            );
+            return NotFound("NO_SEASONS_FOUND");
         }
 
         var response = new SeasonsResponse

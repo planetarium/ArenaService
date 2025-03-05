@@ -37,8 +37,8 @@ public class ClanController : ControllerBase
         "ClanLeaderboardResponse",
         typeof(ClanLeaderboardResponse)
     )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<ActionResult<ClanLeaderboardResponse>> GetClanLeaderboard()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -78,12 +78,7 @@ public class ClanController : ControllerBase
 
         if (!clans.Any())
         {
-            return NotFound(
-                new ErrorResponse(
-                    "NO_CLANS_FOUND",
-                    $"No clan rankings found for season {cachedSeason.Id} and round {cachedRound.Id}"
-                )
-            );
+            return NotFound("NO_CLANS_FOUND");
         }
 
         var clanResponses = new List<ClanResponse>();
@@ -108,12 +103,7 @@ public class ClanController : ControllerBase
 
         if (!clanResponses.Any())
         {
-            return NotFound(
-                new ErrorResponse(
-                    "NO_VALID_CLANS",
-                    "No valid clans found in the leaderboard"
-                )
-            );
+            return NotFound("NO_VALID_CLANS");
         }
 
         var response = new ClanLeaderboardResponse

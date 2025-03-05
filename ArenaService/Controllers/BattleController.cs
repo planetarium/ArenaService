@@ -50,9 +50,9 @@ public class BattleController : ControllerBase
         "BattleTokenResponse",
         typeof(BattleTokenResponse)
     )]
-    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> CreateBattleToken(Address opponentAvatarAddress)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -67,7 +67,7 @@ public class BattleController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("ROUND_ENDING", "Round is about to end")
+                "ROUND_ENDING"
             );
         }
         var inProgressBattles = await _battleRepo.GetInProgressBattles(
@@ -80,7 +80,7 @@ public class BattleController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("BATTLE_IN_PROGRESS", "Battle is already in progress")
+                "BATTLE_IN_PROGRESS"
             );
         }
 
@@ -130,7 +130,7 @@ public class BattleController : ControllerBase
 
         if (battleTicketStatusPerRound.RemainingCount <= 0)
         {
-            return BadRequest(new ErrorResponse("NO_TICKETS", "No remaining battle tickets"));
+            return BadRequest("NO_REMAINING_TICKETS");
         }
 
         var availableOpponent = await _availableOpponentRepo.GetAvailableOpponent(
@@ -140,7 +140,7 @@ public class BattleController : ControllerBase
         );
         if (availableOpponent is null)
         {
-            return BadRequest(new ErrorResponse("INVALID_OPPONENT", $"{opponentAvatarAddress} is not available opponent"));
+            return BadRequest("INVALID_OPPONENT");
         }
 
         var battle = await _battleRepo.AddBattleAsync(
@@ -162,9 +162,9 @@ public class BattleController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "Ok")]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> RequestBattle(int battleId, [FromBody] BattleRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -173,14 +173,14 @@ public class BattleController : ControllerBase
 
         if (battle is null)
         {
-            return NotFound(new ErrorResponse("BATTLE_NOT_FOUND", $"Battle log with ID {battleId} not found."));
+            return NotFound("BATTLE_NOT_FOUND");
         }
 
         if (battle.AvatarAddress != avatarAddress)
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
-                new ErrorResponse("UNAUTHORIZED_ACCESS", "You are not authorized to access this battle")
+                "UNAUTHORIZED_ACCESS"
             );
         }
 
@@ -201,9 +201,9 @@ public class BattleController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "BattleResponse", typeof(BattleResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> GetBattle(int battleId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -215,14 +215,14 @@ public class BattleController : ControllerBase
 
         if (battle is null)
         {
-            return NotFound(new ErrorResponse("BATTLE_NOT_FOUND", $"Battle log with ID {battleId} not found."));
+            return NotFound("BATTLE_NOT_FOUND");
         }
 
         if (battle.AvatarAddress != avatarAddress)
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
-                new ErrorResponse("UNAUTHORIZED_ACCESS", "You are not authorized to access this battle")
+                "UNAUTHORIZED_ACCESS"
             );
         }
 

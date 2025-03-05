@@ -44,8 +44,8 @@ public class TicketController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "TicketStatus", typeof(TicketStatusResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> GetBattleTicketStatus()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -84,8 +84,8 @@ public class TicketController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "TicketStatus", typeof(TicketStatusResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> GetRefreshTicketStatus()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -115,10 +115,10 @@ public class TicketController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status201Created, "Purchase Log Id", typeof(int))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> PurchaseBattleTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -138,7 +138,7 @@ public class TicketController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("ROUND_ENDING", "Round is about to end")
+                "ROUND_ENDING"
             );
         }
 
@@ -151,7 +151,7 @@ public class TicketController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("PURCHASE_IN_PROGRESS", "A ticket purchase is already in progress")
+                "PURCHASE_IN_PROGRESS"
             );
         }
 
@@ -175,24 +175,14 @@ public class TicketController : ControllerBase
                 > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound
             )
             {
-                return BadRequest(
-                    new ErrorResponse(
-                        "MAX_ROUND_TICKETS_REACHED",
-                        "Maximum purchasable tickets per round reached"
-                    )
-                );
+                return BadRequest("MAX_ROUND_TICKETS_REACHED");
             }
         }
         else
         {
             if (request.TicketCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerRound)
             {
-                return BadRequest(
-                    new ErrorResponse(
-                        "MAX_ROUND_TICKETS_REACHED",
-                        "Maximum purchasable tickets per round reached"
-                    )
-                );
+                return BadRequest("MAX_ROUND_TICKETS_REACHED");
             }
         }
         if (battleTicketStatusPerSeason is not null)
@@ -202,24 +192,14 @@ public class TicketController : ControllerBase
                 > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason
             )
             {
-                return BadRequest(
-                    new ErrorResponse(
-                        "MAX_SEASON_TICKETS_REACHED",
-                        "Maximum purchasable tickets per season reached"
-                    )
-                );
+                return BadRequest("MAX_SEASON_TICKETS_REACHED");
             }
         }
         else
         {
             if (request.TicketCount > season.BattleTicketPolicy.MaxPurchasableTicketsPerSeason)
             {
-                return BadRequest(
-                    new ErrorResponse(
-                        "MAX_SEASON_TICKETS_REACHED",
-                        "Maximum purchasable tickets per season reached"
-                    )
-                );
+                return BadRequest("MAX_SEASON_TICKETS_REACHED");
             }
         }
 
@@ -236,12 +216,7 @@ public class TicketController : ControllerBase
 
         if (request.PurchasePrice != requiredAmount)
         {
-            return BadRequest(
-                new ErrorResponse(
-                    "INVALID_PURCHASE_PRICE",
-                    $"Invalid purchase price. Required: {requiredAmount}, Provided: {request.PurchasePrice}"
-                )
-            );
+            return BadRequest("INVALID_PURCHASE_PRICE");
         }
 
         var purchaseLog = await _ticketRepo.AddBattleTicketPurchaseLog(
@@ -268,10 +243,10 @@ public class TicketController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status201Created, "Purchase Log Id", typeof(int))]
-    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> PurchaseRefreshTicket([FromBody] PurchaseTicketRequest request)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -291,7 +266,7 @@ public class TicketController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("ROUND_ENDING", "Round is about to end")
+                "ROUND_ENDING"
             );
         }
 
@@ -304,7 +279,7 @@ public class TicketController : ControllerBase
         {
             return StatusCode(
                 StatusCodes.Status423Locked,
-                new ErrorResponse("PURCHASE_IN_PROGRESS", "A ticket purchase is already in progress")
+                "PURCHASE_IN_PROGRESS"
             );
         }
 
@@ -324,24 +299,14 @@ public class TicketController : ControllerBase
                 > season.RefreshTicketPolicy.MaxPurchasableTicketsPerRound
             )
             {
-                return BadRequest(
-                    new ErrorResponse(
-                        "MAX_ROUND_TICKETS_REACHED",
-                        "Maximum purchasable tickets per round reached"
-                    )
-                );
+                return BadRequest("MAX_ROUND_TICKETS_REACHED");
             }
         }
         else
         {
             if (request.TicketCount > season.RefreshTicketPolicy.MaxPurchasableTicketsPerRound)
             {
-                return BadRequest(
-                    new ErrorResponse(
-                        "MAX_ROUND_TICKETS_REACHED",
-                        "Maximum purchasable tickets per round reached"
-                    )
-                );
+                return BadRequest("MAX_ROUND_TICKETS_REACHED");
             }
         }
 
@@ -358,12 +323,7 @@ public class TicketController : ControllerBase
 
         if (request.PurchasePrice != requiredAmount)
         {
-            return BadRequest(
-                new ErrorResponse(
-                    "INVALID_PURCHASE_PRICE",
-                    $"Invalid purchase price. Required: {requiredAmount}, Provided: {request.PurchasePrice}"
-                )
-            );
+            return BadRequest("INVALID_PURCHASE_PRICE");
         }
 
         var purchaseLog = await _ticketRepo.AddRefreshTicketPurchaseLog(
@@ -390,10 +350,10 @@ public class TicketController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(TicketPurchaseLogResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> GetPurchaseBattleTicketLog(int logId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -402,19 +362,14 @@ public class TicketController : ControllerBase
 
         if (purchaseLog is null)
         {
-            return NotFound(
-                new ErrorResponse("LOG_NOT_FOUND", $"Purchase log with ID {logId} not found")
-            );
+            return NotFound("LOG_NOT_FOUND");
         }
 
         if (purchaseLog.AvatarAddress != avatarAddress)
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
-                new ErrorResponse(
-                    "UNAUTHORIZED_ACCESS",
-                    "You are not authorized to access this purchase log"
-                )
+                "UNAUTHORIZED_ACCESS"
             );
         }
 
@@ -425,10 +380,10 @@ public class TicketController : ControllerBase
     [Authorize(Roles = "User", AuthenticationSchemes = "ES256K")]
     [SwaggerOperation(Summary = "", Description = "")]
     [SwaggerResponse(StatusCodes.Status200OK, "Purchase Log Id", typeof(TicketPurchaseLogResponse))]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(ErrorResponse))]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(ErrorResponse))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status403Forbidden, "Status403Forbidden", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> GetPurchaseRefreshTicketLog(int logId)
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -437,19 +392,14 @@ public class TicketController : ControllerBase
 
         if (purchaseLog is null)
         {
-            return NotFound(
-                new ErrorResponse("LOG_NOT_FOUND", $"Purchase log with ID {logId} not found")
-            );
+            return NotFound("LOG_NOT_FOUND");
         }
 
         if (purchaseLog.AvatarAddress != avatarAddress)
         {
             return StatusCode(
                 StatusCodes.Status403Forbidden,
-                new ErrorResponse(
-                    "UNAUTHORIZED_ACCESS",
-                    "You are not authorized to access this purchase log"
-                )
+                "UNAUTHORIZED_ACCESS"
             );
         }
 
