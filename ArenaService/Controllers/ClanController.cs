@@ -37,8 +37,6 @@ public class ClanController : ControllerBase
         "ClanLeaderboardResponse",
         typeof(ClanLeaderboardResponse)
     )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<ActionResult<ClanLeaderboardResponse>> GetClanLeaderboard()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -76,34 +74,21 @@ public class ClanController : ControllerBase
             100
         );
 
-        if (!clans.Any())
-        {
-            return NotFound("NO_CLANS_FOUND");
-        }
-
         var clanResponses = new List<ClanResponse>();
         foreach (var clanRank in clans)
         {
             var clan = await _clanRepo.GetClan(clanRank.ClanId);
-            if (clan == null)
-            {
-                continue;
-            }
+
 
             clanResponses.Add(
                 new ClanResponse
                 {
-                    ImageURL = clan.ImageURL,
+                    ImageURL = clan!.ImageURL,
                     Name = clan.Name,
                     Rank = clanRank.Rank,
                     Score = clanRank.Score
                 }
             );
-        }
-
-        if (!clanResponses.Any())
-        {
-            return NotFound("NO_VALID_CLANS");
         }
 
         var response = new ClanLeaderboardResponse

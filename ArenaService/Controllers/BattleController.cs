@@ -167,32 +167,32 @@ public class BattleController : ControllerBase
     [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> RequestBattle(int battleId, [FromBody] BattleRequest request)
     {
-        var avatarAddress = HttpContext.User.RequireAvatarAddress();
+        // var avatarAddress = HttpContext.User.RequireAvatarAddress();
 
-        var battle = await _battleRepo.GetBattleAsync(battleId);
+        // var battle = await _battleRepo.GetBattleAsync(battleId);
 
-        if (battle is null)
-        {
-            return NotFound("BATTLE_NOT_FOUND");
-        }
+        // if (battle is null)
+        // {
+        //     return NotFound("BATTLE_NOT_FOUND");
+        // }
 
-        if (battle.AvatarAddress != avatarAddress)
-        {
-            return StatusCode(
-                StatusCodes.Status403Forbidden,
-                "UNAUTHORIZED_ACCESS"
-            );
-        }
+        // if (battle.AvatarAddress != avatarAddress)
+        // {
+        //     return StatusCode(
+        //         StatusCodes.Status403Forbidden,
+        //         "UNAUTHORIZED_ACCESS"
+        //     );
+        // }
 
-        await _battleRepo.UpdateBattle(
-            battle,
-            b =>
-            {
-                b.TxId = request.TxId;
-            }
-        );
+        // await _battleRepo.UpdateBattle(
+        //     battle,
+        //     b =>
+        //     {
+        //         b.TxId = request.TxId;
+        //     }
+        // );
 
-        _jobClient.Enqueue<BattleProcessor>(processor => processor.ProcessAsync(battleId));
+        // _jobClient.Enqueue<BattleProcessor>(processor => processor.ProcessAsync(battleId));
 
         return Ok();
     }

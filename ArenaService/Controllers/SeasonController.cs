@@ -58,7 +58,6 @@ public class SeasonController : ControllerBase
 
     [HttpGet("classify-by-championship/{blockIndex}")]
     [SwaggerResponse(StatusCodes.Status200OK, "SeasonResponse", typeof(SeasonsResponse))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<IActionResult> GetSeasons(long blockIndex)
     {
         var classifiedSeasons = await _seasonService.ClassifyByChampionship(
@@ -68,11 +67,6 @@ public class SeasonController : ControllerBase
                     .Include(s => s.RefreshTicketPolicy)
                     .Include(s => s.Rounds)
         );
-
-        if (!classifiedSeasons.Any())
-        {
-            return NotFound("NO_SEASONS_FOUND");
-        }
 
         var response = new SeasonsResponse
         {

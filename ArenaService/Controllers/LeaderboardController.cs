@@ -23,15 +23,9 @@ public class LeaderboardController : ControllerBase
 
     [HttpGet("count")]
     [SwaggerResponse(StatusCodes.Status200OK, "Ranking Count Response", typeof(int))]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<ActionResult<int>> GetRankingCount(int seasonId, int roundId)
     {
         var rankingCount = await _rankingRepo.GetRankingCountAsync(seasonId, roundId);
-
-        if (rankingCount == 0)
-        {
-            return NotFound("NO_RANKINGS");
-        }
 
         return Ok(rankingCount);
     }

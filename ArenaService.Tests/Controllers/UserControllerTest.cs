@@ -75,6 +75,6 @@ public class UserControllerTest
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("invalid address.", badRequestResult.Value);
+        Assert.Equal("INVALID_ADDRESS", badRequestResult.Value);
     }
 }
