@@ -201,17 +201,13 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id
         );
+
         var opponents = await _rankingRepo.SelectBattleOpponentsAsync(
             avatarAddress,
             cachedSeason.Id,
             cachedRound.Id,
             cachedSeason.StartBlock == cachedRound.StartBlock
         );
-
-        if (!opponents.Any())
-        {
-            return NotFound("NO_OPPONENTS_FOUND");
-        }
 
         var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
             cachedSeason.Id,
@@ -244,13 +240,8 @@ public class AvailableOpponentController : ControllerBase
                 query => query.Include(p => p.User).ThenInclude(u => u.Clan)
             );
 
-            if (opponentParticipant == null)
-            {
-                continue;
-            }
-
             var opponentRank = await _rankingRepo.GetRankAsync(
-                opponentParticipant.AvatarAddress,
+                opponentParticipant!.AvatarAddress,
                 cachedSeason.Id,
                 cachedRound.Id
             );
@@ -271,17 +262,24 @@ public class AvailableOpponentController : ControllerBase
                 clanResponse = opponentParticipant.User.Clan!.ToResponse(clanRank, clanScore);
             }
 
-            var availableOpponent = availableOpponents.First(ao =>
-                ao.OpponentAvatarAddress == opponent.AvatarAddress
-            );
-
             availableOpponentsResponses.Add(
-                AvailableOpponentResponse.FromAvailableOpponent(
-                    availableOpponent,
-                    opponentRank,
-                    opponent.Score,
-                    clanResponse
-                )
+                new AvailableOpponentResponse
+                {
+                    AvatarAddress = opponentParticipant!.AvatarAddress,
+                    NameWithHash = opponentParticipant.User.NameWithHash,
+                    PortraitId = opponentParticipant.User.PortraitId,
+                    Cp = opponentParticipant.User.Cp,
+                    Level = opponentParticipant.User.Level,
+                    SeasonId = opponentParticipant.SeasonId,
+                    Score = opponent.Score,
+                    GroupId = groupId,
+                    Rank = opponentRank,
+                    IsAttacked = false,
+                    ScoreGainOnWin = OpponentGroupConstants.Groups[groupId].WinScore,
+                    ScoreLossOnLose = OpponentGroupConstants.Groups[groupId].LoseScore,
+                    IsVictory = null,
+                    ClanInfo = clanResponse
+                }
             );
         }
 
