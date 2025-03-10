@@ -8,5 +8,7 @@ public enum BattleStatus
     INVALID_BATTLE,
     DUPLICATE_TRANSACTION,
     TX_FAILED,
-    SUCCESS
+    SUCCESS,
+    NO_REMAINING_TICKET,
+    EXPIRED,
 }

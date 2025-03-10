@@ -79,6 +79,7 @@ public class ClanController : ControllerBase
         {
             var clan = await _clanRepo.GetClan(clanRank.ClanId);
 
+
             clanResponses.Add(
                 new ClanResponse
                 {

@@ -39,7 +39,7 @@ public class SeasonController : ControllerBase
         "SeasonAndRoundResponse",
         typeof(SeasonAndRoundResponse)
     )]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
     public async Task<ActionResult<SeasonAndRoundResponse>> GetSeasonAndRoundByBlock(
         long blockIndex
     )
@@ -52,7 +52,7 @@ public class SeasonController : ControllerBase
         }
         catch (NotFoundSeasonException)
         {
-            return NotFound($"No active season found for block index {blockIndex}.");
+            return NotFound("SEASON_NOT_FOUND");
         }
     }
 

@@ -50,9 +50,9 @@ public class AvailableOpponentController : ControllerBase
         "AvailableOpponents",
         typeof(List<AvailableOpponentResponse>)
     )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized")]
-    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound")]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable")]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status404NotFound, "Status404NotFound", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> GetAvailableOpponents()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -81,7 +81,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (!availableOpponents.Any())
         {
-            return NotFound("Refresh first");
+            return NotFound("NO_OPPONENTS_AVAILABLE");
         }
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
@@ -138,13 +138,10 @@ public class AvailableOpponentController : ControllerBase
         "AvailableOpponents",
         typeof(List<AvailableOpponentResponse>)
     )]
-    [SwaggerResponse(
-        StatusCodes.Status400BadRequest,
-        "Free refresh is not available at this time. Additional cost is required."
-    )]
-    [SwaggerResponse(StatusCodes.Status401Unauthorized, "")]
-    [SwaggerResponse(StatusCodes.Status423Locked, "")]
-    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "")]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Status400BadRequest", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status401Unauthorized, "Status401Unauthorized", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status423Locked, "Status423Locked", typeof(string))]
+    [SwaggerResponse(StatusCodes.Status503ServiceUnavailable, "Status503ServiceUnavailable", typeof(string))]
     public async Task<IActionResult> RequestFreeRefresh()
     {
         var avatarAddress = HttpContext.User.RequireAvatarAddress();
@@ -158,7 +155,10 @@ public class AvailableOpponentController : ControllerBase
             <= cachedBlockIndex
         )
         {
-            return StatusCode(StatusCodes.Status423Locked);
+            return StatusCode(
+                StatusCodes.Status423Locked,
+                "ROUND_ENDING"
+            );
         }
 
         var participant = await _participateService.ParticipateAsync(
@@ -193,7 +193,7 @@ public class AvailableOpponentController : ControllerBase
 
         if (refreshTicketStatusPerRound.RemainingCount <= 0)
         {
-            return BadRequest("RemainingCount 0");
+            return BadRequest("NO_REFRESH_TICKETS");
         }
 
         var myScore = await _rankingRepo.GetScoreAsync(
@@ -201,10 +201,12 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.Id,
             cachedRound.Id
         );
+
         var opponents = await _rankingRepo.SelectBattleOpponentsAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id
+            cachedRound.Id,
+            cachedSeason.StartBlock == cachedRound.StartBlock
         );
 
         var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
@@ -237,11 +239,13 @@ public class AvailableOpponentController : ControllerBase
                 opponent.AvatarAddress,
                 query => query.Include(p => p.User).ThenInclude(u => u.Clan)
             );
+
             var opponentRank = await _rankingRepo.GetRankAsync(
                 opponentParticipant!.AvatarAddress,
                 cachedSeason.Id,
                 cachedRound.Id
             );
+
             ClanResponse? clanResponse = null;
             if (opponentParticipant.User.ClanId is not null)
             {
