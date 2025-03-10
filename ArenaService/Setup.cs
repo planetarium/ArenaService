@@ -98,29 +98,24 @@ public class Startup
         services.AddSingleton<IConnectionMultiplexer>(provider =>
         {
             var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
-            var connectionString = string.Empty;
             
-            if (!string.IsNullOrEmpty(redisOptions.Username) || !string.IsNullOrEmpty(redisOptions.Password))
+            var config = new ConfigurationOptions
             {
-                var credentials = string.Empty;
-                if (!string.IsNullOrEmpty(redisOptions.Username))
-                {
-                    credentials = redisOptions.Username;
-                }
-                
-                if (!string.IsNullOrEmpty(redisOptions.Password))
-                {
-                    credentials += ":" + redisOptions.Password;
-                }
-                
-                connectionString = $"{credentials}@{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}";
-            }
-            else
+                EndPoints = { { redisOptions.Host, int.Parse(redisOptions.Port) } },
+                DefaultDatabase = redisOptions.RankingDbNumber
+            };
+            
+            if (!string.IsNullOrEmpty(redisOptions.Username))
             {
-                connectionString = $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}";
+                config.User = redisOptions.Username;
             }
             
-            return ConnectionMultiplexer.Connect(connectionString);
+            if (!string.IsNullOrEmpty(redisOptions.Password))
+            {
+                config.Password = redisOptions.Password;
+            }
+            
+            return ConnectionMultiplexer.Connect(config);
         });
 
         services.AddEndpointsApiExplorer();
@@ -189,8 +184,25 @@ public class Startup
             (provider, config) =>
             {
                 var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
+                
+                var redisConfig = new ConfigurationOptions
+                {
+                    EndPoints = { { redisOptions.Host, int.Parse(redisOptions.Port) } },
+                    DefaultDatabase = redisOptions.HangfireDbNumber
+                };
+                
+                if (!string.IsNullOrEmpty(redisOptions.Username))
+                {
+                    redisConfig.User = redisOptions.Username;
+                }
+                
+                if (!string.IsNullOrEmpty(redisOptions.Password))
+                {
+                    redisConfig.Password = redisOptions.Password;
+                }
+                
                 config.UseRedisStorage(
-                    $"{redisOptions.Host}:{redisOptions.Port}",
+                    ConnectionMultiplexer.Connect(redisConfig),
                     new RedisStorageOptions
                     {
                         Prefix = redisOptions.HangfirePrefix,
