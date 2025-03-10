@@ -98,9 +98,29 @@ public class Startup
         services.AddSingleton<IConnectionMultiplexer>(provider =>
         {
             var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
-            return ConnectionMultiplexer.Connect(
-                $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}"
-            );
+            var connectionString = string.Empty;
+            
+            if (!string.IsNullOrEmpty(redisOptions.Username) || !string.IsNullOrEmpty(redisOptions.Password))
+            {
+                var credentials = string.Empty;
+                if (!string.IsNullOrEmpty(redisOptions.Username))
+                {
+                    credentials = redisOptions.Username;
+                }
+                
+                if (!string.IsNullOrEmpty(redisOptions.Password))
+                {
+                    credentials += ":" + redisOptions.Password;
+                }
+                
+                connectionString = $"{credentials}@{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}";
+            }
+            else
+            {
+                connectionString = $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}";
+            }
+            
+            return ConnectionMultiplexer.Connect(connectionString);
         });
 
         services.AddEndpointsApiExplorer();
