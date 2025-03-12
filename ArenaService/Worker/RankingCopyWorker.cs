@@ -100,7 +100,7 @@ public class RankingCopyWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred in {nameof(RankingCopyWorker)}.");
-                break;
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
 
             await Task.Delay(
