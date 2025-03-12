@@ -127,7 +127,7 @@ public class PrepareRankingWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred in {nameof(PrepareRankingWorker)}.");
-                break;
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
 
             await Task.Delay(

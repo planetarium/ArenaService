@@ -63,7 +63,7 @@ public class CacheBlockTipWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"An error occurred in {nameof(CacheBlockTipWorker)}.");
-                break;
+                await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(4), stoppingToken);

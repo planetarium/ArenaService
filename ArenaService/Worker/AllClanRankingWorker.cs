@@ -50,6 +50,7 @@ public class AllClanRankingWorker : BackgroundService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "An error occurred in AllClanRankingWorker.");
+                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
             }
 
             await Task.Delay(TimeSpan.FromSeconds(UpdateIntervalSeconds), stoppingToken);
