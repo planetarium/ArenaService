@@ -37,25 +37,29 @@ namespace ArenaService.Utils
                 LocalDbPort = dbPort + 10000;
                 LocalRedisPort = redisPort;
 
-                _logger.LogInformation($"SSH tunnel will use local port {LocalDbPort} for DB and {LocalRedisPort} for Redis");
+                _logger.LogInformation(
+                    $"SSH tunnel will use local port {LocalDbPort} for DB and {LocalRedisPort} for Redis"
+                );
 
                 _sshClient = new SshClient(sshHostname, sshPort, sshUsername, password);
-                
+
                 _dbTunnel = new ForwardedPortLocal(
-                    "0.0.0.0",
+                    "127.0.0.1",
                     (uint)LocalDbPort,
                     dbHost,
                     (uint)dbPort
                 );
 
                 _redisTunnel = new ForwardedPortLocal(
-                    "0.0.0.0",
+                    "127.0.0.1",
                     (uint)LocalRedisPort,
                     redisHost,
                     (uint)redisPort
                 );
 
-                _logger.LogInformation($"SSH tunnels created: DB {dbHost}:{dbPort} -> 0.0.0.0:{LocalDbPort}, Redis {redisHost}:{redisPort} -> 0.0.0.0:{LocalRedisPort}");
+                _logger.LogInformation(
+                    $"SSH tunnels created: DB {dbHost}:{dbPort} -> 127.0.0.1:{LocalDbPort}, Redis {redisHost}:{redisPort} -> 127.0.0.1:{LocalRedisPort}"
+                );
             }
             catch (Exception ex)
             {
@@ -77,7 +81,10 @@ namespace ArenaService.Utils
                 KeepAliveInterval,
                 KeepAliveInterval
             );
-            _logger.LogInformation("SSH tunnel monitoring started with interval {interval}ms", KeepAliveInterval);
+            _logger.LogInformation(
+                "SSH tunnel monitoring started with interval {interval}ms",
+                KeepAliveInterval
+            );
         }
 
         private void ConnectAndStartTunnels()
@@ -106,9 +113,6 @@ namespace ArenaService.Utils
                     _redisTunnel.Start();
                     _logger.LogInformation($"Redis tunnel started on local port {LocalRedisPort}");
                 }
-                
-                var testCmd = _sshClient.RunCommand("netstat -an | grep LISTEN");
-                _logger.LogInformation("SSH server open ports: {output}", testCmd.Result);
             }
             catch (Exception ex)
             {
@@ -126,9 +130,13 @@ namespace ArenaService.Utils
             {
                 bool needsReconnect =
                     !_sshClient.IsConnected || !_dbTunnel.IsStarted || !_redisTunnel.IsStarted;
-                
-                _logger.LogDebug("SSH connection status: SSH Connected={sshConnected}, DB Tunnel={dbTunnel}, Redis Tunnel={redisTunnel}", 
-                    _sshClient.IsConnected, _dbTunnel.IsStarted, _redisTunnel.IsStarted);
+
+                _logger.LogDebug(
+                    "SSH connection status: SSH Connected={sshConnected}, DB Tunnel={dbTunnel}, Redis Tunnel={redisTunnel}",
+                    _sshClient.IsConnected,
+                    _dbTunnel.IsStarted,
+                    _redisTunnel.IsStarted
+                );
 
                 if (needsReconnect)
                 {
@@ -157,7 +165,6 @@ namespace ArenaService.Utils
                 int attempts = 0;
                 bool reconnected = false;
 
-                // 여러 번 재연결 시도
                 while (!reconnected && attempts < ReconnectAttempts && !_isDisposed)
                 {
                     attempts++;

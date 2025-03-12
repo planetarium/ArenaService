@@ -101,18 +101,16 @@ public class Startup
         services.AddDbContext<ArenaDbContext>(options =>
         {
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
-            
+
             if (_sshTunnel != null)
             {
                 var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
-                builder.Host = "localhost";
+                builder.Host = "127.0.0.1";
                 builder.Port = _sshTunnel.LocalDbPort;
                 connectionString = builder.ConnectionString;
             }
-            
-            options
-                .UseNpgsql(connectionString)
-                .UseSnakeCaseNamingConvention();
+
+            options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
         });
 
         services.AddSingleton<IConnectionMultiplexer>(provider =>
@@ -124,7 +122,7 @@ public class Startup
                 DefaultDatabase = redisOptions.RankingDbNumber
             };
 
-            // When SSH tunnel is enabled, use localhost
+            // When SSH tunnel is enabled, use 127.0.0.1
             if (_sshTunnel != null)
             {
                 config.EndPoints.Add("127.0.0.1", int.Parse(redisOptions.Port));
@@ -220,7 +218,7 @@ public class Startup
                     DefaultDatabase = redisOptions.HangfireDbNumber
                 };
 
-                // When SSH tunnel is enabled, use localhost
+                // When SSH tunnel is enabled, use 127.0.0.1
                 if (_sshTunnel != null)
                 {
                     redisConfig.EndPoints.Add("127.0.0.1", int.Parse(redisOptions.Port));
