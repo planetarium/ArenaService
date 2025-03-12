@@ -101,15 +101,18 @@ public class Startup
         services.AddDbContext<ArenaDbContext>(options =>
         {
             var connectionString = Configuration.GetConnectionString("DefaultConnection");
-
+            
             if (_sshTunnel != null)
             {
                 var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
-                builder.Host = "127.0.0.1";
+                builder.Host = "localhost";
+                builder.Port = _sshTunnel.LocalDbPort;
                 connectionString = builder.ConnectionString;
             }
-
-            options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
+            
+            options
+                .UseNpgsql(connectionString)
+                .UseSnakeCaseNamingConvention();
         });
 
         services.AddSingleton<IConnectionMultiplexer>(provider =>
