@@ -13,20 +13,26 @@ using ArenaService.Shared.Data;
 using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Repositories;
 using ArenaService.Shared.Services;
+using ArenaService.Utils;
 using ArenaService.Worker;
 using Hangfire;
 using Hangfire.Redis.StackExchange;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Converters;
+using Npgsql;
 using StackExchange.Redis;
 
 public class Startup
 {
     public IConfiguration Configuration { get; }
+    private SshTunnel? _sshTunnel;
 
     public Startup(IConfiguration configuration)
     {
@@ -40,6 +46,7 @@ public class Startup
         services.Configure<OpsConfigOptions>(
             Configuration.GetSection(OpsConfigOptions.SectionName)
         );
+        services.Configure<SshOptions>(Configuration.GetSection(SshOptions.SectionName));
 
         services
             .AddHeadlessClient()
@@ -89,32 +96,51 @@ public class Startup
             .AddAuthentication("ES256K")
             .AddScheme<AuthenticationSchemeOptions, ES256KAuthenticationHandler>("ES256K", null);
 
+        SetupSshTunneling(services);
+
         services.AddDbContext<ArenaDbContext>(options =>
-            options
-                .UseNpgsql(Configuration.GetConnectionString("DefaultConnection"))
-                .UseSnakeCaseNamingConvention()
-        );
+        {
+            var connectionString = Configuration.GetConnectionString("DefaultConnection");
+
+            if (_sshTunnel != null)
+            {
+                var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+                builder.Host = "127.0.0.1";
+                connectionString = builder.ConnectionString;
+            }
+
+            options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
+        });
 
         services.AddSingleton<IConnectionMultiplexer>(provider =>
         {
             var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
-            
+
             var config = new ConfigurationOptions
             {
-                EndPoints = { { redisOptions.Host, int.Parse(redisOptions.Port) } },
                 DefaultDatabase = redisOptions.RankingDbNumber
             };
-            
+
+            // When SSH tunnel is enabled, use localhost
+            if (_sshTunnel != null)
+            {
+                config.EndPoints.Add("127.0.0.1", int.Parse(redisOptions.Port));
+            }
+            else
+            {
+                config.EndPoints.Add(redisOptions.Host, int.Parse(redisOptions.Port));
+            }
+
             if (!string.IsNullOrEmpty(redisOptions.Username))
             {
                 config.User = redisOptions.Username;
             }
-            
+
             if (!string.IsNullOrEmpty(redisOptions.Password))
             {
                 config.Password = redisOptions.Password;
             }
-            
+
             return ConnectionMultiplexer.Connect(config);
         });
 
@@ -184,23 +210,33 @@ public class Startup
             (provider, config) =>
             {
                 var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
-                
+
                 var redisConfig = new ConfigurationOptions
                 {
                     EndPoints = { { redisOptions.Host, int.Parse(redisOptions.Port) } },
                     DefaultDatabase = redisOptions.HangfireDbNumber
                 };
-                
+
+                // When SSH tunnel is enabled, use localhost
+                if (_sshTunnel != null)
+                {
+                    redisConfig.EndPoints.Add("127.0.0.1", int.Parse(redisOptions.Port));
+                }
+                else
+                {
+                    redisConfig.EndPoints.Add(redisOptions.Host, int.Parse(redisOptions.Port));
+                }
+
                 if (!string.IsNullOrEmpty(redisOptions.Username))
                 {
                     redisConfig.User = redisOptions.Username;
                 }
-                
+
                 if (!string.IsNullOrEmpty(redisOptions.Password))
                 {
                     redisConfig.Password = redisOptions.Password;
                 }
-                
+
                 config.UseRedisStorage(
                     ConnectionMultiplexer.Connect(redisConfig),
                     new RedisStorageOptions
@@ -239,6 +275,45 @@ public class Startup
         services.AddHealthChecks();
     }
 
+    private void SetupSshTunneling(IServiceCollection services)
+    {
+        var sshOptions = Configuration.GetSection(SshOptions.SectionName).Get<SshOptions>();
+
+        if (sshOptions?.Enabled == true)
+        {
+            var tempServiceProvider = services.BuildServiceProvider();
+            var loggerFactory = tempServiceProvider.GetRequiredService<ILoggerFactory>();
+            var logger = loggerFactory.CreateLogger<SshTunnel>();
+
+            var connectionString = Configuration.GetConnectionString("DefaultConnection");
+            var builder = new Npgsql.NpgsqlConnectionStringBuilder(connectionString);
+            string dbHost = builder.Host;
+            int dbPort = builder.Port;
+
+            var redisOptions = Configuration
+                .GetSection(RedisOptions.SectionName)
+                .Get<RedisOptions>();
+            string redisHost = redisOptions.Host;
+            int redisPort = int.Parse(redisOptions.Port);
+
+            _sshTunnel = new SshTunnel(
+                sshOptions.Host,
+                sshOptions.Port,
+                sshOptions.Username,
+                sshOptions.Password,
+                dbHost,
+                dbPort,
+                redisHost,
+                redisPort,
+                logger
+            );
+
+            _sshTunnel.Start();
+
+            logger.LogInformation("SSH tunneling enabled successfully");
+        }
+    }
+
     public void Configure(
         IApplicationBuilder app,
         IWebHostEnvironment env,
@@ -273,6 +348,18 @@ public class Startup
             endpoints.MapControllers();
             endpoints.MapSwagger();
             endpoints.MapHealthChecks("/ping");
+        });
+
+        var lifetime = serviceProvider.GetRequiredService<IHostApplicationLifetime>();
+        lifetime.ApplicationStopping.Register(() =>
+        {
+            if (_sshTunnel != null)
+            {
+                _sshTunnel.Dispose();
+                serviceProvider
+                    .GetRequiredService<ILogger<Startup>>()
+                    .LogInformation("SSH tunnel disposed successfully");
+            }
         });
     }
 }

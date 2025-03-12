@@ -19,6 +19,7 @@
     <PackageReference Include="Swashbuckle.AspNetCore.Newtonsoft" Version="7.2.0" />
     <PackageReference Include="Libplanet.Crypto" Version="5.5.0" />
     <PackageReference Include="Libplanet.Types" Version="5.5.0" />
+    <PackageReference Include="SSH.NET" Version="2020.0.2" />
   </ItemGroup>
 
   <ItemGroup>
