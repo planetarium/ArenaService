@@ -15,7 +15,7 @@ public static class RefreshTicketPurchaseLogExtensions
             PurchaseStatus = log.PurchaseStatus,
             AmountPaid = log.AmountPaid,
             TxId = log.TxId,
-            TxStatus = log.TxStatus,
+            TxStatus = log.TxStatus is null ? Models.Enums.TxStatus.INVALID : log.TxStatus,
         };
     }
 }
