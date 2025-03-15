@@ -13,6 +13,6 @@ public class TicketPurchaseLogResponse
     public required PurchaseStatus PurchaseStatus { get; set; }
     public required TxId TxId { get; set; }
 
-    [JsonProperty(Required = Required.DisallowNull)]
+    [JsonProperty(Required = Required.AllowNull)]
     public TxStatus? TxStatus { get; set; }
 }
