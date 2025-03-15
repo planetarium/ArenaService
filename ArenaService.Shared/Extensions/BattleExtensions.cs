@@ -15,7 +15,7 @@ public static class BattleExtensions
             OpponentAvatarAddress = battle.AvailableOpponent.OpponentAvatarAddress,
             BattleStatus = battle.BattleStatus,
             TxId = battle.TxId,
-            TxStatus = battle.TxStatus,
+            TxStatus = battle.TxStatus is null ? Models.Enums.TxStatus.INVALID : battle.TxStatus,
             IsVictory = battle.IsVictory,
             MyScore = battle.Participant.Score,
             MyScoreChange = battle.MyScoreChange,
