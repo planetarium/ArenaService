@@ -121,7 +121,6 @@ public class Startup
                 DefaultDatabase = redisOptions.RankingDbNumber
             };
 
-            // When SSH tunnel is enabled, use localhost
             if (_sshTunnel != null)
             {
                 config.EndPoints.Add("127.0.0.1", int.Parse(redisOptions.Port));
@@ -213,11 +212,9 @@ public class Startup
 
                 var redisConfig = new ConfigurationOptions
                 {
-                    EndPoints = { { redisOptions.Host, int.Parse(redisOptions.Port) } },
                     DefaultDatabase = redisOptions.HangfireDbNumber
                 };
 
-                // When SSH tunnel is enabled, use localhost
                 if (_sshTunnel != null)
                 {
                     redisConfig.EndPoints.Add("127.0.0.1", int.Parse(redisOptions.Port));
