@@ -8,28 +8,28 @@
 @inject ISeasonCacheRepository SeasonCacheRepo
 @inject NavigationManager NavigationManager
 
-<h3>🏆 시즌 목록</h3>
+<h3>🏆 Season List</h3>
 
 @if (loading)
 {
-    <p>로딩 중...</p>
+    <p>Loading...</p>
 }
 else
 {
-    <h4>📅 시즌 목록</h4>
+    <h4>📅 Season List</h4>
     <table class="table">
         <thead>
             <tr>
                 <th>ID</th>
-                <th>시즌 그룹 ID</th>
-                <th>시작 블록</th>
-                <th>종료 블록</th>
-                <th>타입</th>
-                <th>라운드 간격</th>
-                <th>필요 메달</th>
-                <th>상금</th>
-                <th>배틀티켓 정책</th>
-                <th>리프레시티켓 정책</th>
+                <th>Season Group ID</th>
+                <th>Start Block</th>
+                <th>End Block</th>
+                <th>Type</th>
+                <th>Round Interval</th>
+                <th>Required Medals</th>
+                <th>Total Prize</th>
+                <th>Battle Ticket Policy</th>
+                <th>Refresh Ticket Policy</th>
             </tr>
         </thead>
         <tbody>
@@ -52,21 +52,21 @@ else
     </table>
 
     <div class="pagination">
-        <button @onclick="PreviousPage" disabled="@(!CanGoPrevious)">이전</button>
-        <span>페이지 @(currentPage) / @totalPages</span>
-        <button @onclick="NextPage" disabled="@(!CanGoNext)">다음</button>
+        <button @onclick="PreviousPage" disabled="@(!CanGoPrevious)">Previous</button>
+        <span>Page @(currentPage) / @totalPages</span>
+        <button @onclick="NextPage" disabled="@(!CanGoNext)">Next</button>
     </div>
 }
 
 @if (selectedSeason != null)
 {
-    <h4>📋 선택한 시즌의 라운드 목록</h4>
+    <h4>📋 Selected Season's Round List</h4>
     <table class="table">
         <thead>
             <tr>
-                <th>라운드 ID</th>
-                <th>시작 블록</th>
-                <th>종료 블록</th>
+                <th>Round ID</th>
+                <th>Start Block</th>
+                <th>End Block</th>
             </tr>
         </thead>
         <tbody>
@@ -82,21 +82,21 @@ else
     </table>
 }
 
-<h4>🆕 새 시즌 추가</h4>
+<h4>🆕 Add New Season</h4>
 <div class="form-group">
-    <label>시즌 시작 블록:</label>
+    <label>Season Start Block:</label>
     <input class="form-control" type="number" @bind="newStartBlock" />
 </div>
 <div class="form-group">
-    <label>라운드 인터벌:</label>
+    <label>Round Interval:</label>
     <input class="form-control" type="number" @bind="newRoundInterval" />
 </div>
 <div class="form-group">
-    <label>총 진행할 라운드 수:</label>
+    <label>Total Number of Rounds:</label>
     <input class="form-control" type="number" @bind="newRoundCount" />
 </div>
 <div class="form-group">
-    <label>아레나 타입:</label>
+    <label>Arena Type:</label>
     <select class="form-control" @bind="newArenaType">
         @foreach (var type in Enum.GetValues<ArenaType>())
         {
@@ -105,11 +105,11 @@ else
     </select>
 </div>
 <div class="form-group">
-    <label>필요 메달 숫자:</label>
+    <label>Required Medal Count:</label>
     <input class="form-control" type="number" @bind="newRequiredMedalCount" />
 </div>
 <div class="form-group">
-    <label>상금:</label>
+    <label>Total Prize:</label>
     <input class="form-control" type="number" @bind="newTotalPrize" />
 </div>
 <div class="form-group">
@@ -120,7 +120,7 @@ else
     <label>Refresh Policy ID:</label>
     <input class="form-control" type="number" @bind="newRefreshPolicyId" />
 </div>
-<button class="btn btn-primary" @onclick="AddSeason">시즌 추가</button>
+<button class="btn btn-primary" @onclick="AddSeason">Add Season</button>
 
 @if (message is not null)
 {
@@ -183,7 +183,7 @@ else
         }
         catch (Exception ex)
         {
-            message = $"❌ 시즌 추가 실패: {ex.Message}";
+            message = $"❌ Failed to add season: {ex.Message}";
         }
     }
 
