@@ -324,7 +324,7 @@ public class Startup
         app.UseRouting();
         app.UseAuthentication();
         app.UseAuthorization();
-        app.UseHttpsRedirection();
+        // app.UseHttpsRedirection();
         app.UseCors("AllowAllOrigins");
 
         app.UseHangfireDashboard(
