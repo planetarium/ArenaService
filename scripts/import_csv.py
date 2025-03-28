@@ -42,6 +42,11 @@ def import_csv_to_db(conn, table_name, csv_path, temp_file=None, transform_func=
         transform_func: CSV 데이터 변환 함수 (필요한 경우)
     """
     try:
+        # 파일이 존재하는지 확인
+        if not os.path.exists(csv_path):
+            print(f"⚠️ {os.path.basename(csv_path)} 파일이 존재하지 않아 건너뜁니다.")
+            return False
+            
         # 만약 변환 함수가 있고 임시 파일 이름이 제공된 경우
         if transform_func and temp_file:
             # 원본 CSV를 변환하여 임시 파일로 저장
@@ -67,6 +72,8 @@ def import_csv_to_db(conn, table_name, csv_path, temp_file=None, transform_func=
             # 변환된 임시 파일이 있으면 삭제
             if transform_func and temp_file and os.path.exists(temp_file):
                 os.remove(temp_file)
+            
+            return True
                 
     except Exception as e:
         conn.rollback()
@@ -86,6 +93,10 @@ def update_success_battle_id(conn, opponents_csv_path):
     """
     available_opponents 테이블의 success_battle_id를 원본 CSV 파일의 값으로 업데이트합니다.
     """
+    if not os.path.exists(opponents_csv_path):
+        print(f"⚠️ {os.path.basename(opponents_csv_path)} 파일이 존재하지 않아 success_battle_id 업데이트를 건너뜁니다.")
+        return
+        
     try:
         df = pd.read_csv(opponents_csv_path)
         valid_updates = df[df['success_battle_id'].notna()]
@@ -131,8 +142,34 @@ def reset_sequences(conn):
         
         with conn.cursor() as cursor:
             for table_name in tables:
+                # 테이블 존재 여부 확인
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = %s
+                    )
+                """, (table_name,))
+                
+                if not cursor.fetchone()[0]:
+                    print(f"⚠️ {table_name} 테이블이 존재하지 않아 시퀀스 재설정을 건너뜁니다.")
+                    continue
+                
                 # 시퀀스 이름 생성
                 sequence_name = f"{table_name}_id_seq"
+                
+                # 시퀀스 존재 여부 확인
+                cursor.execute("""
+                    SELECT EXISTS (
+                        SELECT FROM pg_sequences
+                        WHERE schemaname = 'public'
+                        AND sequencename = %s
+                    )
+                """, (sequence_name,))
+                
+                if not cursor.fetchone()[0]:
+                    print(f"⚠️ {sequence_name} 시퀀스가 존재하지 않아 재설정을 건너뜁니다.")
+                    continue
                 
                 # 테이블의 레코드 수 조회
                 cursor.execute(f"SELECT COUNT(*) FROM {table_name}")
@@ -177,46 +214,77 @@ def main(folder_path):
     battle_ticket_purchase_logs_csv = os.path.join(folder_path, "battle_ticket_purchase_logs.csv")
     battle_ticket_usage_logs_csv = os.path.join(folder_path, "battle_ticket_usage_logs.csv")
     
+    # 폴더 존재 확인
+    if not os.path.exists(folder_path):
+        print(f"❌ {folder_path} 폴더가 존재하지 않습니다.")
+        return
+    
+    # 존재하는 파일 목록 확인
+    existing_files = [f for f in os.listdir(folder_path) if f.endswith('.csv')]
+    if not existing_files:
+        print(f"❌ {folder_path} 폴더에 CSV 파일이 존재하지 않습니다.")
+        return
+    
+    print(f"📋 {folder_path} 폴더에서 다음 CSV 파일을 찾았습니다: {', '.join(existing_files)}")
+    
+    # 임포트할 테이블과 CSV 파일 매핑
+    table_csv_mapping = {
+        "users": users_csv,
+        "refresh_ticket_policies": refresh_ticket_policies_csv,
+        "battle_ticket_policies": battle_ticket_policies_csv,
+        "clans": clans_csv,
+        "seasons": seasons_csv,
+        "rounds": rounds_csv,
+        "participants": participants_csv,
+        "medals": medals_csv,
+        "ranking_snapshots": ranking_snapshots_csv,
+        "refresh_ticket_statuses_per_round": refresh_ticket_statuses_per_round_csv,
+        "refresh_ticket_purchase_logs": refresh_ticket_purchase_logs_csv,
+        "refresh_ticket_usage_logs": refresh_ticket_usage_logs_csv,
+        "battles": battles_csv,
+        "battle_ticket_statuses_per_round": battle_ticket_statuses_per_round_csv,
+        "battle_ticket_statuses_per_season": battle_ticket_statuses_per_season_csv,
+        "battle_ticket_purchase_logs": battle_ticket_purchase_logs_csv,
+        "battle_ticket_usage_logs": battle_ticket_usage_logs_csv
+    }
+    
     try:
         with psycopg2.connect(CONVERTED_CONNECTION_STRING) as conn:
             # 1단계: users, refresh_ticket_policies, battle_ticket_policies, clans
             print("👉 1단계 임포트 시작: users, refresh_ticket_policies, battle_ticket_policies, clans")
-            import_csv_to_db(conn, "users", users_csv)
-            import_csv_to_db(conn, "refresh_ticket_policies", refresh_ticket_policies_csv)
-            import_csv_to_db(conn, "battle_ticket_policies", battle_ticket_policies_csv)
-            import_csv_to_db(conn, "clans", clans_csv)
+            for table in ["users", "refresh_ticket_policies", "battle_ticket_policies", "clans"]:
+                import_csv_to_db(conn, table, table_csv_mapping[table])
             
             # 2단계: seasons, rounds
             print("\n👉 2단계 임포트 시작: seasons, rounds")
-            import_csv_to_db(conn, "seasons", seasons_csv)
-            import_csv_to_db(conn, "rounds", rounds_csv)
+            for table in ["seasons", "rounds"]:
+                import_csv_to_db(conn, table, table_csv_mapping[table])
             
             # 3단계: participants, medals, ranking_snapshots, refresh_ticket_statuses_per_round, 
             # refresh_ticket_purchase_logs, refresh_ticket_usage_logs
             print("\n👉 3단계 임포트 시작: participants, medals, ranking_snapshots, refresh_ticket_statuses_per_round, refresh_ticket_purchase_logs, refresh_ticket_usage_logs")
-            import_csv_to_db(conn, "participants", participants_csv)
-            import_csv_to_db(conn, "medals", medals_csv)
-            import_csv_to_db(conn, "ranking_snapshots", ranking_snapshots_csv)
-            import_csv_to_db(conn, "refresh_ticket_statuses_per_round", refresh_ticket_statuses_per_round_csv)
-            import_csv_to_db(conn, "refresh_ticket_purchase_logs", refresh_ticket_purchase_logs_csv)
-            import_csv_to_db(conn, "refresh_ticket_usage_logs", refresh_ticket_usage_logs_csv)
+            for table in ["participants", "medals", "ranking_snapshots", "refresh_ticket_statuses_per_round", 
+                         "refresh_ticket_purchase_logs", "refresh_ticket_usage_logs"]:
+                import_csv_to_db(conn, table, table_csv_mapping[table])
             
             # 4단계: available_opponents - success_battle_id를 NULL로 변경하여 임포트
             print("\n👉 4단계 임포트 시작: available_opponents (success_battle_id를 NULL로 변경)")
-            import_csv_to_db(conn, "available_opponents", available_opponents_csv, 
-                             temp_file=temp_file_path, transform_func=transform_available_opponents)
+            if os.path.exists(available_opponents_csv):
+                import_csv_to_db(conn, "available_opponents", available_opponents_csv, 
+                                temp_file=temp_file_path, transform_func=transform_available_opponents)
+            else:
+                print(f"⚠️ {os.path.basename(available_opponents_csv)} 파일이 존재하지 않아 건너뜁니다.")
             
             # 5단계: battles
             print("\n👉 5단계 임포트 시작: battles")
-            import_csv_to_db(conn, "battles", battles_csv)
+            import_csv_to_db(conn, "battles", table_csv_mapping["battles"])
             
             # 6단계: battle_ticket_statuses_per_round, battle_ticket_statuses_per_season, 
             # battle_ticket_purchase_logs, battle_ticket_usage_logs
             print("\n👉 6단계 임포트 시작: battle_ticket_statuses_per_round, battle_ticket_statuses_per_season, battle_ticket_purchase_logs, battle_ticket_usage_logs")
-            import_csv_to_db(conn, "battle_ticket_statuses_per_round", battle_ticket_statuses_per_round_csv)
-            import_csv_to_db(conn, "battle_ticket_statuses_per_season", battle_ticket_statuses_per_season_csv)
-            import_csv_to_db(conn, "battle_ticket_purchase_logs", battle_ticket_purchase_logs_csv)
-            import_csv_to_db(conn, "battle_ticket_usage_logs", battle_ticket_usage_logs_csv)
+            for table in ["battle_ticket_statuses_per_round", "battle_ticket_statuses_per_season", 
+                         "battle_ticket_purchase_logs", "battle_ticket_usage_logs"]:
+                import_csv_to_db(conn, table, table_csv_mapping[table])
             
             # 7단계: available_opponents의 success_battle_id 복구
             print("\n👉 7단계 임포트 시작: available_opponents의 success_battle_id 복구")
@@ -226,7 +294,7 @@ def main(folder_path):
             print("\n👉 8단계 진행: 모든 테이블의 자동 증가 시퀀스 재설정")
             reset_sequences(conn)
             
-            print("\n🎉 모든 데이터 임포트가 성공적으로 완료되었습니다!")
+            print("\n🎉 데이터 임포트가 완료되었습니다!")
             
     except Exception as e:
         print(f"\n❌ 데이터 임포트 중 오류가 발생했습니다: {e}")

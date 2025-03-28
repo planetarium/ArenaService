@@ -1,0 +1,4 @@
+id,season_group_id,start_block,end_block,arena_type,round_interval,required_medal_count,total_prize,prize_detail_url,battle_ticket_policy_id,refresh_ticket_policy_id,created_at,updated_at
+1,0,1,2,2,1,1,1,test,1,1,2025-03-19 06:13:22.430516+00,2025-03-19 06:13:22.430516+00
+3,1,5242616,10485232,1,5242616,0,1,test,1,1,2025-03-19 06:14:19.998405+00,2025-03-19 06:14:19.998405+00
+4,1,10485233,10485234,2,1,0,1,test,3,3,2025-03-19 06:14:19.998405+00,2025-03-19 06:14:19.998405+00
