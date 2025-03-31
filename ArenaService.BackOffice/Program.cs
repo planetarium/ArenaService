@@ -101,6 +101,20 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
+builder.Services.AddHttpsRedirection(options =>
+{
+    options.RedirectStatusCode = StatusCodes.Status307TemporaryRedirect;
+});
+
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                              ForwardedHeaders.XForwardedProto |
+                              ForwardedHeaders.XForwardedHost;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
+
 app.Use(
     async (context, next) =>
     {
@@ -112,8 +126,10 @@ app.Use(
     }
 );
 
+app.UseForwardedHeaders();
 app.UseRouting();
 
+app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
