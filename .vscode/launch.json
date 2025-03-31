@@ -22,7 +22,7 @@
             "cwd": "${workspaceFolder}/ArenaService.BackOffice",
             "stopAtEntry": false,
             "env": {
-                "ASPNETCORE_ENVIRONMENT": "Development"
+                "ASPNETCORE_ENVIRONMENT": "Local"
             }
         }
     ]

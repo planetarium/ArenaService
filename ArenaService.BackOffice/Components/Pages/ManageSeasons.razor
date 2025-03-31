@@ -1,8 +1,11 @@
 @page "/manage-seasons"
+@using Microsoft.AspNetCore.Authorization
 @using ArenaService.Shared.Repositories
 @using ArenaService.Shared.Services
 @using ArenaService.Shared.Models
 @using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+@rendermode InteractiveServer
 @inject ISeasonRepository SeasonRepo
 @inject ISeasonCacheRepository SeasonCacheRepo
 @inject IRankingRepository RankingRepo

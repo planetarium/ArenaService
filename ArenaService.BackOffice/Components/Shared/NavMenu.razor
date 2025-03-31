@@ -1,0 +1,48 @@
+﻿<div class="top-row ps-3 navbar navbar-dark">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="">ArenaService.Backoffice</a>
+    </div>
+</div>
+
+<input type="checkbox" title="Navigation menu" class="navbar-toggler"/>
+
+<div class="nav-scrollable" onclick="document.querySelector('.navbar-toggler').click()">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="bi bi-house-door-fill-nav-menu" aria-hidden="true"></span> Home
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="seasons">
+                <span class="bi bi-plus-square-fill-nav-menu" aria-hidden="true"></span> Seasons
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="manage-seasons">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Manage Seasons
+            </NavLink>
+        </div>
+
+    
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="policy">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Policy
+            </NavLink>
+        </div>
+        
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="confirm-tx">
+                <span class="bi bi-list-nested-nav-menu" aria-hidden="true"></span> Confirm tx
+            </NavLink>
+        </div>
+
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="leaderboard">
+                <span class="bi bi-trophy-fill-nav-menu" aria-hidden="true"></span> Leader board
+            </NavLink>
+        </div>
+    </nav>
+</div>

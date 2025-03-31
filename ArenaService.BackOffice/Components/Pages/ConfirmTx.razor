@@ -1,9 +1,12 @@
 @page "/confirm-tx"
+@using Microsoft.AspNetCore.Authorization
 @using ArenaService.Shared.Models.Ticket
 @using ArenaService.Shared.Repositories
 @using ArenaService.Shared.Models.BattleTicket
 @using ArenaService.Shared.Models.Enums
 @using ArenaService.Shared.Models
+@attribute [Authorize]
+@rendermode InteractiveServer
 @inject ITicketRepository TicketRepo
 @inject IBattleRepository BattleRepo
 

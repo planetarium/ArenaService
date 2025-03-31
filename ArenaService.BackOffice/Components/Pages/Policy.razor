@@ -1,7 +1,10 @@
 @page "/policy"
+@using Microsoft.AspNetCore.Authorization
 @using ArenaService.Shared.Models.BattleTicket
 @using ArenaService.Shared.Models.RefreshTicket
 @using ArenaService.Shared.Repositories
+@attribute [Authorize]
+@rendermode InteractiveServer
 @inject IBattleTicketPolicyRepository BattlePolicyRepo
 @inject IRefreshTicketPolicyRepository RefreshPolicyRepo
 
