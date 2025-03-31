@@ -55,9 +55,24 @@ builder.Services.AddDbContext<ArenaDbContext>(options =>
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 {
     var redisOptions = provider.GetRequiredService<IOptions<RedisOptions>>().Value;
-    return ConnectionMultiplexer.Connect(
-        $"{redisOptions.Host}:{redisOptions.Port},defaultDatabase={redisOptions.RankingDbNumber}"
-    );
+    var config = new ConfigurationOptions
+    {
+        DefaultDatabase = redisOptions.RankingDbNumber
+    };
+
+    config.EndPoints.Add(redisOptions.Host, int.Parse(redisOptions.Port));
+
+    if (!string.IsNullOrEmpty(redisOptions.Username))
+    {
+        config.User = redisOptions.Username;
+    }
+
+    if (!string.IsNullOrEmpty(redisOptions.Password))
+    {
+        config.Password = redisOptions.Password;
+    }
+
+    return ConnectionMultiplexer.Connect(config);
 });
 
 builder.Services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
