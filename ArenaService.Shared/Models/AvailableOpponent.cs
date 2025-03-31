@@ -1,10 +1,13 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Libplanet.Crypto;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Shared.Models;
 
 [Table("available_opponents")]
+[Index(nameof(AvatarAddress), nameof(RoundId), nameof(DeletedAt))]
+[Index(nameof(RoundId), nameof(AvatarAddress), nameof(OpponentAvatarAddress), nameof(SuccessBattleId), nameof(DeletedAt))]
 public class AvailableOpponent
 {
     [Key]

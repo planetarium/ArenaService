@@ -1,0 +1,33 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <div class="top-row px-4">
+            <div class="d-flex justify-content-end w-100">
+                <div class="d-flex align-items-center gap-3">
+                    <AuthorizeView>
+                        <Authorized>
+                            <span>@context.User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value</span>
+                        </Authorized>
+                    </AuthorizeView>
+                    <a href="/logout" class="btn btn-outline-dark">logout</a>
+                </div>
+            </div>
+        </div>
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+<div id="blazor-error-ui">
+    에러가 발생했습니다.
+    <a href="" class="reload">refresh</a>
+    <a class="dismiss">🗙</a>
+</div>

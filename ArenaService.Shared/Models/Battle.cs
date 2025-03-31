@@ -3,10 +3,13 @@ using System.ComponentModel.DataAnnotations.Schema;
 using ArenaService.Shared.Models.Enums;
 using Libplanet.Crypto;
 using Libplanet.Types.Tx;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Shared.Models;
 
 [Table("battles")]
+[Index(nameof(Id), nameof(TxId))]
+[Index(nameof(BattleStatus), nameof(Reviewed))]
 public class Battle
 {
     [Key]

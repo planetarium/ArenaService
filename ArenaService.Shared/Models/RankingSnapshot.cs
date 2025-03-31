@@ -8,6 +8,7 @@ namespace ArenaService.Shared.Models;
 [Table("ranking_snapshots")]
 [PrimaryKey(nameof(AvatarAddress), nameof(SeasonId), nameof(RoundId))]
 [Index(nameof(SeasonId), nameof(RoundId))]
+[Index(nameof(SeasonId))]
 public class RankingSnapshot
 {
     [Required]

@@ -1,0 +1,125 @@
+@page "/leaderboard"
+@using Microsoft.AspNetCore.Authorization
+@using ArenaService.Shared.Models
+@using ArenaService.Shared.Repositories
+@using Microsoft.JSInterop
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject ILeaderboardRepository LeaderboardRepository
+@inject ISeasonRepository SeasonRepository
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
+
+<h3>🏆 리더보드</h3>
+
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="form-group">
+            <label>시즌 선택:</label>
+            <select class="form-control" @bind="selectedSeasonId" @bind:after="LoadLeaderboard">
+                @foreach (var season in seasons)
+                {
+                    <option value="@season.Id">@season.Id - @season.ArenaType</option>
+                }
+            </select>
+        </div>
+    </div>
+    <div class="col-md-6 d-flex align-items-end justify-content-end">
+        <button class="btn btn-primary" @onclick="DownloadCsv" disabled="@loading">
+            <i class="bi bi-download me-1"></i> CSV 다운로드
+        </button>
+    </div>
+</div>
+
+@if (loading)
+{
+    <p>로딩 중...</p>
+}
+else if (leaderboard.Count == 0)
+{
+    <p>해당 시즌의 데이터가 없습니다.</p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>순위</th>
+                <th>Avatar 주소</th>
+                <th>Agent 주소</th>
+                <th>이름</th>
+                <th>점수</th>
+                <th>총 승리</th>
+                <th>총 패배</th>
+                <th>레벨</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in leaderboard)
+            {
+                <tr>
+                    <td>@item.Rank</td>
+                    <td>@item.Participant.User.AvatarAddress</td>
+                    <td>@item.Participant.User.AgentAddress</td>
+                    <td>@item.Participant.User.NameWithHash</td>
+                    <td>@item.Score</td>
+                    <td>@item.Participant.TotalWin</td>
+                    <td>@item.Participant.TotalLose</td>
+                    <td>@item.Participant.User.Level</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Season> seasons = new();
+    private List<(Participant Participant, int Score, int Rank)> leaderboard = new();
+    private int selectedSeasonId;
+    private bool loading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        seasons = await SeasonRepository.GetAllSeasonsAsync();
+        
+        if (seasons.Any())
+        {
+            selectedSeasonId = seasons.Max(s => s.Id);
+            await LoadLeaderboard();
+        }
+        else
+        {
+            loading = false;
+        }
+    }
+
+    private async Task LoadLeaderboard()
+    {
+        loading = true;
+        leaderboard = await LeaderboardRepository.GetLeaderboardAsync(selectedSeasonId);
+        loading = false;
+    }
+    
+    private async Task DownloadCsv()
+    {
+        loading = true;
+        
+        try 
+        {
+            var csvData = await LeaderboardRepository.GenerateLeaderboardCsvAsync(selectedSeasonId);
+            string fileName = $"leaderboard_season_{selectedSeasonId}.csv";
+            string base64 = Convert.ToBase64String(csvData);
+            
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64, "text/csv");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"CSV 다운로드 오류: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+}

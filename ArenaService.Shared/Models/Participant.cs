@@ -8,6 +8,7 @@ namespace ArenaService.Shared.Models;
 [Table("participants")]
 [PrimaryKey(nameof(AvatarAddress), nameof(SeasonId))]
 [Index(nameof(SeasonId))]
+[Index(nameof(SeasonId), nameof(Score), IsDescending = [false, true])]
 public class Participant
 {
     [Required]
