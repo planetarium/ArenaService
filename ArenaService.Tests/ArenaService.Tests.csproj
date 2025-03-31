@@ -21,7 +21,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\ArenaService\ArenaService.csproj" />
-    <ProjectReference Include="..\ArenaService.Shared\ArenaService.Shared.csproj" />
   </ItemGroup>
 
 </Project>
