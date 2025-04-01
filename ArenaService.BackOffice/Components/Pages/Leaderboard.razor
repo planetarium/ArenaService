@@ -19,7 +19,7 @@
             <select class="form-control" @bind="selectedSeasonId" @bind:after="LoadLeaderboard">
                 @foreach (var season in seasons)
                 {
-                    <option value="@season.Id">@season.Id - @season.ArenaType</option>
+                    <option value="@season.Id">@season.SeasonGroupId 시즌 (DB PK: @season.Id) - @season.ArenaType</option>
                 }
             </select>
         </div>
