@@ -2,7 +2,7 @@
 
 #nullable disable
 
-namespace ArenaService.Migrations
+namespace ArenaService.Shared.Migrations
 {
     /// <inheritdoc />
     public partial class RemainingCountCannotBeNegative : Migration
