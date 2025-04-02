@@ -3,12 +3,19 @@
 @using ArenaService.Shared.Models
 @using ArenaService.Shared.Repositories
 @using Microsoft.JSInterop
+@using ArenaService.Client
+@using Libplanet.Crypto
+@using Bencodex
+@using Bencodex.Types
+@using ArenaService.Shared.Extensions
+@using System.Text
 @attribute [Authorize]
 @rendermode InteractiveServer
 @inject ILeaderboardRepository LeaderboardRepository
 @inject ISeasonRepository SeasonRepository
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject IHeadlessClient HeadlessClient
 
 <h3>🏆 리더보드</h3>
 
@@ -25,9 +32,14 @@
         </div>
     </div>
     <div class="col-md-6 d-flex align-items-end justify-content-end">
-        <button class="btn btn-primary" @onclick="DownloadCsv" disabled="@loading">
-            <i class="bi bi-download me-1"></i> CSV 다운로드
-        </button>
+        <div class="btn-group">
+            <button class="btn btn-primary" @onclick="DownloadCsv" disabled="@loading">
+                <i class="bi bi-download me-1"></i> CSV 다운로드
+            </button>
+            <button class="btn btn-success" @onclick="DownloadStakingCsv" disabled="@loading">
+                <i class="bi bi-download me-1"></i> 스테이킹 정보 다운로드
+            </button>
+        </div>
     </div>
 </div>
 
@@ -77,6 +89,8 @@ else
     private List<(Participant Participant, int Score, int Rank)> leaderboard = new();
     private int selectedSeasonId;
     private bool loading = true;
+    private static readonly Codec Codec = new();
+    private static readonly Address LegacyAccountAddress = new("1000000000000000000000000000000000000000");
 
     protected override async Task OnInitializedAsync()
     {
@@ -121,5 +135,70 @@ else
         {
             loading = false;
         }
+    }
+    
+    private async Task DownloadStakingCsv()
+    {
+        loading = true;
+        
+        try 
+        {
+            var stakingData = await GetStakingDataAsync();
+            string fileName = $"staking_data_season_{selectedSeasonId}.csv";
+            string base64 = Convert.ToBase64String(stakingData);
+            
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64, "text/csv");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"스테이킹 데이터 다운로드 오류: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+    
+    private async Task<byte[]> GetStakingDataAsync()
+    {
+        StringBuilder csv = new StringBuilder();
+        
+        // CSV 헤더 추가
+        csv.AppendLine("BlockIndex,StakeVersion,AgentAddress,StakingAmount,StartedBlockIndex,ReceivedBlockIndex,CancellableBlockIndex,TimeStamp");
+        
+        foreach (var item in leaderboard)
+        {
+            try 
+            {
+                var agentAddress = item.Participant.User.AgentAddress;
+                var stakeAddress = agentAddress.Derive("stake");
+                
+                var result = await HeadlessClient.GetState.ExecuteAsync(LegacyAccountAddress.ToHex(), stakeAddress.ToHex());
+                
+                if (result.Data.State is not null)
+                {
+                    var decodedState = Codec.Decode(Convert.FromHexString(result.Data.State));
+                    
+                    if (decodedState is Dictionary dict)
+                    {
+                        var blockIndex = dict.ContainsKey((Bencodex.Types.Text)"block_index") ? (long)(Integer)dict[(Bencodex.Types.Text)"block_index"] : 0;
+                        var stakeVersion = dict.ContainsKey((Bencodex.Types.Text)"stake_version") ? (int)(Integer)dict[(Bencodex.Types.Text)"stake_version"] : 0;
+                        var stakingAmount = dict.ContainsKey((Bencodex.Types.Text)"amount") ? dict[(Bencodex.Types.Text)"amount"].ToString() : "0";
+                        var startedBlockIndex = dict.ContainsKey((Bencodex.Types.Text)"started_block_index") ? (long)(Integer)dict[(Bencodex.Types.Text)"started_block_index"] : 0;
+                        var receivedBlockIndex = dict.ContainsKey((Bencodex.Types.Text)"received_block_index") ? (long)(Integer)dict[(Bencodex.Types.Text)"received_block_index"] : 0;
+                        var cancellableBlockIndex = dict.ContainsKey((Bencodex.Types.Text)"cancellable_block_index") ? (long)(Integer)dict[(Bencodex.Types.Text)"cancellable_block_index"] : 0;
+                        var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+                        
+                        csv.AppendLine($"{blockIndex},{stakeVersion},{agentAddress},{stakingAmount},{startedBlockIndex},{receivedBlockIndex},{cancellableBlockIndex},{timestamp}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"스테이킹 정보 조회 오류: {ex.Message}");
+            }
+        }
+        
+        return Encoding.UTF8.GetBytes(csv.ToString());
     }
 }
