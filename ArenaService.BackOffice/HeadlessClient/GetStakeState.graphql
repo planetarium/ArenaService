@@ -1,0 +1,16 @@
+query GetStakeState($addresses: [Address]!) {
+  stateQuery {
+    stakeStates(addresses: $addresses) {
+      address
+      deposit
+      startedBlockIndex
+      receivedBlockIndex
+      cancellableBlockIndex
+    }
+  }
+  nodeStatus {
+    tip {
+      index
+    }
+  }
+}

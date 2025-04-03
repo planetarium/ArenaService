@@ -1,7 +1,0 @@
-query GetTipIndex {
-  nodeStatus {
-    tip {
-      index
-    }
-  }
-}
