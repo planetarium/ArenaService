@@ -1,5 +1,9 @@
+using System.IdentityModel.Tokens.Jwt;
+using System.Net.Http.Headers;
+using System.Text;
 using ArenaService.BackOffice.Components;
 using ArenaService.BackOffice.Options;
+using ArenaService.Options;
 using ArenaService.Shared.Data;
 using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Repositories;
@@ -10,6 +14,7 @@ using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -19,6 +24,7 @@ builder.Services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.S
 builder.Services.Configure<GoogleAuthOptions>(
     configuration.GetSection(GoogleAuthOptions.SectionName)
 );
+builder.Services.Configure<HeadlessOptions>(configuration.GetSection(HeadlessOptions.SectionName));
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
@@ -51,6 +57,36 @@ builder.Services.AddDbContext<ArenaDbContext>(options =>
         .UseNpgsql(configuration.GetConnectionString("DefaultConnection"))
         .UseSnakeCaseNamingConvention()
 );
+
+builder.Services
+    .AddHeadlessClient()
+    .ConfigureHttpClient(
+        (provider, client) =>
+                {
+                    var headlessOptions = provider.GetRequiredService<IOptions<HeadlessOptions>>();
+                    client.BaseAddress = headlessOptions.Value.HeadlessEndpoint;
+
+                    if (
+                        headlessOptions.Value.JwtSecretKey is not null
+                        && headlessOptions.Value.JwtIssuer is not null
+                    )
+                    {
+                        var key = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(headlessOptions.Value.JwtSecretKey)
+                        );
+                        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+                        var token = new JwtSecurityToken(
+                            issuer: headlessOptions.Value.JwtIssuer,
+                            expires: DateTime.UtcNow.AddMinutes(5),
+                            signingCredentials: creds
+                        );
+                        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue(
+                            "Bearer",
+                            new JwtSecurityTokenHandler().WriteToken(token)
+                        );
+                    }
+                }
+            );
 
 builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 {

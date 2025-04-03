@@ -5,7 +5,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace ArenaService.Migrations
+namespace ArenaService.Shared.Migrations
 {
     /// <inheritdoc />
     public partial class InitialCreate : Migration

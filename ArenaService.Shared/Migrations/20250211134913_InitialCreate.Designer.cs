@@ -10,7 +10,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace ArenaService.Migrations
+namespace ArenaService.Shared.Migrations
 {
     [DbContext(typeof(ArenaDbContext))]
     [Migration("20250211134913_InitialCreate")]

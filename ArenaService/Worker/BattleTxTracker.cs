@@ -13,7 +13,6 @@ public class BattleTxTracker : BackgroundService
 {
     private readonly ILogger<BattleTxTracker> _logger;
     private readonly IServiceProvider _serviceProvider;
-    private const string LAST_PROCESSED_BLOCK_KEY = "battle_tx_tracker:last_processed_block";
     private const string ACTION_TYPE = "battle";
     private static readonly Codec Codec = new();
 
@@ -110,12 +109,26 @@ public class BattleTxTracker : BackgroundService
             $"Processing transactions from block {startingBlock} to {currentBlockIndex}"
         );
 
+        int limit = 1;
+        if (blockDiff > 50)
+        {
+            limit = 30;
+        }
+        else if (blockDiff >= 30)
+        {
+            limit = 10;
+        }
+        else if (blockDiff > 10)
+        {
+            limit = 5;
+        }
+
         var response = await RetryUtility.RetryAsync(
             async () =>
             {
                 var response = await client.GetTxs.ExecuteAsync(
                     startingBlock,
-                    1,
+                    limit,
                     ACTION_TYPE,
                     [TxStatus.Success, TxStatus.Staging],
                     stoppingToken
@@ -192,7 +205,7 @@ public class BattleTxTracker : BackgroundService
             }
         }
 
-        await SetLastProcessedBlockAsync(redis, startingBlock + 1);
+        await SetLastProcessedBlockAsync(redis, startingBlock + limit);
     }
 
     private async Task<long> GetLastProcessedBlockAsync(IDatabase redis)

@@ -9,7 +9,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace ArenaService.Migrations
+namespace ArenaService.Shared.Migrations
 {
     [DbContext(typeof(ArenaDbContext))]
     partial class ArenaDbContextModelSnapshot : ModelSnapshot
