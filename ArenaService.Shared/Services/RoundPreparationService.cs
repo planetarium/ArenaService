@@ -16,6 +16,7 @@ public class RoundPreparationService : IRoundPreparationService
     private readonly IRankingSnapshotRepository _rankingSnapshotRepo;
     private readonly IRankingRepository _rankingRepo;
     private readonly IClanRankingRepository _clanRankingRepo;
+    private readonly IParticipantRepository _participantRepo;
     private readonly IClanRepository _clanRepo;
     private readonly IRankingService _rankingService;
     private readonly ILogger<RoundPreparationService> _logger;
@@ -25,6 +26,7 @@ public class RoundPreparationService : IRoundPreparationService
         IRankingRepository rankingRepo,
         IClanRankingRepository clanRankingRepo,
         IClanRepository clanRepo,
+        IParticipantRepository participantRepo,
         IRankingService rankingService,
         ILogger<RoundPreparationService> logger
     )
@@ -32,6 +34,7 @@ public class RoundPreparationService : IRoundPreparationService
         _rankingSnapshotRepo = rankingSnapshotRepo;
         _rankingRepo = rankingRepo;
         _clanRankingRepo = clanRankingRepo;
+        _participantRepo = participantRepo;
         _clanRepo = clanRepo;
         _rankingService = rankingService;
         _logger = logger;
@@ -49,21 +52,34 @@ public class RoundPreparationService : IRoundPreparationService
             return;
         }
 
-        await _rankingRepo.CopyRoundDataAsync(
-            seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id,
-            seasonAndRound.Round.Id + 1,
-            seasonAndRound.Season.RoundInterval
-        );
-
         var clanIds = await _clanRankingRepo.GetClansAsync(
             seasonAndRound.Season.Id,
             seasonAndRound.Round.Id
         );
 
-        var rankingData = await _rankingRepo.GetScoresAsync(
+        var participants = new List<Participant>();
+        int skip = 0;
+        while (true)
+        {
+            var newParticipants = await _participantRepo.GetParticipantsAsync(
+                seasonAndRound.Season.Id,
+                skip,
+                300
+            );
+
+            if (!newParticipants.Any())
+                break;
+
+            participants.AddRange(newParticipants);
+            skip += 300;
+        }
+        var rankingData = participants.Select(p => (p.AvatarAddress, p.Score)).ToList();
+
+        await _rankingRepo.InitRankingAsync(
+            rankingData,
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id
+            seasonAndRound.Round.Id + 1,
+            seasonAndRound.Season.RoundInterval
         );
 
         var clans = await GetClanMappingsAsync(clanIds, seasonAndRound);

@@ -69,7 +69,10 @@ public class RankingCopyWorker : BackgroundService
                         & await rankingSnapshotRepo.GetRankingSnapshotsCount(
                             cachedSeason.Id,
                             cachedRound.Id
-                        ) <= 0
+                        ) < await rankingSnapshotRepo.GetRankingSnapshotsCount(
+                            cachedSeason.Id,
+                            cachedRound.Id - 1
+                        )
                     )
                     {
                         var season = await seasonRepo.GetSeasonAsync(
@@ -124,7 +127,10 @@ public class RankingCopyWorker : BackgroundService
             & await rankingSnapshotRepo.GetRankingSnapshotsCount(
                 nextRoundInfo.Season.Id,
                 nextRoundInfo.Round.Id
-            ) <= 0
+            ) < await rankingSnapshotRepo.GetRankingSnapshotsCount(
+                nextRoundInfo.Season.Id,
+                nextRoundInfo.Round.Id - 1
+            )
         )
         {
             await PrepareNextRound(nextRoundInfo, roundPreparationService);
