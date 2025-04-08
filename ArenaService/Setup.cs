@@ -47,6 +47,7 @@ public class Startup
             Configuration.GetSection(OpsConfigOptions.SectionName)
         );
         services.Configure<SshOptions>(Configuration.GetSection(SshOptions.SectionName));
+        services.Configure<SentryOptions>(Configuration.GetSection(SentryOptions.SectionName));
 
         services
             .AddHeadlessClient()
@@ -270,6 +271,7 @@ public class Startup
 
         services.AddHangfireServer();
         services.AddHealthChecks();
+       
     }
 
     private void SetupSshTunneling(IServiceCollection services)

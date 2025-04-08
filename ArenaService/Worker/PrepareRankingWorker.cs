@@ -152,10 +152,7 @@ public class PrepareRankingWorker : BackgroundService
             & await rankingSnapshotRepo.GetRankingSnapshotsCount(
                 nextSeason.Season.Id,
                 nextSeason.Round.Id
-            ) < await rankingSnapshotRepo.GetRankingSnapshotsCount(
-                nextSeason.Season.Id,
-                nextSeason.Round.Id - 1
-            )
+            ) <= 0
         )
         {
             await PrepareNextSeason(nextSeason, seasonPreparationService);
