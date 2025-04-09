@@ -1,14 +1,22 @@
 @page "/leaderboard"
+@using ArenaService.Shared.Constants
 @using Microsoft.AspNetCore.Authorization
 @using ArenaService.Shared.Models
 @using ArenaService.Shared.Repositories
 @using Microsoft.JSInterop
+@using ArenaService.Client
+@using Libplanet.Crypto
+@using Bencodex
+@using Bencodex.Types
+@using ArenaService.Shared.Extensions
+@using System.Text
 @attribute [Authorize]
 @rendermode InteractiveServer
 @inject ILeaderboardRepository LeaderboardRepository
 @inject ISeasonRepository SeasonRepository
 @inject IJSRuntime JSRuntime
 @inject NavigationManager NavigationManager
+@inject IHeadlessClient HeadlessClient
 
 <h3>🏆 리더보드</h3>
 
@@ -19,15 +27,21 @@
             <select class="form-control" @bind="selectedSeasonId" @bind:after="LoadLeaderboard">
                 @foreach (var season in seasons)
                 {
-                    <option value="@season.Id">@season.SeasonGroupId 시즌 (DB PK: @season.Id) - @season.ArenaType</option>
+                    <option value="@season.Id">@season.SeasonGroupId 시즌 - @season.StartBlock ~ @season.EndBlock -
+                        @season.ArenaType (pk: @season.Id)</option>
                 }
             </select>
         </div>
     </div>
     <div class="col-md-6 d-flex align-items-end justify-content-end">
-        <button class="btn btn-primary" @onclick="DownloadCsv" disabled="@loading">
-            <i class="bi bi-download me-1"></i> CSV 다운로드
-        </button>
+        <div class="btn-group">
+            <button class="btn btn-primary" @onclick="DownloadCsv" disabled="@loading">
+                <i class="bi bi-download me-1"></i> CSV 다운로드
+            </button>
+            <button class="btn btn-success" @onclick="DownloadStakingCsv" disabled="@loading">
+                <i class="bi bi-download me-1"></i> 스테이킹 정보 다운로드
+            </button>
+        </div>
     </div>
 </div>
 
@@ -76,16 +90,23 @@ else
     private List<Season> seasons = new();
     private List<(Participant Participant, int Score, int Rank)> leaderboard = new();
     private int selectedSeasonId;
+    private int selectedSeasonGroupId;
     private bool loading = true;
 
     protected override async Task OnInitializedAsync()
     {
         loading = true;
-        seasons = await SeasonRepository.GetAllSeasonsAsync();
-        
-        if (seasons.Any())
+        var result = await HeadlessClient.GetTipIndex.ExecuteAsync();
+        var tipIndex = result.Data.NodeStatus.Tip.Index;
+        seasons = (await SeasonRepository.GetAllSeasonsAsync())
+            .Where(s => s.ArenaType != ArenaType.OFF_SEASON)
+            .Where(s => s.EndBlock < tipIndex)
+            .ToList();
+
+        if (seasons.Any()) 
         {
             selectedSeasonId = seasons.Max(s => s.Id);
+            selectedSeasonGroupId = seasons.First(s => s.Id == selectedSeasonId).SeasonGroupId;
             await LoadLeaderboard();
         }
         else
@@ -98,19 +119,20 @@ else
     {
         loading = true;
         leaderboard = await LeaderboardRepository.GetLeaderboardAsync(selectedSeasonId);
+        selectedSeasonGroupId = seasons.First(s => s.Id == selectedSeasonId).SeasonGroupId;
         loading = false;
     }
-    
+
     private async Task DownloadCsv()
     {
         loading = true;
-        
-        try 
+
+        try
         {
             var csvData = await LeaderboardRepository.GenerateLeaderboardCsvAsync(selectedSeasonId);
-            string fileName = $"leaderboard_season_{selectedSeasonId}.csv";
+            string fileName = $"leaderboard_group_{selectedSeasonGroupId}.csv";
             string base64 = Convert.ToBase64String(csvData);
-            
+
             await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64, "text/csv");
         }
         catch (Exception ex)
@@ -121,5 +143,67 @@ else
         {
             loading = false;
         }
+    }
+
+    private async Task DownloadStakingCsv()
+    {
+        loading = true;
+
+        try
+        {
+            var stakingData = await GetStakingDataAsync();
+            string fileName = $"staking_data_group_{selectedSeasonGroupId}.csv";
+            string base64 = Convert.ToBase64String(stakingData);
+
+            await JSRuntime.InvokeVoidAsync("downloadFile", fileName, base64, "text/csv");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"스테이킹 데이터 다운로드 오류: {ex.Message}");
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private async Task<byte[]> GetStakingDataAsync()
+    {
+        StringBuilder csv = new StringBuilder();
+
+        // CSV 헤더 추가
+        csv.AppendLine("BlockIndex,StakeVersion,AgentAddress,StakingAmount,StartedBlockIndex,ReceivedBlockIndex,CancellableBlockIndex,TimeStamp");
+        var totalCount = leaderboard.Count;
+        var chunkSize = 100;
+        var currentIndex = 0;
+
+        while (currentIndex < totalCount)
+        {
+            var chunk = leaderboard.Skip(currentIndex).Take(chunkSize).ToList();
+            var agentAddresses = chunk.Select(item => item.Participant.User.AgentAddress.ToHex()).ToList();
+
+            var result = await HeadlessClient.GetStakeState.ExecuteAsync(agentAddresses);
+
+            foreach (var stakeState in result.Data.StateQuery.StakeStates)
+            {
+                if (stakeState is not null)
+                {
+                    var blockIndex = result.Data.NodeStatus.Tip.Index;
+                    var stakeVersion = "V3";
+                    var stakingAmount = stakeState.Deposit;
+                    var agentAddress = stakeState.Address;
+                    var startedBlockIndex = stakeState.StartedBlockIndex;
+                    var receivedBlockIndex = stakeState.ReceivedBlockIndex;
+                    var cancellableBlockIndex = stakeState.CancellableBlockIndex;
+                    var timestamp = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss");
+
+                    csv.AppendLine($"{blockIndex},{stakeVersion},{agentAddress},{stakingAmount},{startedBlockIndex},{receivedBlockIndex},{cancellableBlockIndex},{timestamp}");
+                }
+            }
+
+            currentIndex += chunkSize;
+        }
+
+        return Encoding.UTF8.GetBytes(csv.ToString());
     }
 }

@@ -110,7 +110,9 @@ public class Startup
                 connectionString = builder.ConnectionString;
             }
 
-            options.UseNpgsql(connectionString).UseSnakeCaseNamingConvention();
+            options.UseNpgsql(connectionString, 
+                    npgsqlOptions => npgsqlOptions.MigrationsAssembly("ArenaService.Shared"))
+                .UseSnakeCaseNamingConvention();
         });
 
         services.AddSingleton<IConnectionMultiplexer>(provider =>
