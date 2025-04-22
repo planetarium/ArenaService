@@ -31,8 +31,14 @@ public class LeaderboardRepository : ILeaderboardRepository
             .Include(p => p.User)
             .OrderByDescending(p => p.Score)
             .ToListAsync();
-
         var result = new List<(Participant Participant, int Score, int Rank)>();
+        
+        // 같은 agent address를 가진 참가자 중 가장 높은 점수만 남김
+        orderedParticipants = orderedParticipants
+            .GroupBy(p => p.User.AgentAddress.ToHex().ToLower())
+            .Select(g => g.OrderByDescending(p => p.Score).First())
+            .OrderByDescending(p => p.Score)
+            .ToList();
 
         // 동점자 처리를 위한 로직
         int processedCount = 0;
