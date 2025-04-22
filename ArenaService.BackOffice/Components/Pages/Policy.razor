@@ -8,17 +8,17 @@
 @inject IBattleTicketPolicyRepository BattlePolicyRepo
 @inject IRefreshTicketPolicyRepository RefreshPolicyRepo
 
-<h3>🎟️ 티켓 정책 관리</h3>
+<h3>🎟️ Ticket Policy Management</h3>
 
-<!-- 배틀 티켓 정책 목록 -->
-<h4>⚔️ 배틀 티켓 정책</h4>
+<!-- Battle Ticket Policies -->
+<h4>⚔️ Battle Ticket Policies</h4>
 @if (battlePolicies == null)
 {
-    <p>로딩 중...</p>
+    <p>Loading...</p>
 }
 else if (!battlePolicies.Any())
 {
-    <p>등록된 배틀 티켓 정책이 없습니다.</p>
+    <p>No registered battle ticket policies.</p>
 }
 else
 {
@@ -26,11 +26,11 @@ else
         <thead>
             <tr>
                 <th>ID</th>
-                <th>이름</th>
-                <th>라운드 별 기본 지급 티켓</th>
-                <th>라운드 별 최대 구매 가능 티켓</th>
-                <th>시즌 별 최대 구매 가능 티켓</th>
-                <th>구매 가격</th>
+                <th>Name</th>
+                <th>Default Tickets per Round</th>
+                <th>Max Purchasable Tickets per Round</th>
+                <th>Max Purchasable Tickets per Season</th>
+                <th>Purchase Prices</th>
             </tr>
         </thead>
         <tbody>
@@ -49,15 +49,15 @@ else
     </table>
 }
 
-<!-- 리프레시 티켓 정책 목록 -->
-<h4>🔄 리프레시 티켓 정책</h4>
+<!-- Refresh Ticket Policies -->
+<h4>🔄 Refresh Ticket Policies</h4>
 @if (refreshPolicies == null)
 {
-    <p>로딩 중...</p>
+    <p>Loading...</p>
 }
 else if (!refreshPolicies.Any())
 {
-    <p>등록된 리프레시 티켓 정책이 없습니다.</p>
+    <p>No registered refresh ticket policies.</p>
 }
 else
 {
@@ -65,10 +65,10 @@ else
         <thead>
             <tr>
                 <th>ID</th>
-                <th>이름</th>
-                <th>라운드 별 기본 지급 티켓</th>
-                <th>라운드 별 최대 구매 가능 티켓</th>
-                <th>구매 가격</th>
+                <th>Name</th>
+                <th>Default Tickets per Round</th>
+                <th>Max Purchasable Tickets per Round</th>
+                <th>Purchase Prices</th>
             </tr>
         </thead>
         <tbody>
@@ -88,50 +88,49 @@ else
 
 <hr />
 
-<!-- 새로운 폴리시 추가 -->
-<h4>🆕 새 정책 추가</h4>
+<!-- Add New Policy -->
+<h4>🆕 Add New Policy</h4>
 <div class="form-group">
-    <label>이름:</label>
+    <label>Name:</label>
     <input class="form-control" @bind="newPolicyName" />
 </div>
 <div class="form-group">
-    <label>라운드 별 기본 지급 티켓:</label>
+    <label>Default Tickets per Round:</label>
     <input class="form-control" type="number" @bind="newDefaultTickets" />
 </div>
 <div class="form-group">
-    <label>라운드 별 최대 구매 가능 티켓:</label>
+    <label>Max Purchasable Tickets per Round:</label>
     <input class="form-control" type="number" @bind="newMaxPurchasableTicketsPerRound" />
 </div>
 <div class="form-group">
-    <label>시즌 별 최대 구매 가능 티켓 (리프레시 티켓일 경우 무시됩니다.):</label>
+    <label>Max Purchasable Tickets per Season (Ignored for Refresh Tickets):</label>
     <input class="form-control" type="number" @bind="newMaxPurchasableTicketsPerSeason" />
 </div>
 
-<!-- 구매 가격 설정 -->
-<h5>💰 구매 가격 설정</h5>
+<!-- Set Purchase Prices -->
+<h5>💰 Set Purchase Prices</h5>
 <div class="form-group">
-    <label>초기 가격:</label>
+    <label>Initial Price:</label>
     <input class="form-control" type="number" step="0.1" @bind="initialPrice" />
 </div>
 <div class="form-group">
-    <label>가격 증가 값:</label>
+    <label>Price Increment:</label>
     <input class="form-control" type="number" step="0.1" @bind="priceStep" />
 </div>
 
-<!-- 배틀 티켓용 자동 생성 버튼 -->
-<button class="btn btn-secondary" @onclick="GenerateBattlePrices">⚔️ 배틀 티켓 가격 자동 생성</button>
+<!-- Auto-Generate Buttons -->
+<button class="btn btn-secondary" @onclick="GenerateBattlePrices">⚔️ Auto-Generate Battle Ticket Prices</button>
+<button class="btn btn-secondary" @onclick="GenerateRefreshPrices">🔄 Auto-Generate Refresh Ticket Prices</button>
 
-<!-- 리프레시 티켓용 자동 생성 버튼 -->
-<button class="btn btn-secondary" @onclick="GenerateRefreshPrices">🔄 리프레시 티켓 가격 자동 생성</button>
-
-<!-- 직접 입력 가능 -->
+<!-- Manual Price Input -->
 <div class="form-group">
-    <label>구매 가격 리스트:</label>
+    <label>Purchase Price List:</label>
     <textarea class="form-control" @bind="manualPrices"></textarea>
 </div>
 
-<button class="btn btn-primary" @onclick="AddBattlePolicy">⚔️ 배틀 티켓 정책 추가</button>
-<button class="btn btn-success" @onclick="AddRefreshPolicy">🔄 리프레시 티켓 정책 추가</button>
+<!-- Add Policy Buttons -->
+<button class="btn btn-primary" @onclick="AddBattlePolicy">⚔️ Add Battle Ticket Policy</button>
+<button class="btn btn-success" @onclick="AddRefreshPolicy">🔄 Add Refresh Ticket Policy</button>
 
 @if (message is not null)
 {
@@ -168,7 +167,7 @@ else
 
         if (prices.Count != newMaxPurchasableTicketsPerSeason)
         {
-            message = "배틀 티켓 가격은 시즌별 최대 구매 횟수와 같아야합니다.";
+            message = "Battle ticket prices must match the maximum season purchase count.";
             return;
         }
 
@@ -182,7 +181,7 @@ else
         };
 
         await BattlePolicyRepo.AddBattlePolicyAsync(policy);
-        message = "✅ 배틀 티켓 정책이 추가되었습니다!";
+        message = "✅ Battle ticket policy added successfully!";
         await LoadPolicies();
     }
 
@@ -190,7 +189,7 @@ else
     {
         if (newDefaultTickets < 1)
         {
-            message = "리프레시 티켓은 기본 티켓이 1개 이상 있어야합니다.";
+            message = "Refresh tickets must have at least one default ticket.";
             return;
         }
 
@@ -198,7 +197,7 @@ else
 
         if (prices.Count != newMaxPurchasableTicketsPerRound)
         {
-            message = "리프레시 티켓 가격은 시즌별 최대 구매 횟수와 같아야합니다.";
+            message = "Refresh ticket prices must match the maximum round purchase count.";
             return;
         }
 
@@ -211,7 +210,7 @@ else
         };
 
         await RefreshPolicyRepo.AddRefreshPolicyAsync(policy);
-        message = "✅ 리프레시 티켓 정책이 추가되었습니다!";
+        message = "✅ Refresh ticket policy added successfully!";
         await LoadPolicies();
     }
 
