@@ -61,7 +61,7 @@ Example:
   },
   "AllowedHosts": "*",
   "Headless": {
-    "HeadlessEndpoint": "https://odin-rpc.nine-chronicles.com/graphql"
+    "HeadlessEndpoint": "https://heimdall-rpc.nine-chronicles.com/graphql"
   },
   "OpsConfig": {
     "RecipientAddress": "{NineChronicles Agent Address}",
@@ -106,9 +106,60 @@ ASPNETCORE_ENVIRONMENT=Local dotnet ef database update --project ArenaService.Sh
 ```
 
 ### Prepare data
+Currently, there are only two ways to configure data: using a Python script or CSV files located in the `./scripts/example` folder.
+This document will explain how to use the Python script method.
 
+First, install Python. [Python](https://www.python.org/downloads/)
 
+Next, you need to add database connection information to the .env file.
+Create a file at the `scripts/.env` path and copy the content below:
+```
+DB_CONNECTION_STRING="Host=localhost;Port=5432;Database=arena;Username=local_test;Password=password"
+```
 
+Then follow these steps to inject the data:
+```
+cd scripts
+python3 -m venv .venv
+. .venv/bin/activate
+pip3 install -r requirements.txt
+python3 import_csv.py ./example
+```
+
+### Running the Arena Service
+
+```sh
+dotnet run --launch-profile Local --project ArenaService
+```
+
+You can run the Arena Service with the command above and check the running server by accessing [Localhost](https://localhost:7096/swagger/index.html).
+![swagger](./static/swagger.png)
+
+However, using the Arena Service requires generating a token by encrypting a private key, which is a complex process.
+Therefore, using a game client to run the Arena Service is the most convenient method.
+
+Following the [CLO JSON modification guide](https://nine-chronicles.dev/tutorials/local-network-tutorial/run-client-with-local-node#_1-modifying-client-settings),
+we will modify the client's clo.json to connect.
+
+Copy the content below and create a clo.json file as described in the guide:
+```json
+{
+  "PlanetRegistryUrl": "https://planets.nine-chronicles.com/planets/",
+  "DefaultPlanetId": "0x000000000001",
+
+  "NoMiner": true,
+  "RpcClient": true,
+  "RpcServerHosts": [
+    "heimdall-rpc-1.nine-chronicles.com"
+  ],
+  "RpcServerPort": 31238,
+
+  "SheetBucketUrl": "http://sheets.planetarium.dev",
+  "ArenaServiceHost": "https://localhost:7096"
+}
+```
+
+This will allow you to run the Arena Service locally and connect it to your game client.
 
 ## Running Tests
 
