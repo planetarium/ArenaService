@@ -17,51 +17,7 @@ While battle results must still be verified on-chain, all other aspects, such as
 This service is designed to be **open and deployable** by anyone. If you're interested in running your own Arena Service, please refer to the [Operation Guide](https://github.com/planetarium/ArenaService/wiki/Operation).
 
 # How It Works
-
-Arena Service is structured as follows:
-
-```mermaid
-sequenceDiagram
-    actor User
-    participant Client
-    participant ArenaService
-    participant Blockchain
-    participant DB
-
-    Note over User,DB: Arena Registration
-    User->>Client: Request Arena Registration (Previous season participants auto-registered)
-    Client->>ArenaService: Send Registration Request
-    ArenaService->>DB: Check Registration Status
-    DB-->>ArenaService: Return Status
-    ArenaService->>DB: Save New Registration (if needed)
-    ArenaService-->>Client: Respond with Registration Complete
-    Client-->>User: Display Registration Result
-
-    Note over User,DB: Update Opponent List
-    User->>Client: Request List Update
-    Client->>ArenaService: Send Update Request
-    ArenaService->>ArenaService: Verify Costs
-    ArenaService->>DB: Fetch Current Ranking
-    DB-->>ArenaService: Return Ranking Info
-    ArenaService->>ArenaService: Generate New List
-    ArenaService->>DB: Save New List
-    ArenaService-->>Client: Provide Updated Opponent List
-    Client-->>User: Display Updated UI
-
-    Note over User,DB: Conduct Battle
-    User->>Client: Start Battle
-    Client->>ArenaService: Validate Battle Request
-    ArenaService->>ArenaService: Check Conditions (Tickets/Opponent Availability)
-    ArenaService->>ArenaService: Sign Battle Token
-    ArenaService-->>Client: Provide Validation Result and Token
-    Client->>Blockchain: Send Arena Battle TX (with Token)
-    Blockchain-->>ArenaService: Battle Result Event (including TX ID)
-    ArenaService->>ArenaService: Poll TX and Verify Result
-    ArenaService->>ArenaService: Calculate Scores and Generate Result
-    ArenaService->>DB: Save Battle Result/Scores
-    ArenaService-->>Client: Provide Updated Information
-    Client-->>User: Display Battle Result
-```
+https://github.com/planetarium/ArenaService/wiki
 
 # API Access
 
