@@ -62,7 +62,7 @@ public class PrepareRankingWorker : BackgroundService
                     var cachedSeason = await seasonCacheRepo.GetSeasonAsync();
 
                     _logger.LogInformation(
-                        $"Check prepare next season {cachedBlockIndex >= cachedSeason.EndBlock - 50}"
+                        $"Check prepare next season {cachedBlockIndex >= cachedSeason.EndBlock - 50} prepareInProgress: {prepareInProgress}"
                     );
 
                     // 시즌이 끝나기 50블록 전부터 다음 시즌에 대한 정보를 미리 주입해둡니다.

@@ -47,10 +47,10 @@ public class RankingCopyWorker : BackgroundService
                     var cachedSeason = await seasonCacheRepo.GetSeasonAsync();
 
                     _logger.LogInformation(
-                        $"Check prepare next round {cachedBlockIndex >= cachedRound.EndBlock - 9}"
+                        $"Check prepare next round {cachedBlockIndex >= cachedRound.EndBlock - 5} prepareInProgress: {prepareInProgress}"
                     );
-                    // 라운드가 끝나기 9 블록 전에 다음 라운드 랭킹을 준비합니다.
-                    if (cachedBlockIndex >= cachedRound.EndBlock - 9)
+                    // 라운드가 끝나기 5 블록 전에 다음 라운드 랭킹을 준비합니다.
+                    if (cachedBlockIndex >= cachedRound.EndBlock - 5)
                     {
                         await ProcessAsync(
                             cachedBlockIndex,
@@ -121,16 +121,21 @@ public class RankingCopyWorker : BackgroundService
     )
     {
         var nextRoundInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 10);
+        var nextRoundRankingCount = await rankingSnapshotRepo.GetRankingSnapshotsCount(
+            nextRoundInfo.Season.Id,
+            nextRoundInfo.Round.Id
+        );
+        var previousRoundRankingCount = await rankingSnapshotRepo.GetRankingSnapshotsCount(
+            nextRoundInfo.Season.Id,
+            nextRoundInfo.Round.Id - 1
+        );
 
+        _logger.LogInformation(
+            $"Round {nextRoundInfo.Round.Id}: {nextRoundRankingCount} < {previousRoundRankingCount}, prepareInProgress: {prepareInProgress}"
+        );
         if (
             !prepareInProgress
-            & await rankingSnapshotRepo.GetRankingSnapshotsCount(
-                nextRoundInfo.Season.Id,
-                nextRoundInfo.Round.Id
-            ) < await rankingSnapshotRepo.GetRankingSnapshotsCount(
-                nextRoundInfo.Season.Id,
-                nextRoundInfo.Round.Id - 1
-            )
+            & nextRoundRankingCount < previousRoundRankingCount
         )
         {
             await PrepareNextRound(nextRoundInfo, roundPreparationService);

@@ -134,7 +134,6 @@ public class ParticipantRepository : IParticipantRepository
         }
 
         return await query.Where(p => p.SeasonId == seasonId).Skip(skip).Take(take).ToListAsync();
-        ;
     }
 
     public async Task<Participant> UpdateParticipantAsync(
