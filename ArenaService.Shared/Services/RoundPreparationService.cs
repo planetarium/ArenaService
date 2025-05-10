@@ -42,13 +42,15 @@ public class RoundPreparationService : IRoundPreparationService
 
     public async Task PrepareNextRoundWithSnapshotAsync((Season Season, Round Round) seasonAndRound)
     {
-        _logger.LogInformation($"Start PrepareNextRound {seasonAndRound.Round.Id}");
+        _logger.LogInformation(
+            $"{nameof(RoundPreparationService)} Start PrepareNextRound {seasonAndRound.Round.Id}"
+        );
 
         var firstRound = seasonAndRound.Season.Rounds.OrderBy(r => r.StartBlock).First();
 
         if (firstRound.Id == seasonAndRound.Round.Id)
         {
-            _logger.LogInformation($"First round, skip");
+            _logger.LogInformation($"{nameof(RoundPreparationService)} First round, skip");
             return;
         }
 
@@ -56,6 +58,8 @@ public class RoundPreparationService : IRoundPreparationService
             seasonAndRound.Season.Id,
             seasonAndRound.Round.Id
         );
+
+        _logger.LogInformation($"{nameof(RoundPreparationService)} Load participants");
 
         var participants = new List<Participant>();
         int skip = 0;
@@ -66,6 +70,9 @@ public class RoundPreparationService : IRoundPreparationService
                 skip,
                 300
             );
+            _logger.LogInformation(
+                $"{nameof(RoundPreparationService)} ... {newParticipants.Count}"
+            );
 
             if (!newParticipants.Any())
                 break;
@@ -74,13 +81,7 @@ public class RoundPreparationService : IRoundPreparationService
             skip += 300;
         }
         var rankingData = participants.Select(p => (p.AvatarAddress, p.Score)).ToList();
-
-        await _rankingRepo.InitRankingAsync(
-            rankingData,
-            seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id + 1,
-            seasonAndRound.Season.RoundInterval
-        );
+        _logger.LogInformation($"{nameof(RoundPreparationService)} Select avatar address, score");
 
         var clans = await GetClanMappingsAsync(clanIds, seasonAndRound);
 
@@ -93,18 +94,30 @@ public class RoundPreparationService : IRoundPreparationService
                 )
             )
             .ToList();
+        _logger.LogInformation(
+            $"{nameof(RoundPreparationService)} Select clan, avatar address, score"
+        );
 
         await _rankingSnapshotRepo.AddRankingsSnapshot(
             rankingDataWithClan,
             seasonAndRound.Season.Id,
             seasonAndRound.Round.Id
         );
+        _logger.LogInformation($"{nameof(RoundPreparationService)} Fix snapshot");
 
         await _rankingService.UpdateAllClanRankingAsync(
             seasonAndRound.Season.Id,
             seasonAndRound.Round.Id + 1,
             seasonAndRound.Season.RoundInterval
         );
+
+        await _rankingRepo.InitRankingAsync(
+            rankingData,
+            seasonAndRound.Season.Id,
+            seasonAndRound.Round.Id + 1,
+            seasonAndRound.Season.RoundInterval
+        );
+        _logger.LogInformation($"{nameof(RoundPreparationService)} Update Redis Ranking");
 
         _logger.LogInformation($"PrepareNextRound {seasonAndRound.Round.Id} Done");
     }
