@@ -264,9 +264,9 @@ public class Startup
         services
             .AddSingleton<RankingCopyWorker>()
             .AddHostedService(provider => provider.GetRequiredService<RankingCopyWorker>());
-        services
-            .AddSingleton<AllClanRankingWorker>()
-            .AddHostedService(provider => provider.GetRequiredService<AllClanRankingWorker>());
+        // services
+        //     .AddSingleton<AllClanRankingWorker>()
+        //     .AddHostedService(provider => provider.GetRequiredService<AllClanRankingWorker>());
         services
             .AddSingleton<BattleTxTracker>()
             .AddHostedService(provider => provider.GetRequiredService<BattleTxTracker>());

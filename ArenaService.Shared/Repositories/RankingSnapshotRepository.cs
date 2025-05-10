@@ -62,7 +62,7 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
                 rankingSnapshots.Add(rankingSnapshot);
             }
 
-            await _context.BulkInsertAsync(rankingSnapshots);
+            await _context.BulkInsertOrUpdateAsync(rankingSnapshots);
             await transaction.CommitAsync();
         }
         catch
