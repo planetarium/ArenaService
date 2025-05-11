@@ -73,6 +73,12 @@ public class RoundPreparationService : IRoundPreparationService
             _logger.LogInformation(
                 $"{nameof(RoundPreparationService)} ... {newParticipants.Count}"
             );
+            foreach (Participant participant in newParticipants)
+            {
+                _logger.LogInformation(
+                    $"{nameof(RoundPreparationService)} List {participant.AvatarAddress}"
+                );
+            }
 
             if (!newParticipants.Any())
                 break;

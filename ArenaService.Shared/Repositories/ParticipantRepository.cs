@@ -31,17 +31,8 @@ public interface IParticipantRepository
         Participant participant,
         Action<Participant> updateFields
     );
-    Task<bool> UpdateMyScore(
-        int seasonId,
-        Address avatarAddress,
-        int scoreChange,
-        bool isVictory
-    );
-    Task<bool> UpdateOpponentScore(
-        int seasonId,
-        Address avatarAddress,
-        int scoreChange
-    );
+    Task<bool> UpdateMyScore(int seasonId, Address avatarAddress, int scoreChange, bool isVictory);
+    Task<bool> UpdateOpponentScore(int seasonId, Address avatarAddress, int scoreChange);
 }
 
 public class ParticipantRepository : IParticipantRepository
@@ -133,7 +124,12 @@ public class ParticipantRepository : IParticipantRepository
             query = includeQuery(query);
         }
 
-        return await query.Where(p => p.SeasonId == seasonId).Skip(skip).Take(take).ToListAsync();
+        return await query
+            .Where(p => p.SeasonId == seasonId)
+            .OrderBy(p => p.Score)
+            .Skip(skip)
+            .Take(take)
+            .ToListAsync();
     }
 
     public async Task<Participant> UpdateParticipantAsync(
@@ -174,14 +170,15 @@ public class ParticipantRepository : IParticipantRepository
         bool isVictory
     )
     {
-        var query = _context.Participants
-            .Where(p => p.SeasonId == seasonId && p.AvatarAddress == avatarAddress);
+        var query = _context.Participants.Where(p =>
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
+        );
 
-        var affected = await query.ExecuteUpdateAsync(p => p
-            .SetProperty(x => x.Score, x => x.Score + scoreChange)
-            .SetProperty(x => x.TotalWin, x => x.TotalWin + (isVictory ? 1 : 0))
-            .SetProperty(x => x.TotalLose, x => x.TotalLose + (isVictory ? 0 : 1))
-            .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+        var affected = await query.ExecuteUpdateAsync(p =>
+            p.SetProperty(x => x.Score, x => x.Score + scoreChange)
+                .SetProperty(x => x.TotalWin, x => x.TotalWin + (isVictory ? 1 : 0))
+                .SetProperty(x => x.TotalLose, x => x.TotalLose + (isVictory ? 0 : 1))
+                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
         );
         return affected > 0;
     }
@@ -192,12 +189,13 @@ public class ParticipantRepository : IParticipantRepository
         int scoreChange
     )
     {
-        var query = _context.Participants
-            .Where(p => p.SeasonId == seasonId && p.AvatarAddress == avatarAddress);
+        var query = _context.Participants.Where(p =>
+            p.SeasonId == seasonId && p.AvatarAddress == avatarAddress
+        );
 
-        var affected = await query.ExecuteUpdateAsync(p => p
-            .SetProperty(x => x.Score, x => x.Score + scoreChange)
-            .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
+        var affected = await query.ExecuteUpdateAsync(p =>
+            p.SetProperty(x => x.Score, x => x.Score + scoreChange)
+                .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
         );
         return affected > 0;
     }
