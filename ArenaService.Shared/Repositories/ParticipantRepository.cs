@@ -126,7 +126,7 @@ public class ParticipantRepository : IParticipantRepository
 
         return await query
             .Where(p => p.SeasonId == seasonId)
-            .OrderBy(p => p.Score)
+            .OrderBy(p => p.AvatarAddress)
             .Skip(skip)
             .Take(take)
             .ToListAsync();
