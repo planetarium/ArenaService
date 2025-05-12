@@ -14,7 +14,7 @@ namespace ArenaService.Worker;
 
 public class PrepareRankingWorker : BackgroundService
 {
-    private const int batchSize = 300;
+    private const int batchSize = 1500;
     private readonly ILogger<CacheBlockTipWorker> _logger;
     private readonly IServiceProvider _serviceProvider;
 

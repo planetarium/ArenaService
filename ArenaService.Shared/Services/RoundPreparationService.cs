@@ -68,7 +68,7 @@ public class RoundPreparationService : IRoundPreparationService
             var newParticipants = await _participantRepo.GetParticipantsAsync(
                 seasonAndRound.Season.Id,
                 skip,
-                300
+                1500
             );
             _logger.LogInformation(
                 $"{nameof(RoundPreparationService)} ... {newParticipants.Count}"
@@ -84,7 +84,7 @@ public class RoundPreparationService : IRoundPreparationService
                 break;
 
             participants.AddRange(newParticipants);
-            skip += 300;
+            skip += 1500;
         }
         var rankingData = participants.Select(p => (p.AvatarAddress, p.Score)).ToList();
         _logger.LogInformation($"{nameof(RoundPreparationService)} Select avatar address, score");
