@@ -2,8 +2,10 @@ namespace ArenaService.Shared.Repositories;
 
 using ArenaService.Shared.Data;
 using ArenaService.Shared.Models;
+using EFCore.BulkExtensions;
 using Libplanet.Crypto;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 public interface IMedalRepository
 {
@@ -86,29 +88,20 @@ public class MedalRepository : IMedalRepository
 
     public async Task<bool> AddOrUpdateMedal(int seasonId, Address avatarAddress)
     {
-        try
-        {
-            await _context.Medals.AddAsync(new Medal
-            {
-                SeasonId = seasonId,
-                AvatarAddress = avatarAddress,
-                MedalCount = 1,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            });
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        catch (DbUpdateException)
-        {
-            var affected = await _context.Medals
-                .Where(m => m.SeasonId == seasonId && m.AvatarAddress == avatarAddress)
-                .ExecuteUpdateAsync(m => m
-                    .SetProperty(x => x.MedalCount, x => x.MedalCount + 1)
-                    .SetProperty(x => x.UpdatedAt, DateTime.UtcNow)
-                );
-
-            return affected > 0;
-        }
+        var sql = @"
+            INSERT INTO medals (season_id, avatar_address, medal_count, created_at, updated_at)
+            VALUES (@seasonId, @avatarAddress, 1, @now, @now)
+            ON CONFLICT (avatar_address, season_id) 
+            DO UPDATE SET 
+                medal_count = medals.medal_count + 1,
+                updated_at = @now";
+        
+        var now = DateTime.UtcNow;
+        var affected = await _context.Database.ExecuteSqlRawAsync(sql, 
+            new NpgsqlParameter("@seasonId", seasonId),
+            new NpgsqlParameter("@avatarAddress", avatarAddress.ToHex().ToLower()),
+            new NpgsqlParameter("@now", now));
+        
+        return affected > 0;
     }
 }
