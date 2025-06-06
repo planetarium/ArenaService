@@ -156,6 +156,13 @@ public class PrepareRankingWorker : BackgroundService
         )
         {
             await PrepareNextSeason(nextSeason, seasonPreparationService);
+
+            if (nextSeason.Season.ArenaType == ArenaType.OFF_SEASON)
+            {
+                _logger.LogInformation($"NextSeason is off season, prepare +2 season");
+                var nextSeason2 = await seasonService.GetSeasonAndRoundByBlock(nextSeason.Season.EndBlock + 10);
+                await PrepareNextSeason(nextSeason2, seasonPreparationService);
+            }
         }
         else
         {
