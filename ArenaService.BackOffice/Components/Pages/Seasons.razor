@@ -9,6 +9,7 @@
 @rendermode InteractiveServer
 @inject ISeasonRepository SeasonRepository
 @inject ISeasonCacheRepository SeasonCacheRepo
+@inject ISeasonBlockAdjustmentService SeasonBlockAdjustmentService
 @inject NavigationManager NavigationManager
 
 <h3>🏆 Season List</h3>
@@ -155,6 +156,20 @@ else
             }
         </tbody>
     </table>
+
+    <h4>🔧 Adjust Season End Block</h4>
+    <div class="form-group">
+        <label>Current End Block: @selectedSeason.EndBlock</label>
+    </div>
+    <div class="form-group">
+        <label>New End Block:</label>
+        <input class="form-control" type="number" @bind="newEndBlock" />
+    </div>
+    <button class="btn btn-warning" @onclick="AdjustSeasonEndBlock">Adjust End Block</button>
+    <div class="alert alert-warning mt-2">
+        <strong>⚠️ Warning:</strong> This action will affect all subsequent seasons and rounds. 
+        If you decrease the end block, some rounds may be deleted or adjusted.
+    </div>
 }
 
 <h4>🆕 Add New Season</h4>
@@ -224,6 +239,8 @@ else
     private int editingSeasonId;
     private Season editingSeason = new();
 
+    private long newEndBlock;
+
     protected override async Task OnInitializedAsync()
     {
         newStartBlock = await SeasonRepository.GetLastSeasonEndBlockAsync() + 1 ?? 1;
@@ -269,6 +286,7 @@ else
     {
         selectedSeason = season;
         rounds = season.Rounds.OrderBy(r => r.StartBlock).ToList();
+        newEndBlock = season.EndBlock;
     }
 
     private async Task NextPage()
@@ -336,5 +354,23 @@ else
     {
         editingSeasonId = 0;
         message = null;
+    }
+
+    private async Task AdjustSeasonEndBlock()
+    {
+        if (selectedSeason == null) return;
+
+        try
+        {
+            await SeasonBlockAdjustmentService.AdjustSeasonEndBlockAsync(selectedSeason.Id, newEndBlock);
+            message = "✅ Season end block adjusted successfully!";
+            selectedSeason = null;
+            rounds.Clear();
+            await LoadSeasons();
+        }
+        catch (Exception ex)
+        {
+            message = $"❌ Failed to adjust season end block: {ex.Message}";
+        }
     }
 }

@@ -46,6 +46,7 @@ public interface ISeasonRepository
         int battleTicketPolicyId,
         int refreshTicketPolicyId
     );
+    Task<Season> AdjustSeasonEndBlockAsync(int seasonId, long newEndBlock);
 }
 
 public class SeasonRepository : ISeasonRepository
@@ -217,6 +218,15 @@ public class SeasonRepository : ISeasonRepository
         season.TotalPrize = totalPrize;
         season.BattleTicketPolicyId = battleTicketPolicyId;
         season.RefreshTicketPolicyId = refreshTicketPolicyId;
+
+        await _context.SaveChangesAsync();
+        return season;
+    }
+
+    public async Task<Season> AdjustSeasonEndBlockAsync(int seasonId, long newEndBlock)
+    {
+        var season = await _context.Seasons.SingleAsync(s => s.Id == seasonId);
+        season.EndBlock = newEndBlock;
 
         await _context.SaveChangesAsync();
         return season;
