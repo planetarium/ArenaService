@@ -33,22 +33,94 @@ else
                 <th>Total Prize</th>
                 <th>Battle Ticket Policy</th>
                 <th>Refresh Ticket Policy</th>
+                <th>Actions</th>
             </tr>
         </thead>
         <tbody>
             @foreach (var season in paginatedSeasons)
             {
-                <tr @onclick="() => SelectSeason(season)">
+                <tr>
                     <td>@season.Id</td>
                     <td>@season.SeasonGroupId</td>
                     <td>@season.StartBlock</td>
                     <td>@season.EndBlock</td>
-                    <td>@season.ArenaType</td>
-                    <td>@season.RoundInterval</td>
-                    <td>@season.RequiredMedalCount</td>
-                    <td>@season.TotalPrize</td>
-                    <td>@season.BattleTicketPolicy.Name</td>
-                    <td>@season.RefreshTicketPolicy.Name</td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <select class="form-control form-control-sm" @bind="editingSeason.ArenaType">
+                                @foreach (var type in Enum.GetValues<ArenaType>())
+                                {
+                                    <option value="@type">@type</option>
+                                }
+                            </select>
+                        }
+                        else
+                        {
+                            @season.ArenaType
+                        }
+                    </td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <input class="form-control form-control-sm" type="number" @bind="editingSeason.RoundInterval" />
+                        }
+                        else
+                        {
+                            @season.RoundInterval
+                        }
+                    </td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <input class="form-control form-control-sm" type="number" @bind="editingSeason.RequiredMedalCount" />
+                        }
+                        else
+                        {
+                            @season.RequiredMedalCount
+                        }
+                    </td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <input class="form-control form-control-sm" type="number" @bind="editingSeason.TotalPrize" />
+                        }
+                        else
+                        {
+                            @season.TotalPrize
+                        }
+                    </td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <input class="form-control form-control-sm" type="number" @bind="editingSeason.BattleTicketPolicyId" />
+                        }
+                        else
+                        {
+                            @season.BattleTicketPolicy.Name
+                        }
+                    </td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <input class="form-control form-control-sm" type="number" @bind="editingSeason.RefreshTicketPolicyId" />
+                        }
+                        else
+                        {
+                            @season.RefreshTicketPolicy.Name
+                        }
+                    </td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <button class="btn btn-success btn-sm" @onclick="() => SaveSeason(season.Id)">Save</button>
+                            <button class="btn btn-secondary btn-sm" @onclick="CancelEdit">Cancel</button>
+                        }
+                        else
+                        {
+                            <button class="btn btn-primary btn-sm" @onclick="() => StartEdit(season)">Edit</button>
+                            <button class="btn btn-info btn-sm" @onclick="() => SelectSeason(season)">View Rounds</button>
+                        }
+                    </td>
                 </tr>
             }
         </tbody>
@@ -149,6 +221,9 @@ else
     private int newRefreshPolicyId;
     private string? message;
 
+    private int editingSeasonId;
+    private Season editingSeason = new();
+
     protected override async Task OnInitializedAsync()
     {
         newStartBlock = await SeasonRepository.GetLastSeasonEndBlockAsync() + 1 ?? 1;
@@ -217,4 +292,49 @@ else
     private int totalPages => (int)Math.Ceiling((double)totalSeasons / pageSize);
     private bool CanGoPrevious => currentPage > 1;
     private bool CanGoNext => currentPage < totalPages;
+
+    private void StartEdit(Season season)
+    {
+        editingSeasonId = season.Id;
+        editingSeason = new Season
+        {
+            Id = season.Id,
+            ArenaType = season.ArenaType,
+            RoundInterval = season.RoundInterval,
+            RequiredMedalCount = season.RequiredMedalCount,
+            TotalPrize = season.TotalPrize,
+            BattleTicketPolicyId = season.BattleTicketPolicyId,
+            RefreshTicketPolicyId = season.RefreshTicketPolicyId
+        };
+    }
+
+    private async Task SaveSeason(int seasonId)
+    {
+        try
+        {
+            await SeasonRepository.UpdateSeasonAsync(
+                seasonId,
+                editingSeason.ArenaType,
+                editingSeason.RoundInterval,
+                editingSeason.RequiredMedalCount,
+                editingSeason.TotalPrize,
+                editingSeason.BattleTicketPolicyId,
+                editingSeason.RefreshTicketPolicyId
+            );
+
+            editingSeasonId = 0;
+            message = "✅ Season updated successfully!";
+            await LoadSeasons();
+        }
+        catch (Exception ex)
+        {
+            message = $"❌ Failed to save season: {ex.Message}";
+        }
+    }
+
+    private void CancelEdit()
+    {
+        editingSeasonId = 0;
+        message = null;
+    }
 }

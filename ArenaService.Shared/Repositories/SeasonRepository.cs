@@ -37,6 +37,15 @@ public interface ISeasonRepository
         int battleTicketPolicyId,
         int refreshTicketPolicyId
     );
+    Task<Season> UpdateSeasonAsync(
+        int id,
+        ArenaType arenaType,
+        int roundInterval,
+        int requiredMedalCount,
+        int totalPrize,
+        int battleTicketPolicyId,
+        int refreshTicketPolicyId
+    );
 }
 
 public class SeasonRepository : ISeasonRepository
@@ -186,6 +195,28 @@ public class SeasonRepository : ISeasonRepository
 
             currentStart = currentEnd + 1;
         }
+
+        await _context.SaveChangesAsync();
+        return season;
+    }
+
+    public async Task<Season> UpdateSeasonAsync(
+        int id,
+        ArenaType arenaType,
+        int roundInterval,
+        int requiredMedalCount,
+        int totalPrize,
+        int battleTicketPolicyId,
+        int refreshTicketPolicyId
+    )
+    {
+        var season = await _context.Seasons.SingleAsync(s => s.Id == id);
+        season.ArenaType = arenaType;
+        season.RoundInterval = roundInterval;
+        season.RequiredMedalCount = requiredMedalCount;
+        season.TotalPrize = totalPrize;
+        season.BattleTicketPolicyId = battleTicketPolicyId;
+        season.RefreshTicketPolicyId = refreshTicketPolicyId;
 
         await _context.SaveChangesAsync();
         return season;
