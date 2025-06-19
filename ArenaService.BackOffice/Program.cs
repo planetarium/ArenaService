@@ -131,6 +131,7 @@ builder.Services.AddScoped<ISeasonService, SeasonService>();
 builder.Services.AddScoped<IRankingService, RankingService>();
 builder.Services.AddScoped<ISeasonPreparationService, SeasonPreparationService>();
 builder.Services.AddScoped<IRoundPreparationService, RoundPreparationService>();
+builder.Services.AddScoped<ISeasonBlockAdjustmentService, SeasonBlockAdjustmentService>();
 
 // Fake Key
 builder.Services.AddSingleton(
