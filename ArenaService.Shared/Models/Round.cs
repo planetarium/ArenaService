@@ -1,9 +1,11 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.EntityFrameworkCore;
 
 namespace ArenaService.Shared.Models;
 
 [Table("rounds")]
+[Index(nameof(SeasonId), nameof(RoundIndex), IsUnique = true)]
 public class Round
 {
     [Key]
@@ -20,6 +22,9 @@ public class Round
 
     [Required]
     public long EndBlock { get; set; }
+
+    [Required]
+    public int RoundIndex { get; set; }
 
     [Required]
     [Column(TypeName = "timestamptz")]

@@ -83,6 +83,7 @@ public class BattleProcessor
                     .ThenInclude(u => u.Clan)
                     .Include(b => b.Season)
                     .ThenInclude(s => s.BattleTicketPolicy)
+                    .Include(b => b.Round)
                     .Include(b => b.Participant)
                     .ThenInclude(p => p.User)
                     .ThenInclude(u => u.Clan)
@@ -395,7 +396,7 @@ public class BattleProcessor
             await _rankingService.UpdateScoreAsync(
                 battle.AvatarAddress,
                 battle.SeasonId,
-                battle.RoundId + 1,
+                battle.Round.RoundIndex + 1,
                 myScoreChange,
                 battle.Participant.User.Clan is null ? null : battle.Participant.User.Clan.Id
             );
@@ -404,7 +405,7 @@ public class BattleProcessor
                 await _rankingService.UpdateScoreAsync(
                     battle.AvailableOpponent.OpponentAvatarAddress,
                     battle.SeasonId,
-                    battle.RoundId + 1,
+                    battle.Round.RoundIndex + 1,
                     opponentScoreChange,
                     battle.AvailableOpponent.Opponent.User.Clan is null
                         ? null

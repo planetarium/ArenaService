@@ -30,6 +30,9 @@ public class Battle
     [Required]
     public int RoundId { get; set; }
 
+    [ForeignKey(nameof(RoundId))]
+    public Round Round { get; set; } = null!;
+
     [Required]
     public int AvailableOpponentId { get; set; }
 

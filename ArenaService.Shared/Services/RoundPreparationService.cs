@@ -113,14 +113,14 @@ public class RoundPreparationService : IRoundPreparationService
 
         await _rankingService.UpdateAllClanRankingAsync(
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id + 1,
+            seasonAndRound.Round.RoundIndex + 1,
             seasonAndRound.Season.RoundInterval
         );
 
         await _rankingRepo.InitRankingAsync(
             rankingData,
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id + 1,
+            seasonAndRound.Round.RoundIndex + 1,
             seasonAndRound.Season.RoundInterval
         );
         _logger.LogInformation($"{nameof(RoundPreparationService)} Update Redis Ranking");
@@ -141,7 +141,7 @@ public class RoundPreparationService : IRoundPreparationService
                 clanId,
                 seasonAndRound.Season.Id,
                 seasonAndRound.Round.Id,
-                seasonAndRound.Round.Id + 1,
+                seasonAndRound.Round.RoundIndex + 1,
                 seasonAndRound.Season.RoundInterval
             );
 

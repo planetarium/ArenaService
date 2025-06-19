@@ -289,7 +289,7 @@ public class PrepareRankingWorker : BackgroundService
             await rankingRepo.InitRankingAsync(
                 nextRoundRankingData,
                 seasonInfo.Season.Id,
-                seasonInfo.Round.Id + 1,
+                seasonInfo.Round.RoundIndex + 1,
                 seasonInfo.Season.RoundInterval
             );
 
@@ -299,7 +299,7 @@ public class PrepareRankingWorker : BackgroundService
                     nextRoundClanRankingData,
                     clanId,
                     seasonInfo.Season.Id,
-                    seasonInfo.Round.Id + 1,
+                    seasonInfo.Round.RoundIndex + 1,
                     seasonInfo.Season.RoundInterval
                 );
             }
@@ -308,12 +308,12 @@ public class PrepareRankingWorker : BackgroundService
         }
         await rankingService.UpdateAllClanRankingAsync(
             seasonInfo.Season.Id,
-            seasonInfo.Round.Id,
+            seasonInfo.Round.RoundIndex,
             seasonInfo.Season.RoundInterval
         );
         await rankingService.UpdateAllClanRankingAsync(
             seasonInfo.Season.Id,
-            seasonInfo.Round.Id + 1,
+            seasonInfo.Round.RoundIndex + 1,
             seasonInfo.Season.RoundInterval
         );
 

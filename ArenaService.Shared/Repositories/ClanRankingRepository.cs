@@ -11,25 +11,25 @@ public interface IClanRankingRepository
         int clanId,
         Address avatarAddress,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int scoreChange
     );
 
-    Task<int> GetRankAsync(int clanId, Address avatarAddress, int seasonId, int roundId);
+    Task<int> GetRankAsync(int clanId, Address avatarAddress, int seasonId, int roundIndex);
 
-    Task<List<int>> GetClansAsync(int seasonId, int roundId);
+    Task<List<int>> GetClansAsync(int seasonId, int roundIndex);
 
     Task<List<(Address AvatarAddress, int Score)>> GetScoresAsync(
         int clanId,
         int seasonId,
-        int roundId
+        int roundIndex
     );
 
     Task CopyRoundDataAsync(
         int clanId,
         int seasonId,
-        int sourceRoundId,
-        int targetRoundId,
+        int sourceRoundIndex,
+        int targetRoundIndex,
         int roundInterval
     );
 
@@ -37,14 +37,14 @@ public interface IClanRankingRepository
         List<(Address AvatarAddress, int Score)> rankingData,
         int clanId,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int roundInterval
     );
 
     Task<List<(int Score, int Rank)>> GetTopClansAsync(
         int clanId,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int topN = 10
     );
 }
@@ -75,13 +75,13 @@ public class ClanRankingRepository : IClanRankingRepository
         int clanId,
         Address avatarAddress,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int scoreChange
     )
     {
-        await InsureRankingStatus(seasonId, roundId, clanId);
+        await InsureRankingStatus(seasonId, roundIndex, clanId);
 
-        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
+        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundIndex, clanId);
         string participantKey = string.Format(
             ParticipantKeyFormat,
             avatarAddress.ToHex().ToLower()
@@ -94,12 +94,12 @@ public class ClanRankingRepository : IClanRankingRepository
         int clanId,
         Address avatarAddress,
         int seasonId,
-        int roundId
+        int roundIndex
     )
     {
-        await InsureRankingStatus(seasonId, roundId, clanId);
+        await InsureRankingStatus(seasonId, roundIndex, clanId);
 
-        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
+        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundIndex, clanId);
         string participantKey = string.Format(
             ParticipantKeyFormat,
             avatarAddress.ToHex().ToLower()
@@ -122,12 +122,12 @@ public class ClanRankingRepository : IClanRankingRepository
     public async Task<List<(Address AvatarAddress, int Score)>> GetScoresAsync(
         int clanId,
         int seasonId,
-        int roundId
+        int roundIndex
     )
     {
-        await InsureRankingStatus(seasonId, roundId, clanId);
+        await InsureRankingStatus(seasonId, roundIndex, clanId);
 
-        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
+        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundIndex, clanId);
 
         var scores = await _redis.SortedSetRangeByRankWithScoresAsync(clanRankingKey);
 
@@ -148,13 +148,13 @@ public class ClanRankingRepository : IClanRankingRepository
         List<(Address AvatarAddress, int Score)> rankingData,
         int clanId,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int roundInterval
     )
     {
-        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId, clanId);
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundIndex, clanId);
         await _redis.StringSetAsync(statusKey, RankingStatus.INITIALIZING.ToString());
-        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
+        string clanRankingKey = string.Format(ClanRankingFormat, seasonId, roundIndex, clanId);
 
         foreach (var rankingEntry in rankingData)
         {
@@ -184,7 +184,7 @@ public class ClanRankingRepository : IClanRankingRepository
             )
         );
 
-        string clansKey = string.Format(ClansKeyFormat, seasonId, roundId);
+        string clansKey = string.Format(ClansKeyFormat, seasonId, roundIndex);
         await _redis.SetAddAsync(clansKey, clanId.ToString());
         await _redis.KeyExpireAsync(
             clansKey,
@@ -197,15 +197,15 @@ public class ClanRankingRepository : IClanRankingRepository
     public async Task CopyRoundDataAsync(
         int clanId,
         int seasonId,
-        int sourceRoundId,
-        int targetRoundId,
+        int sourceRoundIndex,
+        int targetRoundIndex,
         int roundInterval
     )
     {
-        string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundId, clanId);
+        string statusKey = string.Format(StatusKeyFormat, seasonId, targetRoundIndex, clanId);
         await _redis.StringSetAsync(statusKey, RankingStatus.COPYING_IN_PROGRESS.ToString());
-        string sourceKey = string.Format(ClanRankingFormat, seasonId, sourceRoundId, clanId);
-        string targetKey = string.Format(ClanRankingFormat, seasonId, targetRoundId, clanId);
+        string sourceKey = string.Format(ClanRankingFormat, seasonId, sourceRoundIndex, clanId);
+        string targetKey = string.Format(ClanRankingFormat, seasonId, targetRoundIndex, clanId);
 
         await _redis.SortedSetCombineAndStoreAsync(SetOperation.Union, targetKey, [sourceKey]);
         await _redis.KeyExpireAsync(
@@ -222,9 +222,9 @@ public class ClanRankingRepository : IClanRankingRepository
             )
         );
 
-        string clansKey = string.Format(ClansKeyFormat, seasonId, targetRoundId);
+        string clansKey = string.Format(ClansKeyFormat, seasonId, targetRoundIndex);
 
-        var clans = await GetClansAsync(seasonId, sourceRoundId);
+        var clans = await GetClansAsync(seasonId, sourceRoundIndex);
         foreach (var existsClanId in clans)
         {
             await _redis.SetAddAsync(clansKey, existsClanId.ToString());
@@ -238,9 +238,9 @@ public class ClanRankingRepository : IClanRankingRepository
         );
     }
 
-    public async Task<List<int>> GetClansAsync(int seasonId, int roundId)
+    public async Task<List<int>> GetClansAsync(int seasonId, int roundIndex)
     {
-        string clansKey = string.Format(ClansKeyFormat, seasonId, roundId);
+        string clansKey = string.Format(ClansKeyFormat, seasonId, roundIndex);
         var clanIds = await _redis.SetMembersAsync(clansKey);
         return clanIds.Select(id => int.Parse(id.ToString())).ToList();
     }
@@ -248,13 +248,13 @@ public class ClanRankingRepository : IClanRankingRepository
     public async Task<List<(int Score, int Rank)>> GetTopClansAsync(
         int clanId,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int topN
     )
     {
-        await InsureRankingStatus(seasonId, roundId, clanId);
+        await InsureRankingStatus(seasonId, roundIndex, clanId);
 
-        string clanRankingPerClanKey = string.Format(ClanRankingFormat, seasonId, roundId, clanId);
+        string clanRankingPerClanKey = string.Format(ClanRankingFormat, seasonId, roundIndex, clanId);
 
         var topParticipants = await _redis.SortedSetRangeByRankWithScoresAsync(
             clanRankingPerClanKey,
@@ -273,9 +273,9 @@ public class ClanRankingRepository : IClanRankingRepository
             .ToList();
     }
 
-    private async Task InsureRankingStatus(int seasonId, int roundId, int clanId)
+    private async Task InsureRankingStatus(int seasonId, int roundIndex, int clanId)
     {
-        string statusKey = string.Format(StatusKeyFormat, seasonId, roundId, clanId);
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundIndex, clanId);
         var rankingStatus = await _redis.StringGetAsync(statusKey);
         if (rankingStatus != RankingStatus.DONE.ToString())
         {

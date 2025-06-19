@@ -140,12 +140,12 @@ public class ArenaInfoController : ControllerBase
         var nextScore = await _rankingRepo.GetScoreAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id + 1
+            cachedRound.RoundIndex + 1
         );
         var nextRank = await _rankingRepo.GetRankAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id + 1
+            cachedRound.RoundIndex + 1
         );
 
         var arenaInfo = new ArenaInfoResponse

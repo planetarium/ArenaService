@@ -171,7 +171,7 @@ public class SeasonPreparationService : ISeasonPreparationService
         await _rankingRepo.InitRankingAsync(
             rankingData,
             season.Id,
-            round.Id + 1,
+            round.RoundIndex + 1,
             season.RoundInterval
         );
 
@@ -188,14 +188,14 @@ public class SeasonPreparationService : ISeasonPreparationService
                 clanRankingData,
                 clanId,
                 season.Id,
-                round.Id + 1,
+                round.RoundIndex + 1,
                 season.RoundInterval
             );
         }
-        await _rankingService.UpdateAllClanRankingAsync(season.Id, round.Id, season.RoundInterval);
+        await _rankingService.UpdateAllClanRankingAsync(season.Id, round.RoundIndex, season.RoundInterval);
         await _rankingService.UpdateAllClanRankingAsync(
             season.Id,
-            round.Id + 1,
+            round.RoundIndex + 1,
             season.RoundInterval
         );
     }

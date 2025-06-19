@@ -123,11 +123,11 @@ public class RankingCopyWorker : BackgroundService
         var nextRoundInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 10);
         var nextRoundRankingCount = await rankingSnapshotRepo.GetRankingSnapshotsCount(
             nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id
+            nextRoundInfo.Round.RoundIndex
         );
         var previousRoundRankingCount = await rankingSnapshotRepo.GetRankingSnapshotsCount(
             nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id - 1
+            nextRoundInfo.Round.RoundIndex - 1
         );
 
         _logger.LogInformation(

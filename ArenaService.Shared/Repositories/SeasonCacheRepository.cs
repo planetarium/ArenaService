@@ -8,10 +8,10 @@ public interface ISeasonCacheRepository
 {
     Task<long> GetBlockIndexAsync();
     Task<(int Id, long StartBlock, long EndBlock)> GetSeasonAsync();
-    Task<(int Id, long StartBlock, long EndBlock)> GetRoundAsync();
+    Task<(int Id, int RoundIndex, long StartBlock, long EndBlock)> GetRoundAsync();
     Task SetBlockIndexAsync(long blockIndex);
     Task SetSeasonAsync(int seasonId, long startBlock, long endBlock);
-    Task SetRoundAsync(int roundId, long startBlock, long endBlock);
+    Task SetRoundAsync(int roundId, int roundIndex, long startBlock, long endBlock);
 }
 
 public class SeasonCacheRepository : ISeasonCacheRepository
@@ -52,7 +52,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         return (seasonData!.Id, seasonData.StartBlock, seasonData.EndBlock);
     }
 
-    public async Task<(int Id, long StartBlock, long EndBlock)> GetRoundAsync()
+    public async Task<(int Id, int RoundIndex, long StartBlock, long EndBlock)> GetRoundAsync()
     {
         var value = await _redis.StringGetAsync($"{PREFIX}:{RoundKey}");
 
@@ -62,7 +62,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         }
 
         var roundData = JsonSerializer.Deserialize<CachedRound>(value!);
-        return (roundData!.Id, roundData.StartBlock, roundData.EndBlock);
+        return (roundData!.Id, roundData.RoundIndex, roundData.StartBlock, roundData.EndBlock);
     }
 
     public async Task SetBlockIndexAsync(long blockIndex)
@@ -84,11 +84,12 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         await _redis.StringSetAsync($"{PREFIX}:{SeasonKey}", json);
     }
 
-    public async Task SetRoundAsync(int roundId, long startBlock, long endBlock)
+    public async Task SetRoundAsync(int roundId, int roundIndex, long startBlock, long endBlock)
     {
         var roundData = new CachedRound
         {
             Id = roundId,
+            RoundIndex = roundIndex,
             StartBlock = startBlock,
             EndBlock = endBlock
         };
@@ -108,6 +109,7 @@ public class SeasonCacheRepository : ISeasonCacheRepository
     private class CachedRound
     {
         public int Id { get; set; }
+        public int RoundIndex { get; set; }
         public long StartBlock { get; set; }
         public long EndBlock { get; set; }
     }
