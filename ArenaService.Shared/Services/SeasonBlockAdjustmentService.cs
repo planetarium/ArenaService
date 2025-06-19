@@ -82,6 +82,7 @@ public class SeasonBlockAdjustmentService : ISeasonBlockAdjustmentService
 
         var currentStartBlock = lastRound.EndBlock + 1;
         var newRounds = new List<Round>();
+        var nextRoundIndex = rounds.Max(r => r.RoundIndex) + 1;
 
         while (currentStartBlock <= season.EndBlock)
         {
@@ -93,7 +94,8 @@ public class SeasonBlockAdjustmentService : ISeasonBlockAdjustmentService
                 {
                     SeasonId = season.Id,
                     StartBlock = currentStartBlock,
-                    EndBlock = currentEndBlock
+                    EndBlock = currentEndBlock,
+                    RoundIndex = nextRoundIndex++
                 };
 
                 newRounds.Add(newRound);

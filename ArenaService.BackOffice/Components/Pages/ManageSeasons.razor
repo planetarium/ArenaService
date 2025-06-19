@@ -42,6 +42,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Round Index</th>
                 <th>Start Block</th>
                 <th>End Block</th>
             </tr>
@@ -49,6 +50,7 @@
         <tbody>
             <tr>
                 <td>@currentRound?.Id</td>
+                <td>@currentRound?.RoundIndex</td>
                 <td>@currentRound?.StartBlock</td>
                 <td>@currentRound?.EndBlock</td>
             </tr>
@@ -114,7 +116,7 @@ else
 
 @code {
     private (int Id, long StartBlock, long EndBlock)? currentSeason;
-    private (int Id, long StartBlock, long EndBlock)? currentRound;
+    private (int Id, int RoundIndex, long StartBlock, long EndBlock)? currentRound;
     private List<(int RoundOffset, int RankingCount)> rankingCounts = new();
     private int seasonId;
     private int roundId;

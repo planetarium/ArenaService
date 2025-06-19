@@ -34,6 +34,12 @@ public interface IRankingRepository
     Task CopyRoundDataAsync(int seasonId, int sourceRoundIndex, int targetRoundIndex, int roundInterval);
 
     Task<int> GetRankingCountAsync(int seasonId, int roundIndex);
+
+    Task ClearRankingCacheAsync(int seasonId, int roundIndex);
+
+    Task ClearAllRankingCacheAsync();
+
+    Task ClearSeasonAndRoundCacheAsync();
 }
 
 public class RankingRepository : IRankingRepository
@@ -323,6 +329,49 @@ public class RankingRepository : IRankingRepository
         if (rankingStatus != RankingStatus.DONE.ToString())
         {
             throw new CacheUnavailableException($"Ranking is {rankingStatus}");
+        }
+    }
+
+    public async Task ClearRankingCacheAsync(int seasonId, int roundIndex)
+    {
+        string rankingKey = string.Format(RankingKeyFormat, seasonId, roundIndex);
+        string statusKey = string.Format(StatusKeyFormat, seasonId, roundIndex);
+        
+        await _redis.KeyDeleteAsync(rankingKey);
+        await _redis.KeyDeleteAsync(statusKey);
+    }
+
+    public async Task ClearAllRankingCacheAsync()
+    {
+        var server = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints().First());
+        var keys = server.Keys(pattern: "season:*:round:*:ranking");
+        
+        foreach (var key in keys)
+        {
+            await _redis.KeyDeleteAsync(key);
+        }
+
+        var statusKeys = server.Keys(pattern: "season:*:round:*:ranking:status");
+        foreach (var key in statusKeys)
+        {
+            await _redis.KeyDeleteAsync(key);
+        }
+    }
+
+    public async Task ClearSeasonAndRoundCacheAsync()
+    {
+        var server = _redis.Multiplexer.GetServer(_redis.Multiplexer.GetEndPoints().First());
+        var keys = server.Keys(pattern: "season:*:round:*:ranking");
+        
+        foreach (var key in keys)
+        {
+            await _redis.KeyDeleteAsync(key);
+        }
+
+        var statusKeys = server.Keys(pattern: "season:*:round:*:ranking:status");
+        foreach (var key in statusKeys)
+        {
+            await _redis.KeyDeleteAsync(key);
         }
     }
 }

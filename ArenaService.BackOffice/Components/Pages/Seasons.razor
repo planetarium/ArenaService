@@ -10,6 +10,7 @@
 @inject ISeasonRepository SeasonRepository
 @inject ISeasonCacheRepository SeasonCacheRepo
 @inject ISeasonBlockAdjustmentService SeasonBlockAdjustmentService
+@inject ISeasonService SeasonService
 @inject NavigationManager NavigationManager
 
 <h3>🏆 Season List</h3>
@@ -42,7 +43,16 @@ else
             {
                 <tr>
                     <td>@season.Id</td>
-                    <td>@season.SeasonGroupId</td>
+                    <td>
+                        @if (editingSeasonId == season.Id)
+                        {
+                            <input class="form-control form-control-sm" type="number" @bind="editingSeason.SeasonGroupId" />
+                        }
+                        else
+                        {
+                            @season.SeasonGroupId
+                        }
+                    </td>
                     <td>@season.StartBlock</td>
                     <td>@season.EndBlock</td>
                     <td>
@@ -120,6 +130,14 @@ else
                         {
                             <button class="btn btn-primary btn-sm" @onclick="() => StartEdit(season)">Edit</button>
                             <button class="btn btn-info btn-sm" @onclick="() => SelectSeason(season)">View Rounds</button>
+                            @if (deletableSeasonIds.Contains(season.Id))
+                            {
+                                <button class="btn btn-danger btn-sm" @onclick="() => DeleteSeason(season.Id)">Delete</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-secondary btn-sm" disabled title="현재 진행 중인 시즌은 삭제할 수 없습니다">Delete</button>
+                            }
                         }
                     </td>
                 </tr>
@@ -173,6 +191,10 @@ else
 }
 
 <h4>🆕 Add New Season</h4>
+<div class="form-group">
+    <label>Season Group ID:</label>
+    <input class="form-control" type="number" @bind="newSeasonGroupId" />
+</div>
 <div class="form-group">
     <label>Season Start Block:</label>
     <input class="form-control" type="number" @bind="newStartBlock" />
@@ -240,6 +262,9 @@ else
     private Season editingSeason = new();
 
     private long newEndBlock;
+    private int newSeasonGroupId;
+
+    private HashSet<int> deletableSeasonIds = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -253,6 +278,19 @@ else
         loading = true;
         paginatedSeasons = await SeasonRepository.GetSeasonsPagedAsync(currentPage, pageSize, q => q.Include(s =>
         s.Rounds).Include(s => s.BattleTicketPolicy).Include(s => s.RefreshTicketPolicy));
+        
+        // 현재 캐싱된 block index 가져오기
+        var currentBlockIndex = await SeasonCacheRepo.GetBlockIndexAsync();
+        deletableSeasonIds.Clear();
+        
+        foreach (var season in paginatedSeasons)
+        {
+            if (season.StartBlock >= currentBlockIndex)
+            {
+                deletableSeasonIds.Add(season.Id);
+            }
+        }
+        
         loading = false;
     }
 
@@ -264,7 +302,7 @@ else
             newStartBlock,
             newRoundInterval,
             newRoundCount,
-            0,
+            newSeasonGroupId,
             newArenaType,
             newRequiredMedalCount,
             newTotalPrize,
@@ -317,6 +355,7 @@ else
         editingSeason = new Season
         {
             Id = season.Id,
+            SeasonGroupId = season.SeasonGroupId,
             ArenaType = season.ArenaType,
             RoundInterval = season.RoundInterval,
             RequiredMedalCount = season.RequiredMedalCount,
@@ -332,6 +371,7 @@ else
         {
             await SeasonRepository.UpdateSeasonAsync(
                 seasonId,
+                editingSeason.SeasonGroupId,
                 editingSeason.ArenaType,
                 editingSeason.RoundInterval,
                 editingSeason.RequiredMedalCount,
@@ -371,6 +411,21 @@ else
         catch (Exception ex)
         {
             message = $"❌ Failed to adjust season end block: {ex.Message}";
+        }
+    }
+
+    private async Task DeleteSeason(int seasonId)
+    {
+        try
+        {
+            await SeasonService.DeleteSeasonAsync(seasonId);
+            message = "✅ Season deleted successfully!";
+            totalSeasons = await SeasonRepository.GetTotalSeasonsCountAsync();
+            await LoadSeasons();
+        }
+        catch (Exception ex)
+        {
+            message = $"❌ Failed to delete season: {ex.Message}";
         }
     }
 }
