@@ -49,8 +49,10 @@ public class SeasonPreparationService : ISeasonPreparationService
 
     public async Task PrepareSeasonAsync((Season Season, Round Round) seasonAndRound)
     {
-        var prevSeason = await _seasonService.GetLastSeasonByBlockIndexAsync(seasonAndRound.Season.StartBlock);
-        var prevSeasonId = prevSeason.Season.Id;
+        var prevSeason = await _seasonService.GetLastSeasonByBlockIndexAsync(
+            seasonAndRound.Season.StartBlock
+        );
+        var prevSeasonId = prevSeason.Id;
         Dictionary<Address, int>? medalCounts = null;
         int skip = 0;
 
@@ -168,7 +170,12 @@ public class SeasonPreparationService : ISeasonPreparationService
         Round round
     )
     {
-        await _rankingRepo.InitRankingAsync(rankingData, season.Id, round.RoundIndex, season.RoundInterval);
+        await _rankingRepo.InitRankingAsync(
+            rankingData,
+            season.Id,
+            round.RoundIndex,
+            season.RoundInterval
+        );
         await _rankingRepo.InitRankingAsync(
             rankingData,
             season.Id,
@@ -193,7 +200,11 @@ public class SeasonPreparationService : ISeasonPreparationService
                 season.RoundInterval
             );
         }
-        await _rankingService.UpdateAllClanRankingAsync(season.Id, round.RoundIndex, season.RoundInterval);
+        await _rankingService.UpdateAllClanRankingAsync(
+            season.Id,
+            round.RoundIndex,
+            season.RoundInterval
+        );
         await _rankingService.UpdateAllClanRankingAsync(
             season.Id,
             round.RoundIndex + 1,
