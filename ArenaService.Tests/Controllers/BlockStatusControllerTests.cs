@@ -28,6 +28,7 @@ public class CachedBlockInfoControllerTests
         const long seasonStartBlock = 900;
         const long seasonEndBlock = 1100;
         const int roundId = 1;
+        const int roundIndex = 1;
         const long roundStartBlock = 950;
         const long roundEndBlock = 1050;
         const long battleTxTrackerBlock = 990;
@@ -40,7 +41,7 @@ public class CachedBlockInfoControllerTests
             .ReturnsAsync((seasonId, seasonStartBlock, seasonEndBlock));
         _seasonCacheRepoMock
             .Setup(x => x.GetRoundAsync())
-            .ReturnsAsync((roundId, roundStartBlock, roundEndBlock));
+            .ReturnsAsync((roundId, roundIndex, roundStartBlock, roundEndBlock));
         _blockTrackerRepoMock
             .Setup(x => x.GetBattleTxTrackerBlockIndexAsync())
             .ReturnsAsync(battleTxTrackerBlock);
