@@ -115,7 +115,7 @@
     private string alertClass = "";
     private (int Id, long StartBlock, long EndBlock)? currentSeason;
     private (int Id, int RoundIndex, long StartBlock, long EndBlock)? currentRound;
-    private List<(int RoundOffset, int RankingCount)> rankingCounts = new();
+    private List<(int RoundIndex, int RankingCount)> rankingCounts = new();
 
     protected override async Task OnInitializedAsync()
     {
