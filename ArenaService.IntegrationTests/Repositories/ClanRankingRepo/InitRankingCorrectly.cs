@@ -16,14 +16,14 @@ public class InitRankingCorrectly : BaseTest
     public async Task InitRankingTests()
     {
         var seasonId = 1;
-        var roundId = 1;
+        var roundIndex = 1;
         var clanId = 1;
         var roundInterval = 10;
 
         string statusKey = string.Format(
             ClanRankingRepository.StatusKeyFormat,
             seasonId,
-            roundId,
+            roundIndex,
             clanId
         );
 
@@ -32,7 +32,7 @@ public class InitRankingCorrectly : BaseTest
         string rankingKey = string.Format(
             ClanRankingRepository.ClanRankingFormat,
             seasonId,
-            roundId,
+            roundIndex,
             clanId
         );
 
@@ -46,7 +46,7 @@ public class InitRankingCorrectly : BaseTest
             rankingData,
             clanId,
             seasonId,
-            roundId,
+            roundIndex,
             roundInterval
         );
 
@@ -60,7 +60,7 @@ public class InitRankingCorrectly : BaseTest
             var resultScore = await Database.SortedSetScoreAsync(rankingKey, participantKey);
             Assert.Equal(score, resultScore);
         }
-        string clansKey = string.Format(ClanRankingRepository.ClansKeyFormat, seasonId, roundId);
+        string clansKey = string.Format(ClanRankingRepository.ClansKeyFormat, seasonId, roundIndex);
 
         Assert.True(await Database.SetContainsAsync(clansKey, clanId));
 

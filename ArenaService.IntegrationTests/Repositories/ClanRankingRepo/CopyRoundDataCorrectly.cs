@@ -16,44 +16,44 @@ public class CopyRoundDataCorrectly : BaseTest
     public async Task CopyRoundDataTests()
     {
         var seasonId = 1;
-        var sourceRoundId = 1;
-        var targetRoundId = 2;
+        var sourceRoundIndex = 1;
+        var targetRoundIndex = 2;
         var clanId = 1;
         var roundInterval = 10;
 
         string sourceRankingKey = string.Format(
             ClanRankingRepository.ClanRankingFormat,
             seasonId,
-            sourceRoundId,
+            sourceRoundIndex,
             clanId
         );
         string targetRankingKey = string.Format(
             ClanRankingRepository.ClanRankingFormat,
             seasonId,
-            targetRoundId,
+            targetRoundIndex,
             clanId
         );
         string sourceStatusKey = string.Format(
             ClanRankingRepository.StatusKeyFormat,
             seasonId,
-            sourceRoundId,
+            sourceRoundIndex,
             clanId
         );
         string targetStatusKey = string.Format(
             ClanRankingRepository.StatusKeyFormat,
             seasonId,
-            targetRoundId,
+            targetRoundIndex,
             clanId
         );
         string sourceClansKey = string.Format(
             ClanRankingRepository.ClansKeyFormat,
             seasonId,
-            sourceRoundId
+            sourceRoundIndex
         );
         string targetClansKey = string.Format(
             ClanRankingRepository.ClansKeyFormat,
             seasonId,
-            sourceRoundId
+            sourceRoundIndex
         );
 
         await Database.StringSetAsync(sourceStatusKey, RankingStatus.DONE.ToString());
@@ -81,8 +81,8 @@ public class CopyRoundDataCorrectly : BaseTest
         await ClanRankingRepository.CopyRoundDataAsync(
             clanId,
             seasonId,
-            sourceRoundId,
-            targetRoundId,
+            sourceRoundIndex,
+            targetRoundIndex,
             roundInterval
         );
 

@@ -100,7 +100,7 @@ public class PrepareRankingWorker : BackgroundService
                     }
 
                     // 캐시를 복구해야하는지 판단합니다.
-                    if (await rankingRepo.GetRankingStatus(cachedSeason.Id, cachedRound.Id) is null)
+                    if (await rankingRepo.GetRankingStatus(cachedSeason.Id, cachedRound.RoundIndex) is null)
                     {
                         await RestoreRankings(
                             cachedBlockIndex,
@@ -230,7 +230,7 @@ public class PrepareRankingWorker : BackgroundService
         await rankingRepo.InitRankingAsync(
             rankingData.Select(r => (r.AvatarAddress, r.Score)).ToList(),
             seasonInfo.Season.Id,
-            seasonInfo.Round.Id,
+            seasonInfo.Round.RoundIndex,
             seasonInfo.Season.RoundInterval
         );
         foreach (var (clanId, clanRankingData) in clanRankingsData)
@@ -239,7 +239,7 @@ public class PrepareRankingWorker : BackgroundService
                 clanRankingData,
                 clanId,
                 seasonInfo.Season.Id,
-                seasonInfo.Round.Id,
+                seasonInfo.Round.RoundIndex,
                 seasonInfo.Season.RoundInterval
             );
         }

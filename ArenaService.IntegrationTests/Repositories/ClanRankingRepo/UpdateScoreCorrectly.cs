@@ -16,13 +16,13 @@ public class UpdateScoreCorrectly : BaseTest
     public async Task UpdateScoreTests()
     {
         var seasonId = 1;
-        var roundId = 1;
+        var roundIndex = 1;
         var clanId = 1;
 
         string statusKey = string.Format(
             ClanRankingRepository.StatusKeyFormat,
             seasonId,
-            roundId,
+            roundIndex,
             clanId
         );
         await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
@@ -32,7 +32,7 @@ public class UpdateScoreCorrectly : BaseTest
         string rankingKey = string.Format(
             ClanRankingRepository.ClanRankingFormat,
             seasonId,
-            roundId,
+            roundIndex,
             clanId
         );
 
@@ -48,7 +48,7 @@ public class UpdateScoreCorrectly : BaseTest
                 ClanRankingRepository.ParticipantKeyFormat,
                 address.ToHex().ToLower()
             );
-            await ClanRankingRepository.UpdateScoreAsync(clanId, address, seasonId, roundId, score);
+            await ClanRankingRepository.UpdateScoreAsync(clanId, address, seasonId, roundIndex, score);
 
             var resultScore = await Database.SortedSetScoreAsync(rankingKey, participantKey);
             Assert.Equal(score, resultScore);

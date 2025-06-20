@@ -71,12 +71,12 @@ public class ArenaInfoController : ControllerBase
             var myClanRank = await _allClanRankingRepo.GetRankAsync(
                 participant.User.ClanId!.Value,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
             var myClanScore = await _allClanRankingRepo.GetScoreAsync(
                 participant.User.ClanId!.Value,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
             myClanResponse = participant.User.Clan!.ToResponse(myClanRank, myClanScore);
         }
@@ -134,9 +134,9 @@ public class ArenaInfoController : ControllerBase
         var score = await _rankingRepo.GetScoreAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id
+            cachedRound.RoundIndex
         );
-        var rank = await _rankingRepo.GetRankAsync(avatarAddress, cachedSeason.Id, cachedRound.Id);
+        var rank = await _rankingRepo.GetRankAsync(avatarAddress, cachedSeason.Id, cachedRound.RoundIndex);
         var nextScore = await _rankingRepo.GetScoreAsync(
             avatarAddress,
             cachedSeason.Id,

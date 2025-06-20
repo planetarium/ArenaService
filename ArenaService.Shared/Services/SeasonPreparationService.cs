@@ -181,7 +181,7 @@ public class SeasonPreparationService : ISeasonPreparationService
                 clanRankingData,
                 clanId,
                 season.Id,
-                round.Id,
+                round.RoundIndex,
                 season.RoundInterval
             );
             await _clanRankingRepo.InitRankingAsync(

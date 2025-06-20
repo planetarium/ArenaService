@@ -65,7 +65,7 @@
                 @foreach (var roundRanking in rankingCounts)
                 {
                     <tr>
-                        <td>@roundRanking.RoundOffset</td>
+                        <td>@roundRanking.RoundIndex</td>
                         <td>@roundRanking.RankingCount</td>
                         <td>@(roundRanking.RankingCount > 0 ? "✅ 준비됨" : "❌ 불완전")</td>
                     </tr>
@@ -126,7 +126,7 @@
 
             if (currentSeason.HasValue && currentRound.HasValue)
             {
-                await LoadRankingCounts(currentSeason.Value.Id, currentRound.Value.Id);
+                await LoadRankingCounts(currentSeason.Value.Id, currentRound.Value.RoundIndex);
             }
         }
         catch (Exception ex)
@@ -136,15 +136,14 @@
         }
     }
 
-    private async Task LoadRankingCounts(int seasonId, int currentRoundId)
+    private async Task LoadRankingCounts(int seasonId, int currentRoundIndex)
     {
         rankingCounts.Clear();
 
         for (int offset = -1; offset <= 2; offset++)
         {
-            int roundToCheck = currentRoundId + offset;
-            int rankingCount = await RankingRepo.GetRankingCountAsync(seasonId, roundToCheck);
-            rankingCounts.Add((currentRoundId + offset, rankingCount));
+            int rankingCount = await RankingRepo.GetRankingCountAsync(seasonId, currentRoundIndex + offset);
+            rankingCounts.Add((currentRoundIndex + offset, rankingCount));
         }
     }
 
@@ -164,7 +163,7 @@
                 
                 // 페이지 새로고침하여 최신 정보 표시
                 await Task.Delay(1000);
-                await LoadRankingCounts(currentSeason!.Value.Id, currentRound!.Value.Id);
+                await LoadRankingCounts(currentSeason!.Value.Id, currentRound!.Value.RoundIndex);
             }
             else
             {

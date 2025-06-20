@@ -56,7 +56,7 @@ public class RoundPreparationService : IRoundPreparationService
 
         var clanIds = await _clanRankingRepo.GetClansAsync(
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id
+            seasonAndRound.Round.RoundIndex
         );
 
         _logger.LogInformation($"{nameof(RoundPreparationService)} Load participants");
@@ -140,7 +140,7 @@ public class RoundPreparationService : IRoundPreparationService
             await _clanRankingRepo.CopyRoundDataAsync(
                 clanId,
                 seasonAndRound.Season.Id,
-                seasonAndRound.Round.Id,
+                seasonAndRound.Round.RoundIndex,
                 seasonAndRound.Round.RoundIndex + 1,
                 seasonAndRound.Season.RoundInterval
             );

@@ -91,12 +91,12 @@ public class AvailableOpponentController : ControllerBase
             var opponentRank = await _rankingRepo.GetRankAsync(
                 availableOpponent.Opponent.AvatarAddress,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
             var opponentScore = await _rankingRepo.GetScoreAsync(
                 availableOpponent.Opponent.AvatarAddress,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
 
             ClanResponse? clanResponse = null;
@@ -105,12 +105,12 @@ public class AvailableOpponentController : ControllerBase
                 var clanRank = await _allClanRankingRepo.GetRankAsync(
                     availableOpponent.Opponent.User.ClanId!.Value,
                     cachedSeason.Id,
-                    cachedRound.Id
+                    cachedRound.RoundIndex
                 );
                 var clanScore = await _allClanRankingRepo.GetScoreAsync(
                     availableOpponent.Opponent.User.ClanId!.Value,
                     cachedSeason.Id,
-                    cachedRound.Id
+                    cachedRound.RoundIndex
                 );
                 clanResponse = availableOpponent.Opponent.User.Clan!.ToResponse(
                     clanRank,
@@ -201,13 +201,13 @@ public class AvailableOpponentController : ControllerBase
         var myScore = await _rankingRepo.GetScoreAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id
+            cachedRound.RoundIndex
         );
 
         var opponents = await _rankingRepo.SelectBattleOpponentsAsync(
             avatarAddress,
             cachedSeason.Id,
-            cachedRound.Id,
+            cachedRound.RoundIndex,
             cachedSeason.StartBlock == cachedRound.StartBlock
         );
 
@@ -245,7 +245,7 @@ public class AvailableOpponentController : ControllerBase
             var opponentRank = await _rankingRepo.GetRankAsync(
                 opponentParticipant!.AvatarAddress,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
 
             ClanResponse? clanResponse = null;
@@ -254,12 +254,12 @@ public class AvailableOpponentController : ControllerBase
                 var clanRank = await _allClanRankingRepo.GetRankAsync(
                     opponentParticipant.User.ClanId!.Value,
                     cachedSeason.Id,
-                    cachedRound.Id
+                    cachedRound.RoundIndex
                 );
                 var clanScore = await _allClanRankingRepo.GetScoreAsync(
                     opponentParticipant.User.ClanId!.Value,
                     cachedSeason.Id,
-                    cachedRound.Id
+                    cachedRound.RoundIndex
                 );
                 clanResponse = opponentParticipant.User.Clan!.ToResponse(clanRank, clanScore);
             }
