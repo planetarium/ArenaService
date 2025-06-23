@@ -12,6 +12,10 @@ public interface ISeasonCacheRepository
     Task SetBlockIndexAsync(long blockIndex);
     Task SetSeasonAsync(int seasonId, long startBlock, long endBlock);
     Task SetRoundAsync(int roundId, int roundIndex, long startBlock, long endBlock);
+    Task DeleteBlockIndexAsync();
+    Task DeleteSeasonAsync();
+    Task DeleteRoundAsync();
+    Task DeleteAllAsync();
 }
 
 public class SeasonCacheRepository : ISeasonCacheRepository
@@ -97,6 +101,28 @@ public class SeasonCacheRepository : ISeasonCacheRepository
         var json = JsonSerializer.Serialize(roundData);
 
         await _redis.StringSetAsync($"{PREFIX}:{RoundKey}", json);
+    }
+
+    public async Task DeleteBlockIndexAsync()
+    {
+        await _redis.KeyDeleteAsync($"{PREFIX}:{BlockIndexKey}");
+    }
+
+    public async Task DeleteSeasonAsync()
+    {
+        await _redis.KeyDeleteAsync($"{PREFIX}:{SeasonKey}");
+    }
+
+    public async Task DeleteRoundAsync()
+    {
+        await _redis.KeyDeleteAsync($"{PREFIX}:{RoundKey}");
+    }
+
+    public async Task DeleteAllAsync()
+    {
+        await _redis.KeyDeleteAsync($"{PREFIX}:{BlockIndexKey}");
+        await _redis.KeyDeleteAsync($"{PREFIX}:{SeasonKey}");
+        await _redis.KeyDeleteAsync($"{PREFIX}:{RoundKey}");
     }
 
     private class CachedSeason

@@ -1,0 +1,216 @@
+@page "/manage-seasons"
+@using Microsoft.AspNetCore.Authorization
+@using ArenaService.Shared.Repositories
+@using ArenaService.Shared.Services
+@using ArenaService.Shared.Models
+@using Microsoft.EntityFrameworkCore
+@attribute [Authorize]
+@rendermode InteractiveServer
+@inject ISeasonRepository SeasonRepo
+@inject ISeasonCacheRepository SeasonCacheRepo
+@inject IRankingRepository RankingRepo
+@inject IRoundRepository RoundRepo
+@inject ISeasonPreparationService SeasonPreparationService
+@inject IRoundPreparationService RoundPreparationService
+@inject NavigationManager NavigationManager
+
+<h3>🏆 Season Management</h3>
+
+<!-- Ongoing Season Information -->
+<h4>📅 Currently Active Season</h4>
+@if (currentSeason != null)
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Start Block</th>
+                <th>End Block</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@currentSeason?.Id</td>
+                <td>@currentSeason?.StartBlock</td>
+                <td>@currentSeason?.EndBlock</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>📅 Currently Active Round</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Round Index</th>
+                <th>Start Block</th>
+                <th>End Block</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>@currentRound?.Id</td>
+                <td>@currentRound?.RoundIndex</td>
+                <td>@currentRound?.StartBlock</td>
+                <td>@currentRound?.EndBlock</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>📊 Ranking Data Availability</h4>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Round</th>
+                <th>Ranking Data Count</th>
+                <th>Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var roundRanking in rankingCounts)
+            {
+                <tr>
+                    <td>@roundRanking.RoundOffset</td>
+                    <td>@roundRanking.RankingCount</td>
+                    <td>@(roundRanking.RankingCount > 0 ? "✅ Ready" : "❌ Incomplete")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p>⚠️ No active season currently.</p>
+}
+
+<hr />
+
+<!-- Season Initialization -->
+<div class="form-group">
+    <label for="seasonId">Season ID:</label>
+    <input id="seasonId" class="form-control" @bind="seasonId" type="number" />
+</div>
+
+<button class="btn btn-primary" @onclick="InitializeSeason">Initialize Season</button>
+
+@if (seasonMessage is not null)
+{
+    <p class="text-info">@seasonMessage</p>
+}
+
+<hr />
+
+<!-- Round Preparation -->
+<div class="form-group">
+    <label for="roundId">(Prepares the currently active round and the next round. For example, if Round 42 is active but
+        Round 43 is not yet prepared, enter 42.) Round ID:</label>
+    <input id="roundId" class="form-control" @bind="roundId" type="number" />
+</div>
+
+<button class="btn btn-success" @onclick="PrepareNextRound">Prepare Next Round</button>
+
+@if (roundMessage is not null)
+{
+    <p class="text-info">@roundMessage</p>
+}
+
+@code {
+    private (int Id, long StartBlock, long EndBlock)? currentSeason;
+    private (int Id, int RoundIndex, long StartBlock, long EndBlock)? currentRound;
+    private List<(int RoundOffset, int RankingCount)> rankingCounts = new();
+    private int seasonId;
+    private int roundId;
+    private string? seasonMessage;
+    private string? roundMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            currentSeason = await SeasonCacheRepo.GetSeasonAsync();
+            currentRound = await SeasonCacheRepo.GetRoundAsync();
+
+            if (currentSeason.HasValue && currentRound.HasValue)
+            {
+                await LoadRankingCounts(currentSeason.Value.Id, currentRound.Value.RoundIndex);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"⚠️ Error occurred while loading active season data: {ex.Message}");
+        }
+    }
+
+    private async Task LoadRankingCounts(int seasonId, int currentRoundIndex)
+    {
+        rankingCounts.Clear();
+
+        for (int offset = -1; offset <= 1; offset++)
+        {
+            int roundToCheck = currentRoundIndex + offset;
+            if (roundToCheck < 0) {
+                continue;
+            }
+
+            int rankingCount = await RankingRepo.GetRankingCountAsync(seasonId, roundToCheck);
+            rankingCounts.Add((roundToCheck, rankingCount));
+        }
+    }
+
+    private async Task InitializeSeason()
+    {
+        seasonMessage = "Initializing season...";
+        try
+        {
+            var season = await SeasonRepo.GetSeasonAsync(seasonId, q => q.Include(s => s.Rounds));
+
+            if (season == null)
+            {
+                seasonMessage = "❌ Season not found.";
+                return;
+            }
+
+            var firstRound = season.Rounds.OrderBy(r => r.RoundIndex).FirstOrDefault();
+
+            if (firstRound == null)
+            {
+                seasonMessage = "⚠️ No rounds exist for this season.";
+                return;
+            }
+
+            await SeasonPreparationService.PrepareSeasonAsync((season, firstRound));
+
+            seasonMessage = "✅ Season initialized successfully!";
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            seasonMessage = $"❌ Error occurred: {ex.Message}";
+        }
+    }
+
+    private async Task PrepareNextRound()
+    {
+        roundMessage = "Preparing next round...";
+        try
+        {
+            var round = await RoundRepo.GetRoundAsync(roundId, q => q.Include(r => r.Season));
+            var season = await SeasonRepo.GetSeasonAsync(round!.SeasonId, q => q.Include(s => s.Rounds));
+
+            if (round == null || round.Season == null)
+            {
+                roundMessage = "❌ Round not found.";
+                return;
+            }
+
+            await RoundPreparationService.PrepareNextRoundWithSnapshotAsync((season, round));
+
+            roundMessage = "✅ Next round prepared successfully!";
+            NavigationManager.NavigateTo(NavigationManager.Uri, forceLoad: true);
+        }
+        catch (Exception ex)
+        {
+            roundMessage = $"❌ Error occurred: {ex.Message}";
+        }
+    }
+}

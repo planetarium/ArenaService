@@ -4,47 +4,44 @@ namespace ArenaService.Shared.Services;
 
 public interface ICacheInitializationService
 {
-    Task<bool> InitializeCacheAsync(int seasonId, int roundIndex);
-    Task<bool> InitializeAllCacheAsync();
-    Task<bool> InitializeSeasonAndRoundCacheAsync();
+    Task<bool> InitializeRankingCacheAsync(int seasonId, int roundIndex);
 }
 
 public class CacheInitializationService : ICacheInitializationService
 {
     private readonly IRankingRepository _rankingRepository;
     private readonly IRankingSnapshotRepository _rankingSnapshotRepository;
+    private readonly IParticipantRepository _participantRepository;
+    private readonly ISeasonCacheRepository _seasonCacheRepository;
 
     public CacheInitializationService(
         IRankingRepository rankingRepository,
-        IRankingSnapshotRepository rankingSnapshotRepository)
+        IRankingSnapshotRepository rankingSnapshotRepository,
+        IParticipantRepository participantRepository,
+        ISeasonCacheRepository seasonCacheRepository
+    )
     {
         _rankingRepository = rankingRepository;
         _rankingSnapshotRepository = rankingSnapshotRepository;
+        _participantRepository = participantRepository;
+        _seasonCacheRepository = seasonCacheRepository;
     }
 
-    public async Task<bool> InitializeCacheAsync(int seasonId, int roundIndex)
+    public async Task<bool> InitializeRankingCacheAsync(int seasonId, int roundIndex)
     {
-        var rankingCount = await _rankingRepository.GetRankingCountAsync(seasonId, roundIndex);
-        var snapshotCount = await _rankingSnapshotRepository.GetRankingSnapshotsCount(seasonId, roundIndex);
-        
-        if (rankingCount == 0 || snapshotCount < rankingCount)
+        var snapshotCount = await _rankingSnapshotRepository.GetRankingSnapshotsCount(
+            seasonId,
+            roundIndex
+        );
+        var participantCount = await _participantRepository.GetParticipantCountAsync(seasonId);
+
+        if (snapshotCount < participantCount - 50)
         {
             return false;
         }
 
-        await _rankingRepository.ClearRankingCacheAsync(seasonId, roundIndex);
-        return true;
-    }
-
-    public async Task<bool> InitializeAllCacheAsync()
-    {
         await _rankingRepository.ClearAllRankingCacheAsync();
+        await _seasonCacheRepository.DeleteAllAsync();
         return true;
     }
-
-    public async Task<bool> InitializeSeasonAndRoundCacheAsync()
-    {
-        await _rankingRepository.ClearSeasonAndRoundCacheAsync();
-        return true;
-    }
-} 
+}

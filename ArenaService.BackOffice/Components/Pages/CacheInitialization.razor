@@ -87,7 +87,7 @@
         </div>
         <div class="card-body">
             <p class="text-muted">모든 랭킹 캐시를 초기화합니다. 이 작업은 되돌릴 수 없습니다.</p>
-            <button class="btn btn-danger" @onclick="InitializeAllCache" disabled="@isLoading">
+            <button class="btn btn-danger" @onclick="InitializeRankingCacheAsync" disabled="@isLoading">
                 @if (isLoading)
                 {
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -140,21 +140,26 @@
     {
         rankingCounts.Clear();
 
-        for (int offset = -1; offset <= 2; offset++)
+        for (int offset = -1; offset <= 1; offset++)
         {
-            int rankingCount = await RankingRepo.GetRankingCountAsync(seasonId, currentRoundIndex + offset);
-            rankingCounts.Add((currentRoundIndex + offset, rankingCount));
+            int roundToCheck = currentRoundIndex + offset;
+            if (roundToCheck < 0) {
+                continue;
+            }
+
+            int rankingCount = await RankingRepo.GetRankingCountAsync(seasonId, roundToCheck);
+            rankingCounts.Add((roundToCheck, rankingCount));
         }
     }
 
-    private async Task InitializeAllCache()
+    private async Task InitializeRankingCacheAsync()
     {
         isLoading = true;
         message = "";
         
         try
         {
-            var result = await CacheInitializationService.InitializeAllCacheAsync();
+            var result = await CacheInitializationService.InitializeRankingCacheAsync(currentSeason.Value.Id, currentRound.Value.RoundIndex);
             
             if (result)
             {
