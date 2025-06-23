@@ -2,9 +2,13 @@
 @using ArenaService.Shared.Services
 @using ArenaService.Shared.Repositories
 @using ArenaService.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
+@attribute [Authorize]
 @inject ICacheInitializationService CacheInitializationService
 @inject ISeasonCacheRepository SeasonCacheRepo
 @inject IRankingRepository RankingRepo
+@inject IJSRuntime JSRuntime
 
 <PageTitle>캐시 초기화</PageTitle>
 
@@ -87,7 +91,7 @@
         </div>
         <div class="card-body">
             <p class="text-muted">모든 랭킹 캐시를 초기화합니다. 이 작업은 되돌릴 수 없습니다.</p>
-            <button class="btn btn-danger" @onclick="InitializeRankingCacheAsync" disabled="@isLoading">
+            <button class="btn btn-danger" @onclick="() => InitializeRankingCacheAsync()" disabled="@(isLoading || currentSeason == null || currentRound == null)">
                 @if (isLoading)
                 {
                     <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
@@ -98,6 +102,9 @@
                     <span>전체 캐시 초기화</span>
                 }
             </button>
+            <small class="text-muted d-block mt-2">
+                버튼 상태: isLoading=@isLoading, currentSeason=@(currentSeason != null), currentRound=@(currentRound != null)
+            </small>
         </div>
     </div>
 
@@ -121,6 +128,7 @@
     {
         try
         {
+            Console.WriteLine("OnInitializedAsync 시작");
             currentSeason = await SeasonCacheRepo.GetSeasonAsync();
             currentRound = await SeasonCacheRepo.GetRoundAsync();
 
@@ -128,11 +136,25 @@
             {
                 await LoadRankingCounts(currentSeason.Value.Id, currentRound.Value.RoundIndex);
             }
+            
+            Console.WriteLine($"초기화 완료 - isLoading: {isLoading}, currentSeason: {currentSeason}, currentRound: {currentRound}");
+            StateHasChanged();
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"OnInitializedAsync 오류: {ex}");
             message = $"시즌 정보를 불러오는 중 오류가 발생했습니다: {ex.Message}";
             alertClass = "alert-danger";
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("console.log", "CacheInitialization 페이지가 로드되었습니다.");
+            await JSRuntime.InvokeVoidAsync("console.log", "SignalR 연결 상태를 확인하세요.");
         }
     }
 
@@ -143,7 +165,7 @@
         for (int offset = -1; offset <= 1; offset++)
         {
             int roundToCheck = currentRoundIndex + offset;
-            if (roundToCheck < 0) {
+            if (roundToCheck < 1) {
                 continue;
             }
 
@@ -154,19 +176,23 @@
 
     private async Task InitializeRankingCacheAsync()
     {
+        Console.WriteLine("InitializeRankingCacheAsync 시작");
         isLoading = true;
         message = "";
+        StateHasChanged();
         
         try
         {
-            var result = await CacheInitializationService.InitializeRankingCacheAsync(currentSeason.Value.Id, currentRound.Value.RoundIndex);
+            Console.WriteLine($"시즌 ID: {currentSeason!.Value.Id}, 라운드 인덱스: {currentRound!.Value.RoundIndex}");
+            var result = await CacheInitializationService.InitializeRankingCacheAsync(currentSeason!.Value.Id, currentRound!.Value.Id);
+            
+            Console.WriteLine($"캐시 초기화 결과: {result}");
             
             if (result)
             {
                 message = "모든 랭킹 캐시가 성공적으로 초기화되었습니다.";
                 alertClass = "alert-success";
                 
-                // 페이지 새로고침하여 최신 정보 표시
                 await Task.Delay(1000);
                 await LoadRankingCounts(currentSeason!.Value.Id, currentRound!.Value.RoundIndex);
             }
@@ -178,12 +204,14 @@
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"오류 발생: {ex}");
             message = $"캐시 초기화 중 오류가 발생했습니다: {ex.Message}";
             alertClass = "alert-danger";
         }
         finally
         {
             isLoading = false;
+            StateHasChanged();
         }
     }
 } 

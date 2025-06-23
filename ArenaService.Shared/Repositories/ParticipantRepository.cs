@@ -86,7 +86,7 @@ public class ParticipantRepository : IParticipantRepository
     public async Task<int> GetParticipantCountAsync(int seasonId)
     {
         return await _context
-            .RankingSnapshots.AsQueryable()
+            .Participants.AsQueryable()
             .AsNoTracking()
             .Where(p => p.SeasonId == seasonId)
             .CountAsync();

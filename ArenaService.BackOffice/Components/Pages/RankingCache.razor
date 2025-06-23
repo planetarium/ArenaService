@@ -1,4 +1,4 @@
-@page "/manage-seasons"
+@page "/ranking-cache"
 @using Microsoft.AspNetCore.Authorization
 @using ArenaService.Shared.Repositories
 @using ArenaService.Shared.Services
@@ -148,7 +148,7 @@ else
         for (int offset = -1; offset <= 1; offset++)
         {
             int roundToCheck = currentRoundIndex + offset;
-            if (roundToCheck < 0) {
+            if (roundToCheck < 1) {
                 continue;
             }
 

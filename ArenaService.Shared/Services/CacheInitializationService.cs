@@ -27,11 +27,11 @@ public class CacheInitializationService : ICacheInitializationService
         _seasonCacheRepository = seasonCacheRepository;
     }
 
-    public async Task<bool> InitializeRankingCacheAsync(int seasonId, int roundIndex)
+    public async Task<bool> InitializeRankingCacheAsync(int seasonId, int roundId)
     {
         var snapshotCount = await _rankingSnapshotRepository.GetRankingSnapshotsCount(
             seasonId,
-            roundIndex
+            roundId
         );
         var participantCount = await _participantRepository.GetParticipantCountAsync(seasonId);
 
