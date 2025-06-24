@@ -56,7 +56,7 @@ public class RoundPreparationService : IRoundPreparationService
 
         var clanIds = await _clanRankingRepo.GetClansAsync(
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id
+            seasonAndRound.Round.RoundIndex
         );
 
         _logger.LogInformation($"{nameof(RoundPreparationService)} Load participants");
@@ -68,7 +68,7 @@ public class RoundPreparationService : IRoundPreparationService
             var newParticipants = await _participantRepo.GetParticipantsAsync(
                 seasonAndRound.Season.Id,
                 skip,
-                1500
+                3000
             );
             _logger.LogInformation(
                 $"{nameof(RoundPreparationService)} ... {newParticipants.Count}"
@@ -84,7 +84,7 @@ public class RoundPreparationService : IRoundPreparationService
                 break;
 
             participants.AddRange(newParticipants);
-            skip += 1500;
+            skip += 3000;
         }
         var rankingData = participants.Select(p => (p.AvatarAddress, p.Score)).ToList();
         _logger.LogInformation($"{nameof(RoundPreparationService)} Select avatar address, score");
@@ -113,14 +113,14 @@ public class RoundPreparationService : IRoundPreparationService
 
         await _rankingService.UpdateAllClanRankingAsync(
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id + 1,
+            seasonAndRound.Round.RoundIndex + 1,
             seasonAndRound.Season.RoundInterval
         );
 
         await _rankingRepo.InitRankingAsync(
             rankingData,
             seasonAndRound.Season.Id,
-            seasonAndRound.Round.Id + 1,
+            seasonAndRound.Round.RoundIndex + 1,
             seasonAndRound.Season.RoundInterval
         );
         _logger.LogInformation($"{nameof(RoundPreparationService)} Update Redis Ranking");
@@ -140,8 +140,8 @@ public class RoundPreparationService : IRoundPreparationService
             await _clanRankingRepo.CopyRoundDataAsync(
                 clanId,
                 seasonAndRound.Season.Id,
-                seasonAndRound.Round.Id,
-                seasonAndRound.Round.Id + 1,
+                seasonAndRound.Round.RoundIndex,
+                seasonAndRound.Round.RoundIndex + 1,
                 seasonAndRound.Season.RoundInterval
             );
 

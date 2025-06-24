@@ -155,6 +155,7 @@ public class CacheBlockTipWorker : BackgroundService
 
             await seasonCacheRepo.SetRoundAsync(
                 seasonInfo.Round.Id,
+                seasonInfo.Round.RoundIndex,
                 seasonInfo.Round.StartBlock,
                 seasonInfo.Round.EndBlock
             );

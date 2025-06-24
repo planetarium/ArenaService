@@ -1,0 +1,217 @@
+@page "/cache-initialization"
+@using ArenaService.Shared.Services
+@using ArenaService.Shared.Repositories
+@using ArenaService.Shared.Models
+@using Microsoft.AspNetCore.Authorization
+@rendermode InteractiveServer
+@attribute [Authorize]
+@inject ICacheInitializationService CacheInitializationService
+@inject ISeasonCacheRepository SeasonCacheRepo
+@inject IRankingRepository RankingRepo
+@inject IJSRuntime JSRuntime
+
+<PageTitle>캐시 초기화</PageTitle>
+
+<div class="container mt-4">
+    <h2>🔄 캐시 초기화</h2>
+    
+    <!-- 현재 진행 중인 시즌 정보 -->
+    <h4>📅 현재 진행 중인 시즌</h4>
+    @if (currentSeason != null)
+    {
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>시작 블록</th>
+                    <th>종료 블록</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@currentSeason?.Id</td>
+                    <td>@currentSeason?.StartBlock</td>
+                    <td>@currentSeason?.EndBlock</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>📅 현재 진행 중인 라운드</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>라운드 인덱스</th>
+                    <th>시작 블록</th>
+                    <th>종료 블록</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>@currentRound?.Id</td>
+                    <td>@currentRound?.RoundIndex</td>
+                    <td>@currentRound?.StartBlock</td>
+                    <td>@currentRound?.EndBlock</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h4>📊 랭킹 데이터 가용성</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>라운드</th>
+                    <th>랭킹 데이터 수</th>
+                    <th>상태</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var roundRanking in rankingCounts)
+                {
+                    <tr>
+                        <td>@roundRanking.RoundIndex</td>
+                        <td>@roundRanking.RankingCount</td>
+                        <td>@(roundRanking.RankingCount > 0 ? "✅ 준비됨" : "❌ 불완전")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    }
+    else
+    {
+        <p>⚠️ 현재 진행 중인 시즌이 없습니다.</p>
+    }
+
+    <hr />
+
+    <!-- 전체 캐시 초기화 -->
+    <div class="card">
+        <div class="card-header">
+            <h5>🗑️ 전체 캐시 초기화</h5>
+        </div>
+        <div class="card-body">
+            <p class="text-muted">모든 랭킹 캐시를 초기화합니다. 이 작업은 되돌릴 수 없습니다.</p>
+            <button class="btn btn-danger" @onclick="() => InitializeRankingCacheAsync()" disabled="@(isLoading || currentSeason == null || currentRound == null)">
+                @if (isLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span>처리 중...</span>
+                }
+                else
+                {
+                    <span>전체 캐시 초기화</span>
+                }
+            </button>
+            <small class="text-muted d-block mt-2">
+                버튼 상태: isLoading=@isLoading, currentSeason=@(currentSeason != null), currentRound=@(currentRound != null)
+            </small>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(message))
+    {
+        <div class="alert @alertClass mt-3" role="alert">
+            @message
+        </div>
+    }
+</div>
+
+@code {
+    private bool isLoading = false;
+    private string message = "";
+    private string alertClass = "";
+    private (int Id, long StartBlock, long EndBlock)? currentSeason;
+    private (int Id, int RoundIndex, long StartBlock, long EndBlock)? currentRound;
+    private List<(int RoundIndex, int RankingCount)> rankingCounts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            Console.WriteLine("OnInitializedAsync 시작");
+            currentSeason = await SeasonCacheRepo.GetSeasonAsync();
+            currentRound = await SeasonCacheRepo.GetRoundAsync();
+
+            if (currentSeason.HasValue && currentRound.HasValue)
+            {
+                await LoadRankingCounts(currentSeason.Value.Id, currentRound.Value.RoundIndex);
+            }
+            
+            Console.WriteLine($"초기화 완료 - isLoading: {isLoading}, currentSeason: {currentSeason}, currentRound: {currentRound}");
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"OnInitializedAsync 오류: {ex}");
+            message = $"시즌 정보를 불러오는 중 오류가 발생했습니다: {ex.Message}";
+            alertClass = "alert-danger";
+            StateHasChanged();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("console.log", "CacheInitialization 페이지가 로드되었습니다.");
+            await JSRuntime.InvokeVoidAsync("console.log", "SignalR 연결 상태를 확인하세요.");
+        }
+    }
+
+    private async Task LoadRankingCounts(int seasonId, int currentRoundIndex)
+    {
+        rankingCounts.Clear();
+
+        for (int offset = -1; offset <= 1; offset++)
+        {
+            int roundToCheck = currentRoundIndex + offset;
+            if (roundToCheck < 1) {
+                continue;
+            }
+
+            int rankingCount = await RankingRepo.GetRankingCountAsync(seasonId, roundToCheck);
+            rankingCounts.Add((roundToCheck, rankingCount));
+        }
+    }
+
+    private async Task InitializeRankingCacheAsync()
+    {
+        Console.WriteLine("InitializeRankingCacheAsync 시작");
+        isLoading = true;
+        message = "";
+        StateHasChanged();
+        
+        try
+        {
+            Console.WriteLine($"시즌 ID: {currentSeason!.Value.Id}, 라운드 인덱스: {currentRound!.Value.RoundIndex}");
+            var result = await CacheInitializationService.InitializeRankingCacheAsync(currentSeason!.Value.Id, currentRound!.Value.Id);
+            
+            Console.WriteLine($"캐시 초기화 결과: {result}");
+            
+            if (result)
+            {
+                message = "모든 랭킹 캐시가 성공적으로 초기화되었습니다.";
+                alertClass = "alert-success";
+                
+                await Task.Delay(1000);
+                await LoadRankingCounts(currentSeason!.Value.Id, currentRound!.Value.RoundIndex);
+            }
+            else
+            {
+                message = "캐시 초기화에 실패했습니다.";
+                alertClass = "alert-danger";
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"오류 발생: {ex}");
+            message = $"캐시 초기화 중 오류가 발생했습니다: {ex.Message}";
+            alertClass = "alert-danger";
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+} 

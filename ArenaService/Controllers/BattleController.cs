@@ -87,6 +87,7 @@ public class BattleController : ControllerBase
         var participant = await _participateService.ParticipateAsync(
             cachedSeason.Id,
             cachedRound.Id,
+            cachedRound.RoundIndex,
             avatarAddress,
             (int)(cachedRound.EndBlock - cachedRound.StartBlock),
             query =>

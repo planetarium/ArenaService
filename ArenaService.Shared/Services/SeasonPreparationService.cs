@@ -24,7 +24,7 @@ public class SeasonPreparationService : ISeasonPreparationService
     private readonly IRankingService _rankingService;
     private readonly ILogger<SeasonPreparationService> _logger;
 
-    private const int BatchSize = 1500;
+    private const int BatchSize = 3000;
 
     public SeasonPreparationService(
         IParticipantRepository participantRepo,
@@ -49,7 +49,10 @@ public class SeasonPreparationService : ISeasonPreparationService
 
     public async Task PrepareSeasonAsync((Season Season, Round Round) seasonAndRound)
     {
-        var prevSeasonId = seasonAndRound.Season.Id - 1;
+        var prevSeason = await _seasonService.GetLastSeasonByBlockIndexAsync(
+            seasonAndRound.Season.StartBlock
+        );
+        var prevSeasonId = prevSeason.Id;
         Dictionary<Address, int>? medalCounts = null;
         int skip = 0;
 
@@ -167,11 +170,16 @@ public class SeasonPreparationService : ISeasonPreparationService
         Round round
     )
     {
-        await _rankingRepo.InitRankingAsync(rankingData, season.Id, round.Id, season.RoundInterval);
         await _rankingRepo.InitRankingAsync(
             rankingData,
             season.Id,
-            round.Id + 1,
+            round.RoundIndex,
+            season.RoundInterval
+        );
+        await _rankingRepo.InitRankingAsync(
+            rankingData,
+            season.Id,
+            round.RoundIndex + 1,
             season.RoundInterval
         );
 
@@ -181,21 +189,25 @@ public class SeasonPreparationService : ISeasonPreparationService
                 clanRankingData,
                 clanId,
                 season.Id,
-                round.Id,
+                round.RoundIndex,
                 season.RoundInterval
             );
             await _clanRankingRepo.InitRankingAsync(
                 clanRankingData,
                 clanId,
                 season.Id,
-                round.Id + 1,
+                round.RoundIndex + 1,
                 season.RoundInterval
             );
         }
-        await _rankingService.UpdateAllClanRankingAsync(season.Id, round.Id, season.RoundInterval);
         await _rankingService.UpdateAllClanRankingAsync(
             season.Id,
-            round.Id + 1,
+            round.RoundIndex,
+            season.RoundInterval
+        );
+        await _rankingService.UpdateAllClanRankingAsync(
+            season.Id,
+            round.RoundIndex + 1,
             season.RoundInterval
         );
     }

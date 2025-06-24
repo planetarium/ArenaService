@@ -52,12 +52,12 @@ public class ClanController : ControllerBase
             var myClanRank = await _allClanRankingRepo.GetRankAsync(
                 user.ClanId!.Value,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
             var myClanScore = await _allClanRankingRepo.GetScoreAsync(
                 user.ClanId!.Value,
                 cachedSeason.Id,
-                cachedRound.Id
+                cachedRound.RoundIndex
             );
             myClanResponse = new ClanResponse
             {

@@ -16,14 +16,14 @@ public class SelectBattleOpponentsTotal3000Tests : BaseTest
     public async Task SelectBattleOpponentsTotal3000Correctly()
     {
         var seasonId = 1;
-        var roundId = 1;
+        var roundIndex = 1;
 
-        string statusKey = string.Format(RankingRepository.StatusKeyFormat, seasonId, roundId);
+        string statusKey = string.Format(RankingRepository.StatusKeyFormat, seasonId, roundIndex);
         await Database.StringSetAsync(statusKey, RankingStatus.DONE.ToString());
 
         var totalParticipants = 3000;
         var participants = new Dictionary<int, Address>();
-        string rankingKey = string.Format(RankingRepository.RankingKeyFormat, seasonId, roundId);
+        string rankingKey = string.Format(RankingRepository.RankingKeyFormat, seasonId, roundIndex);
 
         for (int i = 0; i < totalParticipants; i++)
         {
@@ -47,14 +47,14 @@ public class SelectBattleOpponentsTotal3000Tests : BaseTest
         {
             foreach (var (score, address) in participants)
             {
-                await CheckRankInRange(seasonId, roundId, address, rankingKey);
+                await CheckRankInRange(seasonId, roundIndex, address, rankingKey);
             }
         }
     }
 
     private async Task CheckRankInRange(
         int seasonId,
-        int roundId,
+        int roundIndex,
         Address avatarAddress,
         string rankingKey
     )
@@ -62,7 +62,7 @@ public class SelectBattleOpponentsTotal3000Tests : BaseTest
         var opponents = await RankingRepository.SelectBattleOpponentsAsync(
             avatarAddress,
             seasonId,
-            roundId,
+            roundIndex,
             true
         );
         Assert.Equal(5, opponents.Count);

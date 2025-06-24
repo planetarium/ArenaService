@@ -46,6 +46,8 @@ public class RankingCopyWorker : BackgroundService
                     var cachedRound = await seasonCacheRepo.GetRoundAsync();
                     var cachedSeason = await seasonCacheRepo.GetSeasonAsync();
 
+                    var prevRound = await roundRepo.GetRoundAsync(cachedSeason.Id, cachedRound.RoundIndex - 1);
+
                     _logger.LogInformation(
                         $"Check prepare next round {cachedBlockIndex >= cachedRound.EndBlock - 5} prepareInProgress: {prepareInProgress}"
                     );
@@ -71,7 +73,7 @@ public class RankingCopyWorker : BackgroundService
                             cachedRound.Id
                         ) < await rankingSnapshotRepo.GetRankingSnapshotsCount(
                             cachedSeason.Id,
-                            cachedRound.Id - 1
+                            prevRound.Id
                         )
                     )
                     {
@@ -123,11 +125,11 @@ public class RankingCopyWorker : BackgroundService
         var nextRoundInfo = await seasonService.GetSeasonAndRoundByBlock(blockIndex + 10);
         var nextRoundRankingCount = await rankingSnapshotRepo.GetRankingSnapshotsCount(
             nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id
+            nextRoundInfo.Round.RoundIndex
         );
         var previousRoundRankingCount = await rankingSnapshotRepo.GetRankingSnapshotsCount(
             nextRoundInfo.Season.Id,
-            nextRoundInfo.Round.Id - 1
+            nextRoundInfo.Round.RoundIndex - 1
         );
 
         _logger.LogInformation(

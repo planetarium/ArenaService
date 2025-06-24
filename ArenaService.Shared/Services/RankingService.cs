@@ -7,12 +7,12 @@ public interface IRankingService
     Task UpdateScoreAsync(
         Address avatarAddress,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int scoreChange,
         int? clanId
     );
 
-    Task UpdateAllClanRankingAsync(int seasonId, int roundId, int roundInterval);
+    Task UpdateAllClanRankingAsync(int seasonId, int roundIndex, int roundInterval);
 }
 
 public class RankingService : IRankingService
@@ -35,12 +35,12 @@ public class RankingService : IRankingService
     public async Task UpdateScoreAsync(
         Address avatarAddress,
         int seasonId,
-        int roundId,
+        int roundIndex,
         int scoreChange,
         int? clanId = null
     )
     {
-        await _rankingRepo.UpdateScoreAsync(avatarAddress, seasonId, roundId, scoreChange);
+        await _rankingRepo.UpdateScoreAsync(avatarAddress, seasonId, roundIndex, scoreChange);
 
         if (clanId is not null)
         {
@@ -48,27 +48,27 @@ public class RankingService : IRankingService
                 clanId.Value,
                 avatarAddress,
                 seasonId,
-                roundId,
+                roundIndex,
                 scoreChange
             );
         }
     }
 
-    public async Task UpdateAllClanRankingAsync(int seasonId, int roundId, int roundInterval)
+    public async Task UpdateAllClanRankingAsync(int seasonId, int roundIndex, int roundInterval)
     {
-        var clans = await _clanRankingRepo.GetClansAsync(seasonId, roundId);
+        var clans = await _clanRankingRepo.GetClansAsync(seasonId, roundIndex);
 
         var clanScores = new List<(int ClanId, int Score)>();
 
         foreach (var clanId in clans)
         {
-            var topMembers = await _clanRankingRepo.GetTopClansAsync(clanId, seasonId, roundId);
+            var topMembers = await _clanRankingRepo.GetTopClansAsync(clanId, seasonId, roundIndex);
 
             int totalScore = topMembers.Sum(member => member.Score);
 
             clanScores.Add((clanId, totalScore));
         }
 
-        await _allClanRankingRepo.InitRankingAsync(clanScores, seasonId, roundId, roundInterval);
+        await _allClanRankingRepo.InitRankingAsync(clanScores, seasonId, roundIndex, roundInterval);
     }
 }

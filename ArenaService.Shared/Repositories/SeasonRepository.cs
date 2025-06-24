@@ -39,6 +39,7 @@ public interface ISeasonRepository
     );
     Task<Season> UpdateSeasonAsync(
         int id,
+        int seasonGroupId,
         ArenaType arenaType,
         int roundInterval,
         int requiredMedalCount,
@@ -47,6 +48,7 @@ public interface ISeasonRepository
         int refreshTicketPolicyId
     );
     Task<Season> AdjustSeasonEndBlockAsync(int seasonId, long newEndBlock);
+    Task DeleteSeasonAsync(int seasonId);
 }
 
 public class SeasonRepository : ISeasonRepository
@@ -190,7 +192,8 @@ public class SeasonRepository : ISeasonRepository
                 {
                     SeasonId = season.Id,
                     StartBlock = currentStart,
-                    EndBlock = currentEnd
+                    EndBlock = currentEnd,
+                    RoundIndex = i
                 }
             );
 
@@ -203,6 +206,7 @@ public class SeasonRepository : ISeasonRepository
 
     public async Task<Season> UpdateSeasonAsync(
         int id,
+        int seasonGroupId,
         ArenaType arenaType,
         int roundInterval,
         int requiredMedalCount,
@@ -218,6 +222,7 @@ public class SeasonRepository : ISeasonRepository
         season.TotalPrize = totalPrize;
         season.BattleTicketPolicyId = battleTicketPolicyId;
         season.RefreshTicketPolicyId = refreshTicketPolicyId;
+        season.SeasonGroupId = seasonGroupId;
 
         await _context.SaveChangesAsync();
         return season;
@@ -230,5 +235,12 @@ public class SeasonRepository : ISeasonRepository
 
         await _context.SaveChangesAsync();
         return season;
+    }
+
+    public async Task DeleteSeasonAsync(int seasonId)
+    {
+        var season = await _context.Seasons.SingleAsync(s => s.Id == seasonId);
+        _context.Seasons.Remove(season);
+        await _context.SaveChangesAsync();
     }
 }

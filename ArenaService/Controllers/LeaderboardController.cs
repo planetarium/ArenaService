@@ -23,9 +23,9 @@ public class LeaderboardController : ControllerBase
 
     [HttpGet("count")]
     [SwaggerResponse(StatusCodes.Status200OK, "Ranking Count Response", typeof(int))]
-    public async Task<ActionResult<int>> GetRankingCount(int seasonId, int roundId)
+    public async Task<ActionResult<int>> GetRankingCount(int seasonId, int roundIndex)
     {
-        var rankingCount = await _rankingRepo.GetRankingCountAsync(seasonId, roundId);
+        var rankingCount = await _rankingRepo.GetRankingCountAsync(seasonId, roundIndex);
 
         return Ok(rankingCount);
     }

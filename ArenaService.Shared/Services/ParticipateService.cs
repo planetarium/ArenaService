@@ -13,6 +13,7 @@ public interface IParticipateService
     Task<Participant> ParticipateAsync(
         int seasonId,
         int roundId,
+        int roundIndex,
         Address avatarAddress,
         int roundInterval,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
@@ -54,6 +55,7 @@ public class ParticipateService : IParticipateService
     public async Task<Participant> ParticipateAsync(
         int seasonId,
         int roundId,
+        int roundIndex,
         Address avatarAddress,
         int roundInterval,
         Func<IQueryable<Participant>, IQueryable<Participant>>? includeQuery = null
@@ -122,13 +124,13 @@ public class ParticipateService : IParticipateService
         await _rankingRepo.UpdateScoreAsync(
             participant.AvatarAddress,
             seasonId,
-            roundId,
+            roundIndex,
             participant.Score
         );
         await _rankingRepo.UpdateScoreAsync(
             participant.AvatarAddress,
             seasonId,
-            roundId + 1,
+            roundIndex + 1,
             participant.Score
         );
 
@@ -138,14 +140,14 @@ public class ParticipateService : IParticipateService
                 user.ClanId.Value,
                 avatarAddress,
                 seasonId,
-                roundId,
+                roundIndex,
                 participant.Score
             );
             await _clanRankingRepo.UpdateScoreAsync(
                 user.ClanId.Value,
                 avatarAddress,
                 seasonId,
-                roundId + 1,
+                roundIndex + 1,
                 participant.Score
             );
         }
