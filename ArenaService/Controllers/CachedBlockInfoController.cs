@@ -40,6 +40,7 @@ public class CachedBlockInfoController : ControllerBase
                 ),
                 Round: new RoundInfo(
                     Id: round.Id,
+                    RoundIndex: round.RoundIndex,
                     StartBlock: round.StartBlock,
                     EndBlock: round.EndBlock
                 ),
