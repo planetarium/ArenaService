@@ -9,4 +9,4 @@ public record CachedBlockInfoResponse(
 
 public record SeasonInfo(int Id, long StartBlock, long EndBlock);
 
-public record RoundInfo(int Id, long StartBlock, long EndBlock); 
+public record RoundInfo(int Id, int RoundIndex, long StartBlock, long EndBlock); 
