@@ -24,6 +24,12 @@ public interface ISeasonService
     Task<Season?> GetLastSeasonByBlockIndexAsync(long blockIndex);
     
     Task<List<Season>> GetCompletedSeasonsBeforeBlock(long blockIndex);
+
+    Task<(List<Season> Seasons, int TotalCount, int TotalPages, bool HasNextPage, bool HasPreviousPage)> GetSeasonsPagedAsync(
+        int pageNumber,
+        int pageSize,
+        Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
+    );
 }
 
 public class SeasonService : ISeasonService
@@ -148,5 +154,20 @@ public class SeasonService : ISeasonService
             .Where(s => s.ArenaType == ArenaType.SEASON && s.EndBlock < blockIndex)
             .OrderByDescending(s => s.EndBlock)
             .ToList();
+    }
+
+    public async Task<(List<Season> Seasons, int TotalCount, int TotalPages, bool HasNextPage, bool HasPreviousPage)> GetSeasonsPagedAsync(
+        int pageNumber,
+        int pageSize,
+        Func<IQueryable<Season>, IQueryable<Season>>? includeQuery = null
+    )
+    {
+        var seasons = await _seasonRepo.GetSeasonsPagedAsync(pageNumber, pageSize, includeQuery);
+        var totalCount = await _seasonRepo.GetTotalSeasonsCountAsync();
+        var totalPages = (int)Math.Ceiling((double)totalCount / pageSize);
+        var hasNextPage = pageNumber < totalPages;
+        var hasPreviousPage = pageNumber > 1;
+
+        return (seasons, totalCount, totalPages, hasNextPage, hasPreviousPage);
     }
 }
