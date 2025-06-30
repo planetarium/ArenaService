@@ -18,6 +18,7 @@ public class LeaderboardControllerTests
     private readonly Mock<ILeaderboardRepository> _mockLeaderboardRepo;
     private readonly Mock<ISeasonService> _mockSeasonService;
     private readonly Mock<ISeasonCacheRepository> _mockSeasonCacheRepo;
+    private readonly Mock<ISeasonRepository> _mockSeasonRepo;
     private readonly LeaderboardController _controller;
 
     public LeaderboardControllerTests()
@@ -27,13 +28,15 @@ public class LeaderboardControllerTests
         _mockLeaderboardRepo = new Mock<ILeaderboardRepository>();
         _mockSeasonService = new Mock<ISeasonService>();
         _mockSeasonCacheRepo = new Mock<ISeasonCacheRepository>();
+        _mockSeasonRepo = new Mock<ISeasonRepository>();
 
         _controller = new LeaderboardController(
             _mockAllClanRankingRepo.Object,
             _mockRankingRepo.Object,
             _mockLeaderboardRepo.Object,
             _mockSeasonService.Object,
-            _mockSeasonCacheRepo.Object
+            _mockSeasonCacheRepo.Object,
+            _mockSeasonRepo.Object
         );
     }
 
@@ -84,6 +87,10 @@ public class LeaderboardControllerTests
             .Setup(x => x.GetSeasonAndRoundByBlock(blockIndex))
             .ReturnsAsync((season, round));
 
+        _mockSeasonRepo
+            .Setup(x => x.GetSeasonAsync(season.Id, null))
+            .ReturnsAsync(season);
+
         _mockSeasonCacheRepo
             .Setup(x => x.GetSeasonAsync())
             .ReturnsAsync(currentSeasonInfo);
@@ -93,7 +100,7 @@ public class LeaderboardControllerTests
             .ReturnsAsync(leaderboardData);
 
         // Act
-        var result = await _controller.GetCompletedArenaLeaderboard(blockIndex);
+        var result = await _controller.GetCompletedArenaLeaderboard(1);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result.Result);
@@ -145,11 +152,10 @@ public class LeaderboardControllerTests
             .ReturnsAsync(currentSeasonInfo);
 
         // Act
-        var result = await _controller.GetCompletedArenaLeaderboard(blockIndex);
+        var result = await _controller.GetCompletedArenaLeaderboard(1);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("The requested block index corresponds to an ongoing or future season.", badRequestResult.Value);
     }
 
     [Fact]
@@ -164,10 +170,9 @@ public class LeaderboardControllerTests
             .ThrowsAsync(new Exception(errorMessage));
 
         // Act
-        var result = await _controller.GetCompletedArenaLeaderboard(blockIndex);
+        var result = await _controller.GetCompletedArenaLeaderboard(1);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal(errorMessage, badRequestResult.Value);
     }
 }

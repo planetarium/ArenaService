@@ -15,6 +15,7 @@ public class LeaderboardController : ControllerBase
     private readonly IRankingRepository _rankingRepo;
     private readonly ILeaderboardRepository _leaderboardRepo;
     private readonly ISeasonService _seasonService;
+    private readonly ISeasonRepository _seasonRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public LeaderboardController(
@@ -22,7 +23,8 @@ public class LeaderboardController : ControllerBase
         IRankingRepository rankingRepo,
         ILeaderboardRepository leaderboardRepo,
         ISeasonService seasonService,
-        ISeasonCacheRepository seasonCacheRepo
+        ISeasonCacheRepository seasonCacheRepo,
+        ISeasonRepository seasonRepo
     )
     {
         _allClanRankingRepo = allClanRankingRepo;
@@ -30,6 +32,7 @@ public class LeaderboardController : ControllerBase
         _leaderboardRepo = leaderboardRepo;
         _seasonService = seasonService;
         _seasonCacheRepo = seasonCacheRepo;
+        _seasonRepo = seasonRepo;
     }
 
     [HttpGet("count")]
@@ -49,16 +52,14 @@ public class LeaderboardController : ControllerBase
     )]
     public async Task<
         ActionResult<CompletedSeasonLeaderboardResponse>
-    > GetCompletedArenaLeaderboard(long blockIndex)
+    > GetCompletedArenaLeaderboard(int seasonId)
     {
         try
         {
-            var seasonInfo = await _seasonService.GetSeasonAndRoundByBlock(blockIndex);
-            var season = seasonInfo.Season;
-
+            var season = await _seasonRepo.GetSeasonAsync(seasonId);
             var currentSeasonInfo = await _seasonCacheRepo.GetSeasonAsync();
             
-            if (blockIndex >= currentSeasonInfo.StartBlock)
+            if (season.Id >= currentSeasonInfo.Id)
             {
                 return BadRequest(
                     "The requested block index corresponds to an ongoing or future season."
