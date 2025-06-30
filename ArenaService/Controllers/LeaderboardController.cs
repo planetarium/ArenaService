@@ -42,51 +42,25 @@ public class LeaderboardController : ControllerBase
     [SwaggerResponse(
         StatusCodes.Status200OK,
         "Completed Arena Leaderboard Response",
-        typeof(CompletedArenaLeaderboardResponse)
+        typeof(CompletedSeasonLeaderboardResponse)
     )]
-    public async Task<ActionResult<CompletedArenaLeaderboardResponse>> GetCompletedArenaLeaderboard(
+    public async Task<ActionResult<CompletedSeasonLeaderboardResponse>> GetCompletedArenaLeaderboard(
         long blockIndex
     )
     {
-        (Season Season, Round Round) currentSeasonInfo;
         try
         {
-            currentSeasonInfo = await _seasonService.GetSeasonAndRoundByBlock(blockIndex);
-        }
-        catch (Exception ex)
-        {
-            return BadRequest(ex.Message);
-        }
+            var seasonInfo = await _seasonService.GetSeasonAndRoundByBlock(blockIndex);
+            var season = seasonInfo.Season;
 
-        var currentSeason = currentSeasonInfo.Season;
+            if (season.EndBlock >= blockIndex)
+            {
+                return BadRequest("The requested block index corresponds to an ongoing season.");
+            }
 
-        var completedSeasons = await _seasonService.GetCompletedSeasonsBeforeBlock(blockIndex);
-
-        if (!completedSeasons.Any())
-        {
-            return Ok(
-                new CompletedArenaLeaderboardResponse
-                {
-                    CurrentSeason = new SimpleSeasonResponse
-                    {
-                        Id = currentSeason.Id,
-                        SeasonGroupId = currentSeason.SeasonGroupId,
-                        StartBlock = currentSeason.StartBlock,
-                        EndBlock = currentSeason.EndBlock,
-                        ArenaType = currentSeason.ArenaType,
-                    },
-                    CompletedSeasons = new List<CompletedSeasonLeaderboardResponse>(),
-                }
-            );
-        }
-
-        var completedSeasonLeaderboards = new List<CompletedSeasonLeaderboardResponse>();
-
-        foreach (var season in completedSeasons)
-        {
             var leaderboardData = await _leaderboardRepo.GetLeaderboardAsync(season.Id);
-
-            var leaderboardResponse = new CompletedSeasonLeaderboardResponse
+            
+            var response = new CompletedSeasonLeaderboardResponse
             {
                 Season = new SimpleSeasonResponse
                 {
@@ -111,22 +85,11 @@ public class LeaderboardController : ControllerBase
                     .ToList(),
             };
 
-            completedSeasonLeaderboards.Add(leaderboardResponse);
+            return Ok(response);
         }
-
-        return Ok(
-            new CompletedArenaLeaderboardResponse
-            {
-                CurrentSeason = new SimpleSeasonResponse
-                {
-                    Id = currentSeason.Id,
-                    SeasonGroupId = currentSeason.SeasonGroupId,
-                    StartBlock = currentSeason.StartBlock,
-                    EndBlock = currentSeason.EndBlock,
-                    ArenaType = currentSeason.ArenaType,
-                },
-                CompletedSeasons = completedSeasonLeaderboards,
-            }
-        );
+        catch (Exception ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

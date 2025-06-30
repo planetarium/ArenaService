@@ -2,12 +2,6 @@ using ArenaService.Shared.Constants;
 
 namespace ArenaService.Shared.Dtos;
 
-public class CompletedArenaLeaderboardResponse
-{
-    public SimpleSeasonResponse CurrentSeason { get; set; } = new();
-    public List<CompletedSeasonLeaderboardResponse> CompletedSeasons { get; set; } = new();
-}
-
 public class CompletedSeasonLeaderboardResponse
 {
     public SimpleSeasonResponse Season { get; set; } = new();
