@@ -22,6 +22,8 @@ public interface ISeasonService
     Task DeleteSeasonAsync(int seasonId);
     
     Task<Season?> GetLastSeasonByBlockIndexAsync(long blockIndex);
+    
+    Task<List<Season>> GetCompletedSeasonsBeforeBlock(long blockIndex);
 }
 
 public class SeasonService : ISeasonService
@@ -136,5 +138,15 @@ public class SeasonService : ISeasonService
             .Where(s => s.ArenaType == ArenaType.SEASON && s.EndBlock < blockIndex)
             .OrderByDescending(s => s.EndBlock)
             .FirstOrDefault();
+    }
+
+    public async Task<List<Season>> GetCompletedSeasonsBeforeBlock(long blockIndex)
+    {
+        var seasons = await _seasonRepo.GetAllSeasonsAsync();
+        
+        return seasons
+            .Where(s => s.ArenaType == ArenaType.SEASON && s.EndBlock < blockIndex)
+            .OrderByDescending(s => s.EndBlock)
+            .ToList();
     }
 }
