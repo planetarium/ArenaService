@@ -184,6 +184,7 @@ public class Startup
         services.AddScoped<IRoundRepository, RoundRepository>();
         services.AddScoped<ITicketRepository, TicketRepository>();
         services.AddScoped<IMedalRepository, MedalRepository>();
+        services.AddScoped<ILeaderboardRepository, LeaderboardRepository>();
         services.AddScoped<IClanRepository, ClanRepository>();
         services.AddScoped<IRankingSnapshotRepository, RankingSnapshotRepository>();
 
