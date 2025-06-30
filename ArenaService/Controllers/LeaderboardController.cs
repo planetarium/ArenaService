@@ -15,18 +15,21 @@ public class LeaderboardController : ControllerBase
     private readonly IRankingRepository _rankingRepo;
     private readonly ILeaderboardRepository _leaderboardRepo;
     private readonly ISeasonService _seasonService;
+    private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public LeaderboardController(
         IAllClanRankingRepository allClanRankingRepo,
         IRankingRepository rankingRepo,
         ILeaderboardRepository leaderboardRepo,
-        ISeasonService seasonService
+        ISeasonService seasonService,
+        ISeasonCacheRepository seasonCacheRepo
     )
     {
         _allClanRankingRepo = allClanRankingRepo;
         _rankingRepo = rankingRepo;
         _leaderboardRepo = leaderboardRepo;
         _seasonService = seasonService;
+        _seasonCacheRepo = seasonCacheRepo;
     }
 
     [HttpGet("count")]
@@ -44,22 +47,26 @@ public class LeaderboardController : ControllerBase
         "Completed Arena Leaderboard Response",
         typeof(CompletedSeasonLeaderboardResponse)
     )]
-    public async Task<ActionResult<CompletedSeasonLeaderboardResponse>> GetCompletedArenaLeaderboard(
-        long blockIndex
-    )
+    public async Task<
+        ActionResult<CompletedSeasonLeaderboardResponse>
+    > GetCompletedArenaLeaderboard(long blockIndex)
     {
         try
         {
             var seasonInfo = await _seasonService.GetSeasonAndRoundByBlock(blockIndex);
             var season = seasonInfo.Season;
 
-            if (season.EndBlock >= blockIndex)
+            var currentSeasonInfo = await _seasonCacheRepo.GetSeasonAsync();
+            
+            if (blockIndex >= currentSeasonInfo.StartBlock)
             {
-                return BadRequest("The requested block index corresponds to an ongoing season.");
+                return BadRequest(
+                    "The requested block index corresponds to an ongoing or future season."
+                );
             }
 
             var leaderboardData = await _leaderboardRepo.GetLeaderboardAsync(season.Id);
-            
+
             var response = new CompletedSeasonLeaderboardResponse
             {
                 Season = new SimpleSeasonResponse

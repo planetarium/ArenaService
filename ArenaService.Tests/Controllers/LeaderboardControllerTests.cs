@@ -17,6 +17,7 @@ public class LeaderboardControllerTests
     private readonly Mock<IRankingRepository> _mockRankingRepo;
     private readonly Mock<ILeaderboardRepository> _mockLeaderboardRepo;
     private readonly Mock<ISeasonService> _mockSeasonService;
+    private readonly Mock<ISeasonCacheRepository> _mockSeasonCacheRepo;
     private readonly LeaderboardController _controller;
 
     public LeaderboardControllerTests()
@@ -25,12 +26,14 @@ public class LeaderboardControllerTests
         _mockRankingRepo = new Mock<IRankingRepository>();
         _mockLeaderboardRepo = new Mock<ILeaderboardRepository>();
         _mockSeasonService = new Mock<ISeasonService>();
+        _mockSeasonCacheRepo = new Mock<ISeasonCacheRepository>();
 
         _controller = new LeaderboardController(
             _mockAllClanRankingRepo.Object,
             _mockRankingRepo.Object,
             _mockLeaderboardRepo.Object,
-            _mockSeasonService.Object
+            _mockSeasonService.Object,
+            _mockSeasonCacheRepo.Object
         );
     }
 
@@ -55,6 +58,8 @@ public class LeaderboardControllerTests
             EndBlock = 800000,
         };
 
+        var currentSeasonInfo = (Id: 2, StartBlock: 1200000L, EndBlock: 1600000L);
+
         var user = new User
         {
             AvatarAddress = new Address("0x1234567890123456789012345678901234567890"),
@@ -78,6 +83,10 @@ public class LeaderboardControllerTests
         _mockSeasonService
             .Setup(x => x.GetSeasonAndRoundByBlock(blockIndex))
             .ReturnsAsync((season, round));
+
+        _mockSeasonCacheRepo
+            .Setup(x => x.GetSeasonAsync())
+            .ReturnsAsync(currentSeasonInfo);
 
         _mockLeaderboardRepo
             .Setup(x => x.GetLeaderboardAsync(season.Id))
@@ -125,16 +134,22 @@ public class LeaderboardControllerTests
             EndBlock = 800000,
         };
 
+        var currentSeasonInfo = (Id: 1, StartBlock: 400000L, EndBlock: 800000L);
+
         _mockSeasonService
             .Setup(x => x.GetSeasonAndRoundByBlock(blockIndex))
             .ReturnsAsync((season, round));
+
+        _mockSeasonCacheRepo
+            .Setup(x => x.GetSeasonAsync())
+            .ReturnsAsync(currentSeasonInfo);
 
         // Act
         var result = await _controller.GetCompletedArenaLeaderboard(blockIndex);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-        Assert.Equal("The requested block index corresponds to an ongoing season.", badRequestResult.Value);
+        Assert.Equal("The requested block index corresponds to an ongoing or future season.", badRequestResult.Value);
     }
 
     [Fact]
