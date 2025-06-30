@@ -76,4 +76,44 @@ public class SeasonController : ControllerBase
 
         return Ok(response);
     }
+
+    [HttpGet]
+    [SwaggerResponse(StatusCodes.Status200OK, "PagedSeasonsResponse", typeof(PagedSeasonsResponse))]
+    public async Task<IActionResult> GetSeasonsPaged(
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10
+    )
+    {
+        if (pageNumber < 1)
+        {
+            return BadRequest("Page number must be greater than 0");
+        }
+
+        if (pageSize < 1 || pageSize > 100)
+        {
+            return BadRequest("Page size must be between 1 and 100");
+        }
+
+        var (seasons, totalCount, totalPages, hasNextPage, hasPreviousPage) = await _seasonService.GetSeasonsPagedAsync(
+            pageNumber,
+            pageSize,
+            q =>
+                q.Include(s => s.BattleTicketPolicy)
+                    .Include(s => s.RefreshTicketPolicy)
+                    .Include(s => s.Rounds)
+        );
+
+        var response = new PagedSeasonsResponse
+        {
+            Seasons = seasons.Select(s => s.ToResponse()).ToList(),
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+            TotalPages = totalPages,
+            HasNextPage = hasNextPage,
+            HasPreviousPage = hasPreviousPage
+        };
+
+        return Ok(response);
+    }
 }
