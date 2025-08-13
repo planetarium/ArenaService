@@ -1,3 +1,4 @@
+using System.Numerics;
 using ArenaService.Shared.Extensions;
 using Bencodex;
 using Bencodex.Types;
@@ -14,7 +15,7 @@ public class BattleResultState
     public bool IsVictory;
     public int PortraitId;
     public int Level;
-    public int Cp;
+    public long Cp;
 
     public BattleResultState(IValue bencoded)
     {
