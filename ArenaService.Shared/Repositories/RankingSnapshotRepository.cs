@@ -25,6 +25,11 @@ public interface IRankingSnapshotRepository
         int roundId,
         Func<IQueryable<RankingSnapshot>, IQueryable<RankingSnapshot>>? includeQuery = null
     );
+
+    Task<List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>> GetRankingSnapshotEntries(
+        int seasonId,
+        int roundId
+    );
 }
 
 public class RankingSnapshotRepository : IRankingSnapshotRepository
@@ -102,5 +107,28 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
         }
 
         return await query.Where(r => r.SeasonId == seasonId && r.RoundId == roundId).CountAsync();
+    }
+
+    public async Task<List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>> GetRankingSnapshotEntries(
+        int seasonId,
+        int roundId
+    )
+    {
+        var query =
+            from snapshot in _context.RankingSnapshots.AsNoTracking()
+            join user in _context.Users.AsNoTracking() on snapshot.AvatarAddress equals user.AvatarAddress
+            where snapshot.SeasonId == seasonId && snapshot.RoundId == roundId
+            orderby snapshot.Score descending
+            select new ArenaService.Shared.Dtos.RankingSnapshotEntryResponse
+            {
+                AgentAddress = user.AgentAddress,
+                AvatarAddress = user.AvatarAddress,
+                NameWithHash = user.NameWithHash,
+                Level = user.Level,
+                Cp = user.Cp,
+                Score = snapshot.Score
+            };
+
+        return await query.ToListAsync();
     }
 }
