@@ -55,10 +55,17 @@ public class LeaderboardController : ControllerBase
     )]
     public async Task<ActionResult<List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>>> GetRankingSnapshot(
         [FromQuery] int seasonId,
-        [FromQuery] int roundId
+        [FromQuery] int roundId,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 1000
     )
     {
-        var entries = await _rankingSnapshotRepo.GetRankingSnapshotEntries(seasonId, roundId);
+        // Limit the maximum page size to 1000
+        if (take > 1000)
+        {
+            take = 1000;
+        }
+        var entries = await _rankingSnapshotRepo.GetRankingSnapshotEntries(seasonId, roundId, skip, take);
         return Ok(entries);
     }
 

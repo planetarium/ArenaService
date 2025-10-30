@@ -28,7 +28,9 @@ public interface IRankingSnapshotRepository
 
     Task<List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>> GetRankingSnapshotEntries(
         int seasonId,
-        int roundId
+        int roundId,
+        int skip = 0,
+        int take = 1000
     );
 }
 
@@ -111,7 +113,9 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
 
     public async Task<List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>> GetRankingSnapshotEntries(
         int seasonId,
-        int roundId
+        int roundId,
+        int skip = 0,
+        int take = 1000
     )
     {
         var query =
@@ -129,6 +133,6 @@ public class RankingSnapshotRepository : IRankingSnapshotRepository
                 Score = snapshot.Score
             };
 
-        return await query.ToListAsync();
+        return await query.Skip(skip).Take(take).ToListAsync();
     }
 }
