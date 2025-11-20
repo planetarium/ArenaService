@@ -87,6 +87,7 @@ public class Startup
                 options.Filters.Add<NotRegisteredUserExceptionFilter>();
                 options.Filters.Add<NotEnoughMedalExceptionFilter>();
                 options.Filters.Add<CalcAOFailedExceptionFilter>();
+                options.Filters.Add<NotEnoughRankingCountExceptionFilter>();
             })
             .AddNewtonsoftJson(options =>
             {

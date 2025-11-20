@@ -175,6 +175,16 @@ public class AvailableOpponentController : ControllerBase
                     .ThenInclude(s => s.RefreshTicketPolicy)
         );
 
+        var rankingCount = await _rankingRepo.GetRankingCountAsync(
+            cachedSeason.Id,
+            cachedRound.RoundIndex
+        );
+
+        if (rankingCount < 40)
+        {
+            throw new NotEnoughRankingCountException("NOT_ENOUGH_RANKING_COUNT");
+        }
+
         var refreshTicketStatusPerRound = await _ticketRepo.GetRefreshTicketStatusPerRound(
             cachedRound.Id,
             avatarAddress
