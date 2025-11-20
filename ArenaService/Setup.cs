@@ -10,6 +10,7 @@ using ArenaService.JsonConverters;
 using ArenaService.Options;
 using ArenaService.Services;
 using ArenaService.Shared.Data;
+using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Jwt;
 using ArenaService.Shared.Repositories;
 using ArenaService.Shared.Services;
@@ -85,6 +86,7 @@ public class Startup
                 options.Filters.Add<CacheExceptionFilter>();
                 options.Filters.Add<NotRegisteredUserExceptionFilter>();
                 options.Filters.Add<NotEnoughMedalExceptionFilter>();
+                options.Filters.Add<CalcAOFailedExceptionFilter>();
             })
             .AddNewtonsoftJson(options =>
             {
