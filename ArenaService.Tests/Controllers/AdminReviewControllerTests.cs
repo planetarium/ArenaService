@@ -1,4 +1,5 @@
 using ArenaService.Controllers;
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.Enums;
@@ -45,7 +46,7 @@ public class AdminReviewControllerTests
         var result = await _controller.GetUnreviewedBattles();
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedBattles = Assert.IsType<List<Battle>>(okResult.Value);
+        var returnedBattles = Assert.IsType<List<AdminBattleReviewResponse>>(okResult.Value);
         Assert.Single(returnedBattles);
     }
 

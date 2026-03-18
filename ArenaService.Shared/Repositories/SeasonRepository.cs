@@ -158,7 +158,7 @@ public class SeasonRepository : ISeasonRepository
         int refreshTicketPolicyId
     )
     {
-        long endBlock = startBlock + (roundInterval * roundCount) - 1;
+        long endBlock = startBlock + ((long)roundInterval * roundCount) - 1;
 
         bool isOverlapping = await IsBlockRangeOverlappingAsync(startBlock, endBlock);
         if (isOverlapping)

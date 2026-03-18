@@ -95,3 +95,4 @@ fabric.properties
 **/appsettings.Internal.json
 **/appsettings.Main.json
 ArenaService.IntegrationTests/**/*.received.*
+.claude/scheduled_tasks.lock

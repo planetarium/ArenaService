@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,11 +30,23 @@ public class AdminReviewController : ControllerBase
     }
 
     [HttpGet("battles")]
-    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(List<AdminBattleReviewResponse>))]
     public async Task<IActionResult> GetUnreviewedBattles()
     {
         var battles = await _battleRepo.GetUnReviewedBattlesAsync();
-        return Ok(battles);
+        var response = battles.Select(b => new AdminBattleReviewResponse
+        {
+            Id = b.Id,
+            AvatarAddress = b.AvatarAddress.ToString().ToLower(),
+            SeasonId = b.SeasonId,
+            RoundId = b.RoundId,
+            BattleStatus = b.BattleStatus,
+            TxId = b.TxId,
+            TxStatus = b.TxStatus,
+            ExceptionNames = b.ExceptionNames,
+            Reviewed = b.Reviewed
+        }).ToList();
+        return Ok(response);
     }
 
     [HttpGet("ticket-purchases")]
@@ -45,22 +58,59 @@ public class AdminReviewController : ControllerBase
 
         await Task.WhenAll(battleTicketsTask, refreshTicketsTask);
 
+        var battleResponse = battleTicketsTask.Result.Select(t => new AdminTicketPurchaseReviewResponse
+        {
+            Id = t.Id,
+            AvatarAddress = t.AvatarAddress.ToString().ToLower(),
+            SeasonId = t.SeasonId,
+            RoundId = t.RoundId,
+            PurchaseStatus = t.PurchaseStatus,
+            TxId = t.TxId,
+            TxStatus = t.TxStatus,
+            ExceptionNames = t.ExceptionNames,
+            Reviewed = t.Reviewed
+        }).ToList();
+
+        var refreshResponse = refreshTicketsTask.Result.Select(t => new AdminTicketPurchaseReviewResponse
+        {
+            Id = t.Id,
+            AvatarAddress = t.AvatarAddress.ToString().ToLower(),
+            SeasonId = t.SeasonId,
+            RoundId = t.RoundId,
+            PurchaseStatus = t.PurchaseStatus,
+            TxId = t.TxId,
+            TxStatus = t.TxStatus,
+            ExceptionNames = t.ExceptionNames,
+            Reviewed = t.Reviewed
+        }).ToList();
+
         return Ok(new
         {
-            BattleTicketPurchases = battleTicketsTask.Result,
-            RefreshTicketPurchases = refreshTicketsTask.Result
+            BattleTicketPurchases = battleResponse,
+            RefreshTicketPurchases = refreshResponse
         });
     }
 
     [HttpPost("battles/{battleId}/confirm")]
-    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(AdminBattleReviewResponse))]
     [SwaggerResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConfirmBattle(int battleId)
     {
         try
         {
             var battle = await _battleRepo.UpdateBattle(battleId, battle => battle.Reviewed = true);
-            return Ok(battle);
+            return Ok(new AdminBattleReviewResponse
+            {
+                Id = battle.Id,
+                AvatarAddress = battle.AvatarAddress.ToString().ToLower(),
+                SeasonId = battle.SeasonId,
+                RoundId = battle.RoundId,
+                BattleStatus = battle.BattleStatus,
+                TxId = battle.TxId,
+                TxStatus = battle.TxStatus,
+                ExceptionNames = battle.ExceptionNames,
+                Reviewed = battle.Reviewed
+            });
         }
         catch (ArgumentException)
         {
@@ -69,7 +119,7 @@ public class AdminReviewController : ControllerBase
     }
 
     [HttpPost("ticket-purchases/{purchaseLogId}/confirm")]
-    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(AdminTicketPurchaseReviewResponse))]
     [SwaggerResponse(StatusCodes.Status400BadRequest)]
     [SwaggerResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConfirmTicketPurchase(int purchaseLogId, [FromQuery] string type = "battle")
@@ -84,12 +134,34 @@ public class AdminReviewController : ControllerBase
             if (string.Equals(type, "refresh", StringComparison.OrdinalIgnoreCase))
             {
                 var log = await _ticketRepo.UpdateRefreshTicketPurchaseLog(purchaseLogId, log => log.Reviewed = true);
-                return Ok(log);
+                return Ok(new AdminTicketPurchaseReviewResponse
+                {
+                    Id = log.Id,
+                    AvatarAddress = log.AvatarAddress.ToString().ToLower(),
+                    SeasonId = log.SeasonId,
+                    RoundId = log.RoundId,
+                    PurchaseStatus = log.PurchaseStatus,
+                    TxId = log.TxId,
+                    TxStatus = log.TxStatus,
+                    ExceptionNames = log.ExceptionNames,
+                    Reviewed = log.Reviewed
+                });
             }
             else
             {
                 var log = await _ticketRepo.UpdateBattleTicketPurchaseLog(purchaseLogId, log => log.Reviewed = true);
-                return Ok(log);
+                return Ok(new AdminTicketPurchaseReviewResponse
+                {
+                    Id = log.Id,
+                    AvatarAddress = log.AvatarAddress.ToString().ToLower(),
+                    SeasonId = log.SeasonId,
+                    RoundId = log.RoundId,
+                    PurchaseStatus = log.PurchaseStatus,
+                    TxId = log.TxId,
+                    TxStatus = log.TxStatus,
+                    ExceptionNames = log.ExceptionNames,
+                    Reviewed = log.Reviewed
+                });
             }
         }
         catch (ArgumentException)

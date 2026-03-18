@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Repositories;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -18,12 +19,12 @@ public class AdminLeaderboardController : ControllerBase
     }
 
     [HttpGet("{seasonId}")]
-    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(List<AdminLeaderboardEntryResponse>))]
     public async Task<IActionResult> GetLeaderboard(int seasonId)
     {
         var leaderboard = await _leaderboardRepo.GetLeaderboardAsync(seasonId);
 
-        var response = leaderboard.Select(entry => new
+        var response = leaderboard.Select(entry => new AdminLeaderboardEntryResponse
         {
             AvatarAddress = entry.Participant.AvatarAddress.ToString().ToLower(),
             AgentAddress = entry.Participant.User.AgentAddress.ToString().ToLower(),
@@ -33,7 +34,7 @@ public class AdminLeaderboardController : ControllerBase
             TotalWin = entry.Participant.TotalWin,
             TotalLose = entry.Participant.TotalLose,
             Level = entry.Participant.User.Level
-        });
+        }).ToList();
 
         return Ok(response);
     }
