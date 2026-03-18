@@ -25,8 +25,8 @@ public class AdminLeaderboardController : ControllerBase
 
         var response = leaderboard.Select(entry => new
         {
-            AvatarAddress = entry.Participant.AvatarAddress.ToString(),
-            AgentAddress = entry.Participant.User.AgentAddress.ToString(),
+            AvatarAddress = entry.Participant.AvatarAddress.ToString().ToLower(),
+            AgentAddress = entry.Participant.User.AgentAddress.ToString().ToLower(),
             NameWithHash = entry.Participant.User.NameWithHash,
             Rank = entry.Rank,
             Score = entry.Score,

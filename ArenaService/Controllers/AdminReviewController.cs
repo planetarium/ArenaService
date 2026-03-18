@@ -13,6 +13,12 @@ public class AdminReviewController : ControllerBase
     private readonly IBattleRepository _battleRepo;
     private readonly ITicketRepository _ticketRepo;
 
+    private static readonly HashSet<string> ValidTicketTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "battle",
+        "refresh"
+    };
+
     public AdminReviewController(
         IBattleRepository battleRepo,
         ITicketRepository ticketRepo
@@ -34,13 +40,15 @@ public class AdminReviewController : ControllerBase
     [SwaggerResponse(StatusCodes.Status200OK)]
     public async Task<IActionResult> GetUnreviewedTicketPurchases()
     {
-        var battleTickets = await _ticketRepo.GetUnReviewedBattleTicketPurchasesAsync();
-        var refreshTickets = await _ticketRepo.GetUnReviewedRefreshTicketPurchasesAsync();
+        var battleTicketsTask = _ticketRepo.GetUnReviewedBattleTicketPurchasesAsync();
+        var refreshTicketsTask = _ticketRepo.GetUnReviewedRefreshTicketPurchasesAsync();
+
+        await Task.WhenAll(battleTicketsTask, refreshTicketsTask);
 
         return Ok(new
         {
-            BattleTicketPurchases = battleTickets,
-            RefreshTicketPurchases = refreshTickets
+            BattleTicketPurchases = battleTicketsTask.Result,
+            RefreshTicketPurchases = refreshTicketsTask.Result
         });
     }
 
@@ -62,12 +70,18 @@ public class AdminReviewController : ControllerBase
 
     [HttpPost("ticket-purchases/{purchaseLogId}/confirm")]
     [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status400BadRequest)]
     [SwaggerResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> ConfirmTicketPurchase(int purchaseLogId, [FromQuery] string type = "battle")
     {
+        if (!ValidTicketTypes.Contains(type))
+        {
+            return BadRequest($"Invalid ticket type '{type}'. Must be 'battle' or 'refresh'.");
+        }
+
         try
         {
-            if (type == "refresh")
+            if (string.Equals(type, "refresh", StringComparison.OrdinalIgnoreCase))
             {
                 var log = await _ticketRepo.UpdateRefreshTicketPurchaseLog(purchaseLogId, log => log.Reviewed = true);
                 return Ok(log);

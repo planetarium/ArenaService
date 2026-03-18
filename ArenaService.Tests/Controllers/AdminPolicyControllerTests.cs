@@ -1,4 +1,5 @@
 using ArenaService.Controllers;
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Shared.Repositories;
@@ -42,6 +43,28 @@ public class AdminPolicyControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var returnedPolicies = Assert.IsType<List<BattleTicketPolicy>>(okResult.Value);
         Assert.Single(returnedPolicies);
+    }
+
+    [Fact]
+    public async Task GetBattleTicketPolicy_Exists_ReturnsOk()
+    {
+        var policy = new BattleTicketPolicy { Id = 1, Name = "Test" };
+        _battlePolicyRepoMock.Setup(x => x.GetBattlePolicyByIdAsync(1)).ReturnsAsync(policy);
+
+        var result = await _controller.GetBattleTicketPolicy(1);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(policy, okResult.Value);
+    }
+
+    [Fact]
+    public async Task GetBattleTicketPolicy_NotFound_ReturnsNotFound()
+    {
+        _battlePolicyRepoMock.Setup(x => x.GetBattlePolicyByIdAsync(999)).ReturnsAsync((BattleTicketPolicy?)null);
+
+        var result = await _controller.GetBattleTicketPolicy(999);
+
+        Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
@@ -94,6 +117,18 @@ public class AdminPolicyControllerTests
         var okResult = Assert.IsType<OkObjectResult>(result);
         var returnedPolicies = Assert.IsType<List<RefreshTicketPolicy>>(okResult.Value);
         Assert.Single(returnedPolicies);
+    }
+
+    [Fact]
+    public async Task GetRefreshTicketPolicy_Exists_ReturnsOk()
+    {
+        var policy = new RefreshTicketPolicy { Id = 1, Name = "Test" };
+        _refreshPolicyRepoMock.Setup(x => x.GetRefreshPolicyByIdAsync(1)).ReturnsAsync(policy);
+
+        var result = await _controller.GetRefreshTicketPolicy(1);
+
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        Assert.Equal(policy, okResult.Value);
     }
 
     [Fact]

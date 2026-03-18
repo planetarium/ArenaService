@@ -137,4 +137,42 @@ public class AdminReviewControllerTests
 
         Assert.IsType<OkObjectResult>(result);
     }
+
+    [Fact]
+    public async Task ConfirmTicketPurchase_InvalidType_ReturnsBadRequest()
+    {
+        var result = await _controller.ConfirmTicketPurchase(1, "invalid");
+
+        Assert.IsType<BadRequestObjectResult>(result);
+        _ticketRepoMock.Verify(
+            x => x.UpdateBattleTicketPurchaseLog(It.IsAny<int>(), It.IsAny<Action<BattleTicketPurchaseLog>>()),
+            Times.Never
+        );
+        _ticketRepoMock.Verify(
+            x => x.UpdateRefreshTicketPurchaseLog(It.IsAny<int>(), It.IsAny<Action<RefreshTicketPurchaseLog>>()),
+            Times.Never
+        );
+    }
+
+    [Fact]
+    public async Task ConfirmTicketPurchase_CaseInsensitive_ReturnsOk()
+    {
+        var log = new RefreshTicketPurchaseLog
+        {
+            Id = 1,
+            AvatarAddress = new Address("0x0000000000000000000000000000000000000000"),
+            SeasonId = 1,
+            RoundId = 1,
+            PurchaseStatus = PurchaseStatus.PENDING,
+            PurchaseCount = 1,
+            TxId = new TxId(new byte[32]),
+            Reviewed = true
+        };
+        _ticketRepoMock.Setup(x => x.UpdateRefreshTicketPurchaseLog(1, It.IsAny<Action<RefreshTicketPurchaseLog>>()))
+            .ReturnsAsync(log);
+
+        var result = await _controller.ConfirmTicketPurchase(1, "Refresh");
+
+        Assert.IsType<OkObjectResult>(result);
+    }
 }

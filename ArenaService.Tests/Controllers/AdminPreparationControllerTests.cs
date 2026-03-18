@@ -1,5 +1,6 @@
 using ArenaService.Controllers;
 using ArenaService.Shared.Constants;
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;

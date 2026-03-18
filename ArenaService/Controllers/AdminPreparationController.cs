@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -77,20 +78,4 @@ public class AdminPreparationController : ControllerBase
 
         return Ok(new { Message = "Ranking cache initialized successfully." });
     }
-}
-
-public class InitializeSeasonRequest
-{
-    public long BlockIndex { get; set; }
-}
-
-public class PrepareNextRoundRequest
-{
-    public long BlockIndex { get; set; }
-}
-
-public class InitializeRankingCacheRequest
-{
-    public int SeasonId { get; set; }
-    public int RoundId { get; set; }
 }

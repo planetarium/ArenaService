@@ -1,5 +1,6 @@
 using ArenaService.Controllers;
 using ArenaService.Shared.Constants;
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.RefreshTicket;
@@ -16,17 +17,20 @@ public class AdminSeasonControllerTests
     private readonly Mock<ISeasonRepository> _seasonRepoMock;
     private readonly Mock<ISeasonService> _seasonServiceMock;
     private readonly Mock<ISeasonBlockAdjustmentService> _adjustmentServiceMock;
+    private readonly Mock<ISeasonCacheRepository> _seasonCacheRepoMock;
 
     public AdminSeasonControllerTests()
     {
         _seasonRepoMock = new Mock<ISeasonRepository>();
         _seasonServiceMock = new Mock<ISeasonService>();
         _adjustmentServiceMock = new Mock<ISeasonBlockAdjustmentService>();
+        _seasonCacheRepoMock = new Mock<ISeasonCacheRepository>();
 
         _controller = new AdminSeasonController(
             _seasonRepoMock.Object,
             _seasonServiceMock.Object,
-            _adjustmentServiceMock.Object
+            _adjustmentServiceMock.Object,
+            _seasonCacheRepoMock.Object
         );
     }
 
@@ -152,9 +156,10 @@ public class AdminSeasonControllerTests
     [Fact]
     public async Task DeleteSeason_CanDelete_ReturnsNoContent()
     {
+        _seasonCacheRepoMock.Setup(x => x.GetBlockIndexAsync()).ReturnsAsync(500);
         _seasonServiceMock.Setup(x => x.CanDeleteSeasonAsync(1, 500)).ReturnsAsync(true);
 
-        var result = await _controller.DeleteSeason(1, 500);
+        var result = await _controller.DeleteSeason(1);
 
         Assert.IsType<NoContentResult>(result);
         _seasonServiceMock.Verify(x => x.DeleteSeasonAsync(1), Times.Once);
@@ -163,9 +168,10 @@ public class AdminSeasonControllerTests
     [Fact]
     public async Task DeleteSeason_AlreadyStarted_ReturnsBadRequest()
     {
+        _seasonCacheRepoMock.Setup(x => x.GetBlockIndexAsync()).ReturnsAsync(1500);
         _seasonServiceMock.Setup(x => x.CanDeleteSeasonAsync(1, 1500)).ReturnsAsync(false);
 
-        var result = await _controller.DeleteSeason(1, 1500);
+        var result = await _controller.DeleteSeason(1);
 
         Assert.IsType<BadRequestObjectResult>(result);
         _seasonServiceMock.Verify(x => x.DeleteSeasonAsync(It.IsAny<int>()), Times.Never);

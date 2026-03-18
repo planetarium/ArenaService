@@ -1,5 +1,6 @@
 namespace ArenaService.Controllers;
 
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Models.BattleTicket;
 using ArenaService.Shared.Models.RefreshTicket;
 using ArenaService.Shared.Repositories;
@@ -32,6 +33,20 @@ public class AdminPolicyController : ControllerBase
         return Ok(policies);
     }
 
+    [HttpGet("battle-ticket/{id}")]
+    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetBattleTicketPolicy(int id)
+    {
+        var policy = await _battlePolicyRepo.GetBattlePolicyByIdAsync(id);
+        if (policy == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(policy);
+    }
+
     [HttpPost("battle-ticket")]
     [SwaggerResponse(StatusCodes.Status201Created)]
     public async Task<IActionResult> CreateBattleTicketPolicy([FromBody] CreateBattleTicketPolicyRequest request)
@@ -46,7 +61,7 @@ public class AdminPolicyController : ControllerBase
         };
 
         var created = await _battlePolicyRepo.AddBattlePolicyAsync(policy);
-        return CreatedAtAction(nameof(GetBattleTicketPolicies), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetBattleTicketPolicy), new { id = created.Id }, created);
     }
 
     [HttpGet("refresh-ticket")]
@@ -55,6 +70,20 @@ public class AdminPolicyController : ControllerBase
     {
         var policies = await _refreshPolicyRepo.GetAllRefreshPoliciesAsync();
         return Ok(policies);
+    }
+
+    [HttpGet("refresh-ticket/{id}")]
+    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GetRefreshTicketPolicy(int id)
+    {
+        var policy = await _refreshPolicyRepo.GetRefreshPolicyByIdAsync(id);
+        if (policy == null)
+        {
+            return NotFound();
+        }
+
+        return Ok(policy);
     }
 
     [HttpPost("refresh-ticket")]
@@ -70,23 +99,6 @@ public class AdminPolicyController : ControllerBase
         };
 
         var created = await _refreshPolicyRepo.AddRefreshPolicyAsync(policy);
-        return CreatedAtAction(nameof(GetRefreshTicketPolicies), new { id = created.Id }, created);
+        return CreatedAtAction(nameof(GetRefreshTicketPolicy), new { id = created.Id }, created);
     }
-}
-
-public class CreateBattleTicketPolicyRequest
-{
-    public required string Name { get; set; }
-    public int DefaultTicketsPerRound { get; set; }
-    public int MaxPurchasableTicketsPerRound { get; set; }
-    public int MaxPurchasableTicketsPerSeason { get; set; }
-    public List<decimal> PurchasePrices { get; set; } = new();
-}
-
-public class CreateRefreshTicketPolicyRequest
-{
-    public required string Name { get; set; }
-    public int DefaultTicketsPerRound { get; set; }
-    public int MaxPurchasableTicketsPerRound { get; set; }
-    public List<decimal> PurchasePrices { get; set; } = new();
 }

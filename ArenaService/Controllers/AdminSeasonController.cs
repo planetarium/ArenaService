@@ -1,6 +1,6 @@
 namespace ArenaService.Controllers;
 
-using ArenaService.Shared.Constants;
+using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Models;
 using ArenaService.Shared.Repositories;
 using ArenaService.Shared.Services;
@@ -17,16 +17,19 @@ public class AdminSeasonController : ControllerBase
     private readonly ISeasonRepository _seasonRepo;
     private readonly ISeasonService _seasonService;
     private readonly ISeasonBlockAdjustmentService _adjustmentService;
+    private readonly ISeasonCacheRepository _seasonCacheRepo;
 
     public AdminSeasonController(
         ISeasonRepository seasonRepo,
         ISeasonService seasonService,
-        ISeasonBlockAdjustmentService adjustmentService
+        ISeasonBlockAdjustmentService adjustmentService,
+        ISeasonCacheRepository seasonCacheRepo
     )
     {
         _seasonRepo = seasonRepo;
         _seasonService = seasonService;
         _adjustmentService = adjustmentService;
+        _seasonCacheRepo = seasonCacheRepo;
     }
 
     [HttpPost]
@@ -105,8 +108,9 @@ public class AdminSeasonController : ControllerBase
     [HttpDelete("{seasonId}")]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Season deleted")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Season already started")]
-    public async Task<IActionResult> DeleteSeason(int seasonId, [FromQuery] long currentBlockIndex)
+    public async Task<IActionResult> DeleteSeason(int seasonId)
     {
+        var currentBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
         var canDelete = await _seasonService.CanDeleteSeasonAsync(seasonId, currentBlockIndex);
         if (!canDelete)
         {
@@ -131,33 +135,4 @@ public class AdminSeasonController : ControllerBase
             return NotFound();
         }
     }
-}
-
-public class CreateSeasonRequest
-{
-    public long StartBlock { get; set; }
-    public int RoundInterval { get; set; }
-    public int RoundCount { get; set; }
-    public int SeasonGroupId { get; set; }
-    public ArenaType ArenaType { get; set; }
-    public int RequiredMedalCount { get; set; }
-    public int TotalPrize { get; set; }
-    public int BattleTicketPolicyId { get; set; }
-    public int RefreshTicketPolicyId { get; set; }
-}
-
-public class UpdateSeasonRequest
-{
-    public int SeasonGroupId { get; set; }
-    public ArenaType ArenaType { get; set; }
-    public int RoundInterval { get; set; }
-    public int RequiredMedalCount { get; set; }
-    public int TotalPrize { get; set; }
-    public int BattleTicketPolicyId { get; set; }
-    public int RefreshTicketPolicyId { get; set; }
-}
-
-public class AdjustEndBlockRequest
-{
-    public long NewEndBlock { get; set; }
 }
