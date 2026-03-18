@@ -5,7 +5,7 @@ namespace ArenaService.Shared.Dtos;
 
 public class CreateSeasonRequest
 {
-    [Range(0, long.MaxValue)]
+    [Range(typeof(long), "0", "9223372036854775807")]
     public long StartBlock { get; set; }
 
     [Range(1, int.MaxValue)]
@@ -59,7 +59,7 @@ public class UpdateSeasonRequest
 
 public class AdjustEndBlockRequest
 {
-    [Range(0, long.MaxValue)]
+    [Range(typeof(long), "0", "9223372036854775807")]
     public long NewEndBlock { get; set; }
 }
 
@@ -100,13 +100,13 @@ public class CreateRefreshTicketPolicyRequest
 
 public class InitializeSeasonRequest
 {
-    [Range(0, long.MaxValue)]
+    [Range(typeof(long), "0", "9223372036854775807")]
     public long BlockIndex { get; set; }
 }
 
 public class PrepareNextRoundRequest
 {
-    [Range(0, long.MaxValue)]
+    [Range(typeof(long), "0", "9223372036854775807")]
     public long BlockIndex { get; set; }
 }
 
