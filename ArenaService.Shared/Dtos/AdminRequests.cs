@@ -71,10 +71,10 @@ public class CreateBattleTicketPolicyRequest
     [Range(0, int.MaxValue)]
     public int DefaultTicketsPerRound { get; set; }
 
-    [Range(0, int.MaxValue)]
+    [Range(1, int.MaxValue)]
     public int MaxPurchasableTicketsPerRound { get; set; }
 
-    [Range(0, int.MaxValue)]
+    [Range(1, int.MaxValue)]
     public int MaxPurchasableTicketsPerSeason { get; set; }
 
     [Required]
@@ -90,7 +90,7 @@ public class CreateRefreshTicketPolicyRequest
     [Range(0, int.MaxValue)]
     public int DefaultTicketsPerRound { get; set; }
 
-    [Range(0, int.MaxValue)]
+    [Range(1, int.MaxValue)]
     public int MaxPurchasableTicketsPerRound { get; set; }
 
     [Required]

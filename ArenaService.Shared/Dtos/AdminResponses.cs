@@ -1,5 +1,4 @@
 using ArenaService.Shared.Models.Enums;
-using Libplanet.Crypto;
 using Libplanet.Types.Tx;
 
 namespace ArenaService.Shared.Dtos;
