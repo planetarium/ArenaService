@@ -202,6 +202,11 @@ public class Startup
         services.AddScoped<ISeasonService, SeasonService>();
         services.AddScoped<ITxTrackingService, TxTrackingService>();
         services.AddScoped<IParticipateService, ParticipateService>();
+        services.AddScoped<ISeasonBlockAdjustmentService, SeasonBlockAdjustmentService>();
+        services.AddScoped<ICacheInitializationService, CacheInitializationService>();
+
+        services.AddScoped<IBattleTicketPolicyRepository, BattleTicketPolicyRepository>();
+        services.AddScoped<IRefreshTicketPolicyRepository, RefreshTicketPolicyRepository>();
 
         services.AddCors(options =>
         {
