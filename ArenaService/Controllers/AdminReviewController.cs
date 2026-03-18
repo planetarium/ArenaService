@@ -50,7 +50,7 @@ public class AdminReviewController : ControllerBase
     }
 
     [HttpGet("ticket-purchases")]
-    [SwaggerResponse(StatusCodes.Status200OK)]
+    [SwaggerResponse(StatusCodes.Status200OK, Type = typeof(AdminTicketPurchaseReviewListResponse))]
     public async Task<IActionResult> GetUnreviewedTicketPurchases()
     {
         var battleTicketsTask = _ticketRepo.GetUnReviewedBattleTicketPurchasesAsync();
@@ -58,37 +58,38 @@ public class AdminReviewController : ControllerBase
 
         await Task.WhenAll(battleTicketsTask, refreshTicketsTask);
 
-        var battleResponse = battleTicketsTask.Result.Select(t => new AdminTicketPurchaseReviewResponse
-        {
-            Id = t.Id,
-            AvatarAddress = t.AvatarAddress.ToString().ToLower(),
-            SeasonId = t.SeasonId,
-            RoundId = t.RoundId,
-            PurchaseStatus = t.PurchaseStatus,
-            TxId = t.TxId,
-            TxStatus = t.TxStatus,
-            ExceptionNames = t.ExceptionNames,
-            Reviewed = t.Reviewed
-        }).ToList();
+        var battleTickets = await battleTicketsTask;
+        var refreshTickets = await refreshTicketsTask;
 
-        var refreshResponse = refreshTicketsTask.Result.Select(t => new AdminTicketPurchaseReviewResponse
+        var response = new AdminTicketPurchaseReviewListResponse
         {
-            Id = t.Id,
-            AvatarAddress = t.AvatarAddress.ToString().ToLower(),
-            SeasonId = t.SeasonId,
-            RoundId = t.RoundId,
-            PurchaseStatus = t.PurchaseStatus,
-            TxId = t.TxId,
-            TxStatus = t.TxStatus,
-            ExceptionNames = t.ExceptionNames,
-            Reviewed = t.Reviewed
-        }).ToList();
+            BattleTicketPurchases = battleTickets.Select(t => new AdminTicketPurchaseReviewResponse
+            {
+                Id = t.Id,
+                AvatarAddress = t.AvatarAddress.ToString().ToLower(),
+                SeasonId = t.SeasonId,
+                RoundId = t.RoundId,
+                PurchaseStatus = t.PurchaseStatus,
+                TxId = t.TxId,
+                TxStatus = t.TxStatus,
+                ExceptionNames = t.ExceptionNames,
+                Reviewed = t.Reviewed
+            }).ToList(),
+            RefreshTicketPurchases = refreshTickets.Select(t => new AdminTicketPurchaseReviewResponse
+            {
+                Id = t.Id,
+                AvatarAddress = t.AvatarAddress.ToString().ToLower(),
+                SeasonId = t.SeasonId,
+                RoundId = t.RoundId,
+                PurchaseStatus = t.PurchaseStatus,
+                TxId = t.TxId,
+                TxStatus = t.TxStatus,
+                ExceptionNames = t.ExceptionNames,
+                Reviewed = t.Reviewed
+            }).ToList()
+        };
 
-        return Ok(new
-        {
-            BattleTicketPurchases = battleResponse,
-            RefreshTicketPurchases = refreshResponse
-        });
+        return Ok(response);
     }
 
     [HttpPost("battles/{battleId}/confirm")]

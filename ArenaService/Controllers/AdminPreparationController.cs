@@ -31,7 +31,7 @@ public class AdminPreparationController : ControllerBase
     }
 
     [HttpPost("season/initialize")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Season initialized")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Season initialized", typeof(AdminPreparationResponse))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Season not found")]
     public async Task<IActionResult> InitializeSeason([FromBody] InitializeSeasonRequest request)
     {
@@ -39,7 +39,12 @@ public class AdminPreparationController : ControllerBase
         {
             var seasonAndRound = await _seasonService.GetSeasonAndRoundByBlock(request.BlockIndex);
             await _seasonPreparation.PrepareSeasonAsync(seasonAndRound);
-            return Ok(new { Message = "Season initialized successfully.", SeasonId = seasonAndRound.Season.Id, RoundId = seasonAndRound.Round.Id });
+            return Ok(new AdminPreparationResponse
+            {
+                Message = "Season initialized successfully.",
+                SeasonId = seasonAndRound.Season.Id,
+                RoundId = seasonAndRound.Round.Id
+            });
         }
         catch (NotFoundSeasonException ex)
         {
@@ -48,7 +53,7 @@ public class AdminPreparationController : ControllerBase
     }
 
     [HttpPost("round/prepare-next")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Round prepared")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Round prepared", typeof(AdminPreparationResponse))]
     [SwaggerResponse(StatusCodes.Status404NotFound, "Season/round not found")]
     public async Task<IActionResult> PrepareNextRound([FromBody] PrepareNextRoundRequest request)
     {
@@ -56,7 +61,12 @@ public class AdminPreparationController : ControllerBase
         {
             var seasonAndRound = await _seasonService.GetSeasonAndRoundByBlock(request.BlockIndex);
             await _roundPreparation.PrepareNextRoundWithSnapshotAsync(seasonAndRound);
-            return Ok(new { Message = "Next round prepared successfully.", SeasonId = seasonAndRound.Season.Id, RoundId = seasonAndRound.Round.Id });
+            return Ok(new AdminPreparationResponse
+            {
+                Message = "Next round prepared successfully.",
+                SeasonId = seasonAndRound.Season.Id,
+                RoundId = seasonAndRound.Round.Id
+            });
         }
         catch (NotFoundSeasonException ex)
         {
@@ -65,7 +75,7 @@ public class AdminPreparationController : ControllerBase
     }
 
     [HttpPost("ranking-cache/initialize")]
-    [SwaggerResponse(StatusCodes.Status200OK, "Ranking cache initialized")]
+    [SwaggerResponse(StatusCodes.Status200OK, "Ranking cache initialized", typeof(AdminPreparationResponse))]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Insufficient snapshots")]
     public async Task<IActionResult> InitializeRankingCache([FromBody] InitializeRankingCacheRequest request)
     {
@@ -76,6 +86,6 @@ public class AdminPreparationController : ControllerBase
             return BadRequest("Snapshot count is below participant count threshold. Cannot initialize ranking cache.");
         }
 
-        return Ok(new { Message = "Ranking cache initialized successfully." });
+        return Ok(new AdminPreparationResponse { Message = "Ranking cache initialized successfully." });
     }
 }

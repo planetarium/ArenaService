@@ -47,7 +47,7 @@ public class AdminSeasonController : ControllerBase
         }
         catch (OverflowException)
         {
-            return BadRequest("RoundInterval * RoundCount causes overflow.");
+            return BadRequest("Computed end block overflows. Check StartBlock, RoundInterval, and RoundCount values.");
         }
 
         try
@@ -64,14 +64,21 @@ public class AdminSeasonController : ControllerBase
                 request.RefreshTicketPolicyId
             );
 
-            var created = await _seasonRepo.GetSeasonAsync(
-                season.Id,
-                q => q.Include(s => s.BattleTicketPolicy)
-                      .Include(s => s.RefreshTicketPolicy)
-                      .Include(s => s.Rounds)
-            );
+            try
+            {
+                var created = await _seasonRepo.GetSeasonAsync(
+                    season.Id,
+                    q => q.Include(s => s.BattleTicketPolicy)
+                          .Include(s => s.RefreshTicketPolicy)
+                          .Include(s => s.Rounds)
+                );
 
-            return CreatedAtAction(nameof(GetSeason), new { seasonId = created.Id }, created.ToResponse());
+                return CreatedAtAction(nameof(GetSeason), new { seasonId = created.Id }, created.ToResponse());
+            }
+            catch (InvalidOperationException)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "Season created but failed to reload.");
+            }
         }
         catch (InvalidOperationException)
         {

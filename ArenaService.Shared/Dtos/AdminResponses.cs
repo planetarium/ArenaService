@@ -29,6 +29,19 @@ public class AdminTicketPurchaseReviewResponse
     public bool? Reviewed { get; set; }
 }
 
+public class AdminTicketPurchaseReviewListResponse
+{
+    public List<AdminTicketPurchaseReviewResponse> BattleTicketPurchases { get; set; } = new();
+    public List<AdminTicketPurchaseReviewResponse> RefreshTicketPurchases { get; set; } = new();
+}
+
+public class AdminPreparationResponse
+{
+    public string Message { get; set; } = null!;
+    public int? SeasonId { get; set; }
+    public int? RoundId { get; set; }
+}
+
 public class AdminLeaderboardEntryResponse
 {
     public string AvatarAddress { get; set; } = null!;
