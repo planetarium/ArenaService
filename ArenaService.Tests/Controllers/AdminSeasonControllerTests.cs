@@ -231,15 +231,31 @@ public class AdminSeasonControllerTests
     }
 
     [Fact]
+    public async Task DeleteSeason_NotFound_ReturnsNotFound()
+    {
+        _seasonCacheRepoMock.Setup(x => x.GetBlockIndexAsync()).ReturnsAsync(500);
+        _seasonServiceMock.Setup(x => x.CanDeleteSeasonAsync(999, 500))
+            .ThrowsAsync(new InvalidOperationException());
+
+        var result = await _controller.DeleteSeason(999);
+
+        Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
     public async Task AdjustEndBlock_ValidRequest_ReturnsOk()
     {
         var season = CreateTestSeason();
         season.EndBlock = 3000;
+        _seasonRepoMock.SetupSequence(x => x.GetSeasonAsync(
+            1, It.IsAny<Func<IQueryable<Season>, IQueryable<Season>>>()
+        ))
+            .ReturnsAsync(season)
+            .ReturnsAsync(season);
+        _seasonRepoMock.Setup(x => x.GetSeasonAsync(1, null))
+            .ReturnsAsync(season);
         _adjustmentServiceMock.Setup(x => x.AdjustSeasonEndBlockAsync(1, 3000))
             .ReturnsAsync(season);
-        _seasonRepoMock.Setup(x => x.GetSeasonAsync(
-            1, It.IsAny<Func<IQueryable<Season>, IQueryable<Season>>>()
-        )).ReturnsAsync(season);
 
         var request = new AdjustEndBlockRequest { NewEndBlock = 3000 };
 
@@ -253,7 +269,7 @@ public class AdminSeasonControllerTests
     [Fact]
     public async Task AdjustEndBlock_NotFound_ReturnsNotFound()
     {
-        _adjustmentServiceMock.Setup(x => x.AdjustSeasonEndBlockAsync(999, 3000))
+        _seasonRepoMock.Setup(x => x.GetSeasonAsync(999, null))
             .ThrowsAsync(new InvalidOperationException());
 
         var request = new AdjustEndBlockRequest { NewEndBlock = 3000 };
@@ -261,5 +277,19 @@ public class AdminSeasonControllerTests
         var result = await _controller.AdjustEndBlock(999, request);
 
         Assert.IsType<NotFoundResult>(result);
+    }
+
+    [Fact]
+    public async Task AdjustEndBlock_BelowStartBlock_ReturnsBadRequest()
+    {
+        var season = CreateTestSeason(); // StartBlock = 1000
+        _seasonRepoMock.Setup(x => x.GetSeasonAsync(1, null))
+            .ReturnsAsync(season);
+
+        var request = new AdjustEndBlockRequest { NewEndBlock = 500 };
+
+        var result = await _controller.AdjustEndBlock(1, request);
+
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 }

@@ -5,21 +5,19 @@ namespace ArenaService.Shared.Dtos;
 
 public class CreateSeasonRequest
 {
-    [Required]
+    [Range(0, long.MaxValue)]
     public long StartBlock { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int RoundInterval { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int RoundCount { get; set; }
 
-    [Required]
+    [Range(1, int.MaxValue)]
     public int SeasonGroupId { get; set; }
 
-    [Required]
+    [EnumDataType(typeof(ArenaType))]
     public ArenaType ArenaType { get; set; }
 
     [Range(0, int.MaxValue)]
@@ -28,24 +26,21 @@ public class CreateSeasonRequest
     [Range(0, int.MaxValue)]
     public int TotalPrize { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int BattleTicketPolicyId { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int RefreshTicketPolicyId { get; set; }
 }
 
 public class UpdateSeasonRequest
 {
-    [Required]
+    [Range(1, int.MaxValue)]
     public int SeasonGroupId { get; set; }
 
-    [Required]
+    [EnumDataType(typeof(ArenaType))]
     public ArenaType ArenaType { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int RoundInterval { get; set; }
 
@@ -55,18 +50,16 @@ public class UpdateSeasonRequest
     [Range(0, int.MaxValue)]
     public int TotalPrize { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int BattleTicketPolicyId { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int RefreshTicketPolicyId { get; set; }
 }
 
 public class AdjustEndBlockRequest
 {
-    [Required]
+    [Range(0, long.MaxValue)]
     public long NewEndBlock { get; set; }
 }
 
@@ -85,6 +78,7 @@ public class CreateBattleTicketPolicyRequest
     public int MaxPurchasableTicketsPerSeason { get; set; }
 
     [Required]
+    [MinLength(1)]
     public List<decimal> PurchasePrices { get; set; } = new();
 }
 
@@ -100,28 +94,27 @@ public class CreateRefreshTicketPolicyRequest
     public int MaxPurchasableTicketsPerRound { get; set; }
 
     [Required]
+    [MinLength(1)]
     public List<decimal> PurchasePrices { get; set; } = new();
 }
 
 public class InitializeSeasonRequest
 {
-    [Required]
+    [Range(0, long.MaxValue)]
     public long BlockIndex { get; set; }
 }
 
 public class PrepareNextRoundRequest
 {
-    [Required]
+    [Range(0, long.MaxValue)]
     public long BlockIndex { get; set; }
 }
 
 public class InitializeRankingCacheRequest
 {
-    [Required]
     [Range(1, int.MaxValue)]
     public int SeasonId { get; set; }
 
-    [Required]
     [Range(1, int.MaxValue)]
     public int RoundId { get; set; }
 }

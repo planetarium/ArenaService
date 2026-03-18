@@ -42,7 +42,7 @@ public class AdminSeasonController : ControllerBase
         {
             checked
             {
-                long endBlock = request.StartBlock + ((long)request.RoundInterval * request.RoundCount) - 1;
+                _ = request.StartBlock + ((long)request.RoundInterval * request.RoundCount) - 1;
             }
         }
         catch (OverflowException)
@@ -136,26 +136,42 @@ public class AdminSeasonController : ControllerBase
     [HttpDelete("{seasonId}")]
     [SwaggerResponse(StatusCodes.Status204NoContent, "Season deleted")]
     [SwaggerResponse(StatusCodes.Status400BadRequest, "Season already started")]
+    [SwaggerResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> DeleteSeason(int seasonId)
     {
-        var currentBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
-        var canDelete = await _seasonService.CanDeleteSeasonAsync(seasonId, currentBlockIndex);
-        if (!canDelete)
+        try
         {
-            return BadRequest("Cannot delete a season that has already started.");
-        }
+            var currentBlockIndex = await _seasonCacheRepo.GetBlockIndexAsync();
+            var canDelete = await _seasonService.CanDeleteSeasonAsync(seasonId, currentBlockIndex);
+            if (!canDelete)
+            {
+                return BadRequest("Cannot delete a season that has already started.");
+            }
 
-        await _seasonService.DeleteSeasonAsync(seasonId);
-        return NoContent();
+            await _seasonService.DeleteSeasonAsync(seasonId);
+            return NoContent();
+        }
+        catch (InvalidOperationException)
+        {
+            return NotFound();
+        }
     }
 
     [HttpPut("{seasonId}/end-block")]
     [SwaggerResponse(StatusCodes.Status200OK, "End block adjusted", typeof(SeasonResponse))]
+    [SwaggerResponse(StatusCodes.Status400BadRequest, "Invalid end block")]
     [SwaggerResponse(StatusCodes.Status404NotFound)]
     public async Task<IActionResult> AdjustEndBlock(int seasonId, [FromBody] AdjustEndBlockRequest request)
     {
         try
         {
+            var season = await _seasonRepo.GetSeasonAsync(seasonId);
+
+            if (request.NewEndBlock < season.StartBlock)
+            {
+                return BadRequest($"NewEndBlock ({request.NewEndBlock}) must be >= season start block ({season.StartBlock}).");
+            }
+
             await _adjustmentService.AdjustSeasonEndBlockAsync(seasonId, request.NewEndBlock);
 
             var adjusted = await _seasonRepo.GetSeasonAsync(
