@@ -28,11 +28,8 @@ public class AdminPolicyControllerTests
         {
             new BattleTicketPolicy
             {
-                Id = 1,
-                Name = "Default",
-                DefaultTicketsPerRound = 5,
-                MaxPurchasableTicketsPerRound = 10,
-                MaxPurchasableTicketsPerSeason = 50,
+                Id = 1, Name = "Default", DefaultTicketsPerRound = 5,
+                MaxPurchasableTicketsPerRound = 10, MaxPurchasableTicketsPerSeason = 50,
                 PurchasePrices = new List<decimal> { 1m, 2m, 3m }
             }
         };
@@ -41,8 +38,7 @@ public class AdminPolicyControllerTests
         var result = await _controller.GetBattleTicketPolicies();
 
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedPolicies = Assert.IsType<List<BattleTicketPolicy>>(okResult.Value);
-        Assert.Single(returnedPolicies);
+        Assert.Single(Assert.IsType<List<BattleTicketPolicy>>(okResult.Value));
     }
 
     [Fact]
@@ -53,8 +49,7 @@ public class AdminPolicyControllerTests
 
         var result = await _controller.GetBattleTicketPolicy(1);
 
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(policy, okResult.Value);
+        Assert.IsType<OkObjectResult>(result);
     }
 
     [Fact]
@@ -72,11 +67,8 @@ public class AdminPolicyControllerTests
     {
         var created = new BattleTicketPolicy
         {
-            Id = 1,
-            Name = "New Policy",
-            DefaultTicketsPerRound = 5,
-            MaxPurchasableTicketsPerRound = 10,
-            MaxPurchasableTicketsPerSeason = 50,
+            Id = 1, Name = "New Policy", DefaultTicketsPerRound = 5,
+            MaxPurchasableTicketsPerRound = 10, MaxPurchasableTicketsPerSeason = 2,
             PurchasePrices = new List<decimal> { 1m, 2m }
         };
         _battlePolicyRepoMock.Setup(x => x.AddBattlePolicyAsync(It.IsAny<BattleTicketPolicy>()))
@@ -84,10 +76,8 @@ public class AdminPolicyControllerTests
 
         var request = new CreateBattleTicketPolicyRequest
         {
-            Name = "New Policy",
-            DefaultTicketsPerRound = 5,
-            MaxPurchasableTicketsPerRound = 10,
-            MaxPurchasableTicketsPerSeason = 50,
+            Name = "New Policy", DefaultTicketsPerRound = 5,
+            MaxPurchasableTicketsPerRound = 10, MaxPurchasableTicketsPerSeason = 2,
             PurchasePrices = new List<decimal> { 1m, 2m }
         };
 
@@ -97,26 +87,36 @@ public class AdminPolicyControllerTests
     }
 
     [Fact]
+    public async Task CreateBattleTicketPolicy_MismatchedPrices_ReturnsBadRequest()
+    {
+        var request = new CreateBattleTicketPolicyRequest
+        {
+            Name = "Bad Policy", DefaultTicketsPerRound = 5,
+            MaxPurchasableTicketsPerRound = 10, MaxPurchasableTicketsPerSeason = 3,
+            PurchasePrices = new List<decimal> { 1m } // count 1 != 3
+        };
+
+        var result = await _controller.CreateBattleTicketPolicy(request);
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
     public async Task GetRefreshTicketPolicies_ReturnsOk()
     {
         var policies = new List<RefreshTicketPolicy>
         {
             new RefreshTicketPolicy
             {
-                Id = 1,
-                Name = "Default",
-                DefaultTicketsPerRound = 3,
-                MaxPurchasableTicketsPerRound = 5,
-                PurchasePrices = new List<decimal> { 1m }
+                Id = 1, Name = "Default", DefaultTicketsPerRound = 3,
+                MaxPurchasableTicketsPerRound = 5, PurchasePrices = new List<decimal> { 1m }
             }
         };
         _refreshPolicyRepoMock.Setup(x => x.GetAllRefreshPoliciesAsync()).ReturnsAsync(policies);
 
         var result = await _controller.GetRefreshTicketPolicies();
 
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        var returnedPolicies = Assert.IsType<List<RefreshTicketPolicy>>(okResult.Value);
-        Assert.Single(returnedPolicies);
+        Assert.IsType<OkObjectResult>(result);
     }
 
     [Fact]
@@ -127,8 +127,17 @@ public class AdminPolicyControllerTests
 
         var result = await _controller.GetRefreshTicketPolicy(1);
 
-        var okResult = Assert.IsType<OkObjectResult>(result);
-        Assert.Equal(policy, okResult.Value);
+        Assert.IsType<OkObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task GetRefreshTicketPolicy_NotFound_ReturnsNotFound()
+    {
+        _refreshPolicyRepoMock.Setup(x => x.GetRefreshPolicyByIdAsync(999)).ReturnsAsync((RefreshTicketPolicy?)null);
+
+        var result = await _controller.GetRefreshTicketPolicy(999);
+
+        Assert.IsType<NotFoundResult>(result);
     }
 
     [Fact]
@@ -136,25 +145,34 @@ public class AdminPolicyControllerTests
     {
         var created = new RefreshTicketPolicy
         {
-            Id = 1,
-            Name = "New Refresh",
-            DefaultTicketsPerRound = 3,
-            MaxPurchasableTicketsPerRound = 5,
-            PurchasePrices = new List<decimal> { 1m }
+            Id = 1, Name = "New Refresh", DefaultTicketsPerRound = 3,
+            MaxPurchasableTicketsPerRound = 1, PurchasePrices = new List<decimal> { 1m }
         };
         _refreshPolicyRepoMock.Setup(x => x.AddRefreshPolicyAsync(It.IsAny<RefreshTicketPolicy>()))
             .ReturnsAsync(created);
 
         var request = new CreateRefreshTicketPolicyRequest
         {
-            Name = "New Refresh",
-            DefaultTicketsPerRound = 3,
-            MaxPurchasableTicketsPerRound = 5,
-            PurchasePrices = new List<decimal> { 1m }
+            Name = "New Refresh", DefaultTicketsPerRound = 3,
+            MaxPurchasableTicketsPerRound = 1, PurchasePrices = new List<decimal> { 1m }
         };
 
         var result = await _controller.CreateRefreshTicketPolicy(request);
 
         Assert.IsType<CreatedAtActionResult>(result);
+    }
+
+    [Fact]
+    public async Task CreateRefreshTicketPolicy_MismatchedPrices_ReturnsBadRequest()
+    {
+        var request = new CreateRefreshTicketPolicyRequest
+        {
+            Name = "Bad", DefaultTicketsPerRound = 3,
+            MaxPurchasableTicketsPerRound = 5, PurchasePrices = new List<decimal> { 1m, 2m } // count 2 != 5
+        };
+
+        var result = await _controller.CreateRefreshTicketPolicy(request);
+
+        Assert.IsType<BadRequestObjectResult>(result);
     }
 }

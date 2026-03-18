@@ -49,8 +49,14 @@ public class AdminPolicyController : ControllerBase
 
     [HttpPost("battle-ticket")]
     [SwaggerResponse(StatusCodes.Status201Created)]
+    [SwaggerResponse(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateBattleTicketPolicy([FromBody] CreateBattleTicketPolicyRequest request)
     {
+        if (request.PurchasePrices.Count != request.MaxPurchasableTicketsPerSeason)
+        {
+            return BadRequest($"PurchasePrices count ({request.PurchasePrices.Count}) must match MaxPurchasableTicketsPerSeason ({request.MaxPurchasableTicketsPerSeason}).");
+        }
+
         var policy = new BattleTicketPolicy
         {
             Name = request.Name,
@@ -88,8 +94,14 @@ public class AdminPolicyController : ControllerBase
 
     [HttpPost("refresh-ticket")]
     [SwaggerResponse(StatusCodes.Status201Created)]
+    [SwaggerResponse(StatusCodes.Status400BadRequest)]
     public async Task<IActionResult> CreateRefreshTicketPolicy([FromBody] CreateRefreshTicketPolicyRequest request)
     {
+        if (request.PurchasePrices.Count != request.MaxPurchasableTicketsPerRound)
+        {
+            return BadRequest($"PurchasePrices count ({request.PurchasePrices.Count}) must match MaxPurchasableTicketsPerRound ({request.MaxPurchasableTicketsPerRound}).");
+        }
+
         var policy = new RefreshTicketPolicy
         {
             Name = request.Name,
