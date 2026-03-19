@@ -13,18 +13,21 @@ public class CacheInitializationService : ICacheInitializationService
     private readonly IRankingSnapshotRepository _rankingSnapshotRepository;
     private readonly IParticipantRepository _participantRepository;
     private readonly ISeasonCacheRepository _seasonCacheRepository;
+    private readonly IBlockTrackerRepository _blockTrackerRepository;
 
     public CacheInitializationService(
         IRankingRepository rankingRepository,
         IRankingSnapshotRepository rankingSnapshotRepository,
         IParticipantRepository participantRepository,
-        ISeasonCacheRepository seasonCacheRepository
+        ISeasonCacheRepository seasonCacheRepository,
+        IBlockTrackerRepository blockTrackerRepository
     )
     {
         _rankingRepository = rankingRepository;
         _rankingSnapshotRepository = rankingSnapshotRepository;
         _participantRepository = participantRepository;
         _seasonCacheRepository = seasonCacheRepository;
+        _blockTrackerRepository = blockTrackerRepository;
     }
 
     public async Task<bool> InitializeRankingCacheAsync(int seasonId, int roundId)
@@ -40,8 +43,11 @@ public class CacheInitializationService : ICacheInitializationService
             return false;
         }
 
-        await _rankingRepository.ClearAllRankingCacheAsync();
-        await _seasonCacheRepository.DeleteAllAsync();
+        await Task.WhenAll(
+            _rankingRepository.ClearAllRankingCacheAsync(),
+            _seasonCacheRepository.DeleteAllAsync(),
+            _blockTrackerRepository.DeleteBattleTxTrackerBlockIndexAsync()
+        );
         return true;
     }
 }

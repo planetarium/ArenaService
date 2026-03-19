@@ -6,6 +6,7 @@ public interface IBlockTrackerRepository
 {
     Task<long> GetBattleTxTrackerBlockIndexAsync();
     Task SetBattleTxTrackerBlockIndexAsync(long blockIndex);
+    Task DeleteBattleTxTrackerBlockIndexAsync();
 }
 
 public class BlockTrackerRepository : IBlockTrackerRepository
@@ -28,5 +29,10 @@ public class BlockTrackerRepository : IBlockTrackerRepository
     public async Task SetBattleTxTrackerBlockIndexAsync(long blockIndex)
     {
         await _redis.StringSetAsync($"{PREFIX}:{BATTLE_TX_TRACKER_KEY}", blockIndex);
+    }
+
+    public async Task DeleteBattleTxTrackerBlockIndexAsync()
+    {
+        await _redis.KeyDeleteAsync($"{PREFIX}:{BATTLE_TX_TRACKER_KEY}");
     }
 } 
