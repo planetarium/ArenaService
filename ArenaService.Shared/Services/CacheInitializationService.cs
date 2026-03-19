@@ -43,9 +43,11 @@ public class CacheInitializationService : ICacheInitializationService
             return false;
         }
 
-        await _rankingRepository.ClearAllRankingCacheAsync();
-        await _seasonCacheRepository.DeleteAllAsync();
-        await _blockTrackerRepository.DeleteBattleTxTrackerBlockIndexAsync();
+        await Task.WhenAll(
+            _rankingRepository.ClearAllRankingCacheAsync(),
+            _seasonCacheRepository.DeleteAllAsync(),
+            _blockTrackerRepository.DeleteBattleTxTrackerBlockIndexAsync()
+        );
         return true;
     }
 }

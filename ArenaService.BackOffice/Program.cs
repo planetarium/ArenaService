@@ -112,6 +112,7 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(provider =>
 });
 
 builder.Services.AddScoped<ISeasonCacheRepository, SeasonCacheRepository>();
+builder.Services.AddScoped<IBlockTrackerRepository, BlockTrackerRepository>();
 builder.Services.AddScoped<IBattleTicketPolicyRepository, BattleTicketPolicyRepository>();
 builder.Services.AddScoped<IRefreshTicketPolicyRepository, RefreshTicketPolicyRepository>();
 builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();

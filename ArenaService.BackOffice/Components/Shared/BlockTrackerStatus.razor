@@ -1,0 +1,44 @@
+@using ArenaService.Shared.Repositories
+@inject IBlockTrackerRepository BlockTrackerRepo
+@implements IAsyncDisposable
+
+<span class="text-muted small">
+    Battle Tracker: <strong>@(_blockIndex >= 0 ? _blockIndex.ToString("N0") : "-")</strong>
+</span>
+
+@code {
+    private long _blockIndex = -1;
+    private PeriodicTimer? _timer;
+    private readonly CancellationTokenSource _cts = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        _blockIndex = await BlockTrackerRepo.GetBattleTxTrackerBlockIndexAsync();
+        _timer = new PeriodicTimer(TimeSpan.FromSeconds(8));
+        _ = RefreshLoop();
+    }
+
+    private async Task RefreshLoop()
+    {
+        try
+        {
+            while (_timer is not null && await _timer.WaitForNextTickAsync(_cts.Token))
+            {
+                var newIndex = await BlockTrackerRepo.GetBattleTxTrackerBlockIndexAsync();
+                if (newIndex != _blockIndex)
+                {
+                    _blockIndex = newIndex;
+                    await InvokeAsync(StateHasChanged);
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    public ValueTask DisposeAsync()
+    {
+        _cts.Cancel();
+        _timer?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}
