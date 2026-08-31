@@ -1,6 +1,8 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
+using ArenaService.BackOffice.Authentication;
 using ArenaService.BackOffice.Components;
 using ArenaService.BackOffice.Options;
 using ArenaService.Options;
@@ -15,6 +17,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,6 +31,59 @@ builder.Services.Configure<HeadlessOptions>(configuration.GetSection(HeadlessOpt
 
 // Add services to the container.
 builder.Services.AddRazorComponents().AddInteractiveServerComponents();
+
+// REST API surface (API key authenticated) alongside the Blazor UI.
+builder.Services.AddControllers();
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc(
+        "v1",
+        new OpenApiInfo
+        {
+            Title = "ArenaService BackOffice API",
+            Version = "v1",
+            Description = "Arena back office operations exposed as REST endpoints."
+        }
+    );
+
+    options.AddSecurityDefinition(
+        ApiKeyAuthenticationDefaults.AuthenticationScheme,
+        new OpenApiSecurityScheme
+        {
+            Name = ApiKeyAuthenticationDefaults.HeaderName,
+            Type = SecuritySchemeType.ApiKey,
+            In = ParameterLocation.Header,
+            Description = $"API key authentication using the {ApiKeyAuthenticationDefaults.HeaderName} header."
+        }
+    );
+
+    options.AddSecurityRequirement(
+        new OpenApiSecurityRequirement
+        {
+            {
+                new OpenApiSecurityScheme
+                {
+                    Reference = new OpenApiReference
+                    {
+                        Type = ReferenceType.SecurityScheme,
+                        Id = ApiKeyAuthenticationDefaults.AuthenticationScheme
+                    }
+                },
+                Array.Empty<string>()
+            }
+        }
+    );
+
+    var xmlPath = Path.Combine(
+        AppContext.BaseDirectory,
+        $"{Assembly.GetExecutingAssembly().GetName().Name}.xml"
+    );
+    if (File.Exists(xmlPath))
+    {
+        options.IncludeXmlComments(xmlPath);
+    }
+});
 
 // Add Google Authentication
 builder
@@ -50,7 +106,11 @@ builder
 
         googleOptions.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
         googleOptions.CorrelationCookie.SameSite = SameSiteMode.Lax;
-    });
+    })
+    .AddScheme<AuthenticationSchemeOptions, ApiKeyAuthenticationHandler>(
+        ApiKeyAuthenticationDefaults.AuthenticationScheme,
+        null
+    );
 
 builder.Services.AddDbContext<ArenaDbContext>(options =>
     options
@@ -185,6 +245,10 @@ app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseSwagger();
+app.UseSwaggerUI();
+
 app.UseAntiforgery();
 
 app.MapGet(
@@ -207,6 +271,8 @@ app.MapGet(
         return Results.Redirect("/");
     }
 );
+
+app.MapControllers();
 
 app.MapRazorComponents<App>().AddInteractiveServerRenderMode().RequireAuthorization();
 
