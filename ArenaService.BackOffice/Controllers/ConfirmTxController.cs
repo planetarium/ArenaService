@@ -17,6 +17,12 @@ namespace ArenaService.BackOffice.Controllers;
 [Produces("application/json")]
 public class ConfirmTxController : ControllerBase
 {
+    private const string BattleTicketType = "battle";
+    private const string RefreshTicketType = "refresh";
+
+    private static readonly HashSet<string> ValidTicketTypes =
+        new(new[] { BattleTicketType, RefreshTicketType }, StringComparer.OrdinalIgnoreCase);
+
     private readonly IBattleRepository _battleRepository;
     private readonly ITicketRepository _ticketRepository;
     private readonly ILogger<ConfirmTxController> _logger;
@@ -44,9 +50,13 @@ public class ConfirmTxController : ControllerBase
     [HttpGet("ticket-purchases")]
     public async Task<ActionResult<ApiResponse<List<TicketPurchaseLogDto>>>> GetUnreviewedTicketPurchases()
     {
-        var purchases = (await _ticketRepository.GetUnReviewedBattleTicketPurchasesAsync())
+        var battlePurchasesTask = _ticketRepository.GetUnReviewedBattleTicketPurchasesAsync();
+        var refreshPurchasesTask = _ticketRepository.GetUnReviewedRefreshTicketPurchasesAsync();
+        await Task.WhenAll(battlePurchasesTask, refreshPurchasesTask);
+
+        var purchases = battlePurchasesTask.Result
             .Cast<TicketPurchaseLog>()
-            .Concat(await _ticketRepository.GetUnReviewedRefreshTicketPurchasesAsync())
+            .Concat(refreshPurchasesTask.Result)
             .ToList();
 
         return Ok(
@@ -73,28 +83,55 @@ public class ConfirmTxController : ControllerBase
     }
 
     /// <summary>
-    /// Marks a battle ticket purchase log as reviewed.
+    /// Marks a ticket purchase log as reviewed.
     /// </summary>
-    /// <remarks>
-    /// Same as the Blazor page: only battle ticket purchase logs are updated, so a refresh
-    /// ticket purchase id will not be found.
-    /// </remarks>
+    /// <param name="purchaseLogId">Id of the purchase log.</param>
+    /// <param name="type">
+    /// Which log the id belongs to: <c>battle</c> or <c>refresh</c>. Case insensitive.
+    /// The list endpoint returns this as <c>ticketType</c> on every entry.
+    /// </param>
     [HttpPost("ticket-purchases/{purchaseLogId:int}/review")]
-    public async Task<ActionResult<ApiResponse>> MarkTicketPurchaseAsReviewed(int purchaseLogId)
+    public async Task<ActionResult<ApiResponse>> MarkTicketPurchaseAsReviewed(
+        int purchaseLogId,
+        [FromQuery] string type = BattleTicketType
+    )
     {
+        if (!ValidTicketTypes.Contains(type))
+        {
+            return BadRequest(
+                ApiResponse.Error(
+                    $"Unsupported ticket type '{type}'. Expected '{BattleTicketType}' or '{RefreshTicketType}'."
+                )
+            );
+        }
+
+        var isRefresh = string.Equals(type, RefreshTicketType, StringComparison.OrdinalIgnoreCase);
+
         try
         {
-            await _ticketRepository.UpdateBattleTicketPurchaseLog(
-                purchaseLogId,
-                log => log.Reviewed = true
-            );
+            if (isRefresh)
+            {
+                await _ticketRepository.UpdateRefreshTicketPurchaseLog(
+                    purchaseLogId,
+                    log => log.Reviewed = true
+                );
+            }
+            else
+            {
+                await _ticketRepository.UpdateBattleTicketPurchaseLog(
+                    purchaseLogId,
+                    log => log.Reviewed = true
+                );
+            }
+
             return Ok(ApiResponse.Ok($"Ticket purchase {purchaseLogId} marked as reviewed."));
         }
         catch (Exception ex)
         {
             _logger.LogError(
                 ex,
-                "Failed to mark ticket purchase {PurchaseLogId} as reviewed.",
+                "Failed to mark {Type} ticket purchase {PurchaseLogId} as reviewed.",
+                type,
                 purchaseLogId
             );
             return StatusCode(500, ApiResponse.Error($"Ticket purchase review failed: {ex.Message}"));

@@ -107,7 +107,7 @@ public record BattleDto(
     public static BattleDto From(Battle b) =>
         new(
             b.Id,
-            b.AvatarAddress.ToString(),
+            b.AvatarAddress.ToString().ToLower(),
             b.SeasonId,
             b.RoundId,
             b.AvailableOpponentId,
@@ -143,7 +143,7 @@ public record TicketPurchaseLogDto(
         new(
             log.Id,
             log is BattleTicketPurchaseLog ? "battle" : "refresh",
-            log.AvatarAddress.ToString(),
+            log.AvatarAddress.ToString().ToLower(),
             log.SeasonId,
             log.RoundId,
             log.AmountPaid,

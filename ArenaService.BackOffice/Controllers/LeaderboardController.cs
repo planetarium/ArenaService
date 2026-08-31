@@ -79,8 +79,8 @@ public class LeaderboardController : ControllerBase
             .Select(item => new LeaderboardEntryDto(
                 item.Rank,
                 item.Score,
-                item.Participant.AvatarAddress.ToString(),
-                item.Participant.User.AgentAddress.ToString(),
+                item.Participant.AvatarAddress.ToString().ToLower(),
+                item.Participant.User.AgentAddress.ToString().ToLower(),
                 item.Participant.User.Level,
                 item.Participant.User.Cp,
                 item.Participant.User.PortraitId,
