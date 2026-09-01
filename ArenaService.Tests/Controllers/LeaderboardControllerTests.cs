@@ -19,6 +19,7 @@ public class LeaderboardControllerTests
     private readonly Mock<ISeasonService> _mockSeasonService;
     private readonly Mock<ISeasonCacheRepository> _mockSeasonCacheRepo;
     private readonly Mock<ISeasonRepository> _mockSeasonRepo;
+    private readonly Mock<IRankingSnapshotRepository> _mockRankingSnapshotRepo;
     private readonly LeaderboardController _controller;
 
     public LeaderboardControllerTests()
@@ -29,6 +30,7 @@ public class LeaderboardControllerTests
         _mockSeasonService = new Mock<ISeasonService>();
         _mockSeasonCacheRepo = new Mock<ISeasonCacheRepository>();
         _mockSeasonRepo = new Mock<ISeasonRepository>();
+        _mockRankingSnapshotRepo = new Mock<IRankingSnapshotRepository>();
 
         _controller = new LeaderboardController(
             _mockAllClanRankingRepo.Object,
@@ -36,7 +38,8 @@ public class LeaderboardControllerTests
             _mockLeaderboardRepo.Object,
             _mockSeasonService.Object,
             _mockSeasonCacheRepo.Object,
-            _mockSeasonRepo.Object
+            _mockSeasonRepo.Object,
+            _mockRankingSnapshotRepo.Object
         );
     }
 
@@ -174,5 +177,53 @@ public class LeaderboardControllerTests
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+    }
+
+    [Fact]
+    public async Task GetRankingSnapshot_RespectsPaginationParameters()
+    {
+        // Arrange
+        int seasonId = 1;
+        int roundId = 1;
+        var entries = Enumerable.Range(0, 1500).Select(i => new RankingSnapshotEntryResponse
+        {
+            AgentAddress = new Address($"0x{i.ToString("x").PadLeft(40, '0')}"),
+            AvatarAddress = new Address($"0x{(i + 10000).ToString("x").PadLeft(40, '0')}"),
+            NameWithHash = $"Player#{i}",
+            Level = i,
+            Cp = i * 100,
+            Score = 2000 - i
+        }).ToList();
+
+        _mockRankingSnapshotRepo
+            .Setup(x => x.GetRankingSnapshotEntries(seasonId, roundId, 0, 1000))
+            .ReturnsAsync(entries.Take(1000).ToList());
+        _mockRankingSnapshotRepo
+            .Setup(x => x.GetRankingSnapshotEntries(seasonId, roundId, 1000, 1000))
+            .ReturnsAsync(entries.Skip(1000).Take(1000).ToList());
+        _mockRankingSnapshotRepo
+            .Setup(x => x.GetRankingSnapshotEntries(seasonId, roundId, 500, 200))
+            .ReturnsAsync(entries.Skip(500).Take(200).ToList());
+
+        // Act
+        var firstPageResult = await _controller.GetRankingSnapshot(seasonId, roundId, 0, 1000);
+        var secondPageResult = await _controller.GetRankingSnapshot(seasonId, roundId, 1000, 1000);
+        var customPageResult = await _controller.GetRankingSnapshot(seasonId, roundId, 500, 200);
+
+        // Assert
+        var firstPage = Assert.IsType<OkObjectResult>(firstPageResult.Result);
+        var secondPage = Assert.IsType<OkObjectResult>(secondPageResult.Result);
+        var customPage = Assert.IsType<OkObjectResult>(customPageResult.Result);
+
+        var firstPageEntries = Assert.IsType<List<RankingSnapshotEntryResponse>>(firstPage.Value);
+        var secondPageEntries = Assert.IsType<List<RankingSnapshotEntryResponse>>(secondPage.Value);
+        var customPageEntries = Assert.IsType<List<RankingSnapshotEntryResponse>>(customPage.Value);
+
+        Assert.Equal(1000, firstPageEntries.Count);
+        Assert.Equal(500, secondPageEntries.Count);
+        Assert.Equal(200, customPageEntries.Count);
+        Assert.Equal(entries[0].AvatarAddress, firstPageEntries.First().AvatarAddress);
+        Assert.Equal(entries[1000].AvatarAddress, secondPageEntries.First().AvatarAddress);
+        Assert.Equal(entries[500].AvatarAddress, customPageEntries.First().AvatarAddress);
     }
 }

@@ -17,6 +17,7 @@ public class LeaderboardController : ControllerBase
     private readonly ISeasonService _seasonService;
     private readonly ISeasonRepository _seasonRepo;
     private readonly ISeasonCacheRepository _seasonCacheRepo;
+    private readonly IRankingSnapshotRepository _rankingSnapshotRepo;
 
     public LeaderboardController(
         IAllClanRankingRepository allClanRankingRepo,
@@ -24,7 +25,8 @@ public class LeaderboardController : ControllerBase
         ILeaderboardRepository leaderboardRepo,
         ISeasonService seasonService,
         ISeasonCacheRepository seasonCacheRepo,
-        ISeasonRepository seasonRepo
+        ISeasonRepository seasonRepo,
+        IRankingSnapshotRepository rankingSnapshotRepo
     )
     {
         _allClanRankingRepo = allClanRankingRepo;
@@ -33,6 +35,7 @@ public class LeaderboardController : ControllerBase
         _seasonService = seasonService;
         _seasonCacheRepo = seasonCacheRepo;
         _seasonRepo = seasonRepo;
+        _rankingSnapshotRepo = rankingSnapshotRepo;
     }
 
     [HttpGet("count")]
@@ -42,6 +45,28 @@ public class LeaderboardController : ControllerBase
         var rankingCount = await _rankingRepo.GetRankingCountAsync(seasonId, roundIndex);
 
         return Ok(rankingCount);
+    }
+
+    [HttpGet("participants")]
+    [SwaggerResponse(
+        StatusCodes.Status200OK,
+        "Ranking ongoing participants",
+        typeof(List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>)
+    )]
+    public async Task<ActionResult<List<ArenaService.Shared.Dtos.RankingSnapshotEntryResponse>>> GetRankingSnapshot(
+        [FromQuery] int seasonId,
+        [FromQuery] int roundId,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 1000
+    )
+    {
+        // Limit the maximum page size to 1000
+        if (take > 1000)
+        {
+            take = 1000;
+        }
+        var entries = await _rankingSnapshotRepo.GetRankingSnapshotEntries(seasonId, roundId, skip, take);
+        return Ok(entries);
     }
 
     [HttpGet("completed")]
