@@ -9,6 +9,7 @@ namespace ArenaService.Shared.Models;
 
 [Table("battles")]
 [Index(nameof(Id), nameof(TxId))]
+[Index(nameof(TxId))]
 [Index(nameof(BattleStatus), nameof(Reviewed))]
 public class Battle
 {
