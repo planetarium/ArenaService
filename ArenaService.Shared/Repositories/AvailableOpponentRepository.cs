@@ -99,48 +99,38 @@ public class AvailableOpponentRepository : IAvailableOpponentRepository
         List<(Address, int)> opponents
     )
     {
-        using var transaction = await _context.Database.BeginTransactionAsync();
+        // Runs in the caller's transaction so the refresh commits together with the ticket deduction.
+        var existOpponents = await GetAvailableOpponents(avatarAddress, roundId);
 
-        try
+        foreach (var existOpponent in existOpponents)
         {
-            var existOpponents = await GetAvailableOpponents(avatarAddress, roundId);
+            existOpponent.DeletedAt = DateTime.UtcNow;
 
-            foreach (var existOpponent in existOpponents)
-            {
-                existOpponent.DeletedAt = DateTime.UtcNow;
-
-                _context.AvailableOpponents.Update(existOpponent);
-            }
-
-            var newOpponents = new List<AvailableOpponent>();
-
-            foreach (var opponent in opponents)
-            {
-                var newOpponent = new AvailableOpponent
-                {
-                    AvatarAddress = avatarAddress,
-                    SeasonId = seasonId,
-                    RoundId = roundId,
-                    GroupId = opponent.Item2,
-                    OpponentAvatarAddress = opponent.Item1,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedAt = DateTime.UtcNow
-                };
-
-                newOpponents.Add(newOpponent);
-            }
-
-            await _context.AvailableOpponents.AddRangeAsync(newOpponents);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
-
-            return newOpponents;
+            _context.AvailableOpponents.Update(existOpponent);
         }
-        catch
+
+        var newOpponents = new List<AvailableOpponent>();
+
+        foreach (var opponent in opponents)
         {
-            await transaction.RollbackAsync();
-            throw;
+            var newOpponent = new AvailableOpponent
+            {
+                AvatarAddress = avatarAddress,
+                SeasonId = seasonId,
+                RoundId = roundId,
+                GroupId = opponent.Item2,
+                OpponentAvatarAddress = opponent.Item1,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            newOpponents.Add(newOpponent);
         }
+
+        await _context.AvailableOpponents.AddRangeAsync(newOpponents);
+        await _context.SaveChangesAsync();
+
+        return newOpponents;
     }
 
     public async Task<AvailableOpponent> UpdateAvailableOpponent(

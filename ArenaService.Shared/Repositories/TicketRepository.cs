@@ -162,6 +162,8 @@ public interface ITicketRepository
         bool isVictory
     );
 
+    Task<bool> TryDeductRefreshTicket(int refreshTicketStatusPerRoundId);
+
 
     Task<bool> TryUpdateBattleTicketStatusPerRound(
         int roundId,
@@ -694,6 +696,18 @@ public class TicketRepository : ITicketRepository
         }
 
         return false;
+    }
+
+    public async Task<bool> TryDeductRefreshTicket(int refreshTicketStatusPerRoundId)
+    {
+        var rowsAffected = await _context.RefreshTicketStatusesPerRound
+            .Where(rts => rts.Id == refreshTicketStatusPerRoundId && rts.RemainingCount > 0)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(rts => rts.RemainingCount, rts => rts.RemainingCount - 1)
+                .SetProperty(rts => rts.UsedCount, rts => rts.UsedCount + 1)
+                .SetProperty(rts => rts.UpdatedAt, DateTime.UtcNow));
+
+        return rowsAffected > 0;
     }
 
     public async Task<bool> TryUpdateBattleTicketStatusPerRound(

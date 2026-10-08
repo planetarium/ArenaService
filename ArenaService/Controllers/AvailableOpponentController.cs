@@ -1,6 +1,8 @@
 namespace ArenaService.Controllers;
 
+using System.Data;
 using ArenaService.Shared.Constants;
+using ArenaService.Shared.Data;
 using ArenaService.Shared.Dtos;
 using ArenaService.Shared.Exceptions;
 using ArenaService.Shared.Extensions;
@@ -22,6 +24,7 @@ public class AvailableOpponentController : ControllerBase
     private readonly IParticipateService _participateService;
     private readonly IRankingRepository _rankingRepo;
     private readonly IAllClanRankingRepository _allClanRankingRepo;
+    private readonly ArenaDbContext _dbContext;
 
     public AvailableOpponentController(
         IAvailableOpponentRepository availableOpponentRepo,
@@ -30,7 +33,8 @@ public class AvailableOpponentController : ControllerBase
         ISeasonCacheRepository seasonCacheRepo,
         IParticipateService participateService,
         IAllClanRankingRepository allClanRankingRepo,
-        IRankingRepository rankingRepo
+        IRankingRepository rankingRepo,
+        ArenaDbContext dbContext
     )
     {
         _availableOpponentRepo = availableOpponentRepo;
@@ -40,6 +44,7 @@ public class AvailableOpponentController : ControllerBase
         _participateService = participateService;
         _allClanRankingRepo = allClanRankingRepo;
         _rankingRepo = rankingRepo;
+        _dbContext = dbContext;
     }
 
     [HttpGet]
@@ -211,26 +216,30 @@ public class AvailableOpponentController : ControllerBase
             cachedSeason.StartBlock == cachedRound.StartBlock
         );
 
-        var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
-            cachedSeason.Id,
-            cachedRound.Id,
-            avatarAddress,
-            opponents.Select(o => (o.Value.AvatarAddress, o.Key)).ToList()
-        );
-
-        await _ticketRepo.UpdateRefreshTicketStatusPerRound(
-            refreshTicketStatusPerRound,
-            rts =>
+        // Deducting first locks the ticket status row, so concurrent refreshes by the same
+        // avatar are serialized and each one sees the opponents committed by the previous one.
+        using (var transaction = await _dbContext.Database.BeginTransactionAsync(IsolationLevel.ReadCommitted))
+        {
+            if (!await _ticketRepo.TryDeductRefreshTicket(refreshTicketStatusPerRound.Id))
             {
-                rts.RemainingCount -= 1;
-                rts.UsedCount += 1;
+                await transaction.RollbackAsync();
+                return BadRequest("NO_REFRESH_TICKETS");
             }
-        );
 
-        await _ticketRepo.AddRefreshTicketUsageLog(
-            refreshTicketStatusPerRound.Id,
-            availableOpponents.Select(o => o.Id).ToList()
-        );
+            var availableOpponents = await _availableOpponentRepo.RefreshAvailableOpponents(
+                cachedSeason.Id,
+                cachedRound.Id,
+                avatarAddress,
+                opponents.Select(o => (o.Value.AvatarAddress, o.Key)).ToList()
+            );
+
+            await _ticketRepo.AddRefreshTicketUsageLog(
+                refreshTicketStatusPerRound.Id,
+                availableOpponents.Select(o => o.Id).ToList()
+            );
+
+            await transaction.CommitAsync();
+        }
 
         var availableOpponentsResponses = new List<AvailableOpponentResponse>();
 
